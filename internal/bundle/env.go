@@ -74,3 +74,14 @@ func Record(root string, env Env, events []Event) error {
 	_, err = b.SyncIndexes(false)
 	return err
 }
+
+// Reindex regenerates index files under the writer lock.
+func Reindex(root string, env Env) ([]string, error) {
+	var changed []string
+	err := Update(root, env, func(b *Bundle) ([]Event, error) {
+		var err error
+		changed, err = b.SyncIndexes(false)
+		return nil, err
+	})
+	return changed, err
+}
