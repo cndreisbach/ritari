@@ -1,6 +1,6 @@
 module github.com/cndreisbach/ritari
 
-go 1.26.5
+go 1.26.9
 
 require (
 	github.com/stretchr/testify v1.12.1
