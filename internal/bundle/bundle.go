@@ -204,6 +204,9 @@ func (b *Bundle) Abs(rel string) string {
 // ErrNoID is returned when a note reference is empty.
 var ErrNoID = errors.New("no note id given")
 
+// ErrNotFound is returned when a note reference matches nothing.
+var ErrNotFound = errors.New("note not found")
+
 // Resolve finds the concept a reference names: a path, an ID, or a title (§5.1).
 func (b *Bundle) Resolve(ref string) (*Concept, error) {
 	if strings.TrimSpace(ref) == "" {
@@ -225,7 +228,7 @@ func (b *Bundle) Resolve(ref string) (*Concept, error) {
 	if c := b.ByTitle(ref); c != nil {
 		return c, nil
 	}
-	return nil, fmt.Errorf("note not found: %s", ref)
+	return nil, fmt.Errorf("%w: %s", ErrNotFound, ref)
 }
 
 // pathRef interprets ref as a file path, returning its bundle-relative path if

@@ -8,3 +8,8 @@ require (
 )
 
 require go.yaml.in/yaml/v3 v3.0.5
+
+require (
+	github.com/gofrs/flock v0.13.1 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+)

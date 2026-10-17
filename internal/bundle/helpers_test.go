@@ -26,3 +26,10 @@ func openFiles(t *testing.T, files map[string]string) *Bundle {
 	require.NoError(t, err)
 	return b
 }
+
+func readFile(t *testing.T, root, rel string) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
+	require.NoError(t, err)
+	return string(data)
+}
