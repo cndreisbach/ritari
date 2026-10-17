@@ -34,8 +34,9 @@ computes everything else from those files. Written in Go.
 
 ## Tooling
 
-Tools are managed with mise (`mise.toml`): Go, golangci-lint, govulncheck, and
-`okf` (the third-party OKF linter used as a conformance check).
+Tools are managed with mise (`mise.toml`): Go, golangci-lint, govulncheck,
+`okf` (the third-party OKF linter used as a conformance check), and `svu`
+(next-version calculation for releases).
 
 ```bash
 mise install
@@ -46,6 +47,33 @@ go build -o rit ./cmd/rit
 
 Before finishing any change: `gofmt`, `go vet ./...`, `go test ./...`, and
 `golangci-lint run ./...` must all be clean.
+
+## CI and releases
+
+- `.github/workflows/ci.yml` runs on every PR: `go test ./...`,
+  `golangci-lint`, and `govulncheck` on Linux. It sets `RITARI_SKIP_OKF=1`, so
+  the acceptance tests skip `okf lint` there (okf takes a long time to build).
+  Run the full suite locally (with okf installed) before merging.
+- `.github/workflows/release.yml` runs on every push to `main`: the CI job,
+  then the release. The next version comes from the Conventional Commits since
+  the last `v*` tag (via `svu`): a breaking change bumps major, `feat` bumps
+  minor, `fix`/`perf` bump patch, and anything else releases nothing. The first
+  release is `v1.0.0`. The job creates the GitHub release (notes from
+  `.github/scripts/release-notes.sh`), then regenerates `Formula/ritari.rb`
+  with `.github/scripts/update-formula.sh` and commits it to `main`.
+- **Never edit `Formula/ritari.rb` by hand**; change the generator script.
+- The repo is its own Homebrew tap. The formula builds from the tagged source
+  and stamps the version with
+  `-ldflags "-X github.com/cndreisbach/ritari/internal/cli.version=<v>"`:
+
+  ```bash
+  brew tap cndreisbach/ritari https://github.com/cndreisbach/ritari
+  brew install ritari
+  ```
+
+- PRs are merged with merge commits, not squashed, so **every commit message**
+  on a branch counts toward the version bump. A commit that isn't in
+  Conventional Commits format is ignored.
 
 ## Conventions
 
