@@ -36,10 +36,15 @@ func TestAcceptance(t *testing.T) {
 		},
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
 			// okflint checks a bundle with the third-party `okf lint`
-			// (github.com/abcubed3/okf), skipping if it is not installed.
+			// (github.com/abcubed3/okf), skipping if it is not installed or
+			// RITARI_SKIP_OKF is set (as in CI).
 			"okflint": func(ts *testscript.TestScript, neg bool, args []string) {
 				if len(args) != 1 {
 					ts.Fatalf("usage: okflint <bundle>")
+				}
+				if os.Getenv("RITARI_SKIP_OKF") != "" {
+					ts.Logf("RITARI_SKIP_OKF is set; skipping OKF conformance check")
+					return
 				}
 				bin, err := exec.LookPath("okf")
 				if err != nil {
