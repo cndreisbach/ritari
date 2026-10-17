@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # okf is slow to build (large dependency tree); the acceptance tests skip it in CI.
+      RITARI_SKIP_OKF: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          install_args: go golangci-lint go:golang.org/x/vuln/cmd/govulncheck
+          cache: true
+      - name: Test
+        run: go test ./...
+      - name: Lint
+        run: golangci-lint run ./...
+      - name: Vulnerability check
+        run: govulncheck ./...

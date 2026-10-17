@@ -3,6 +3,7 @@ go = "1.26.9"
 golangci-lint = "2.12.2"
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.6.0"
 "go:github.com/abcubed3/okf/cmd/okf" = "0.1.7"
+svu = "3.4.1"
 
 [tasks.test]
 description = "Run tests"
