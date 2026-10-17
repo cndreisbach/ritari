@@ -470,3 +470,23 @@ func cleanTags(tags []string) []string {
 	}
 	return out
 }
+
+// Trust tiers (§5.5).
+const (
+	TrustUnverified       = "unverified"
+	TrustMachineConfirmed = "machine-confirmed"
+	TrustHumanReviewed    = "human-reviewed"
+)
+
+// Trust derives the trust tier from `verified`.
+func (fm *Frontmatter) Trust() string {
+	if len(fm.Verified) == 0 {
+		return TrustUnverified
+	}
+	for _, v := range fm.Verified {
+		if strings.HasPrefix(v.By, "human:") {
+			return TrustHumanReviewed
+		}
+	}
+	return TrustMachineConfirmed
+}

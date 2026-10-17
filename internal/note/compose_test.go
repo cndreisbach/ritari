@@ -183,3 +183,17 @@ func TestEditBody(t *testing.T) {
 	_, err = EditBody(body, "explode", "", "", "", 0)
 	assert.EqualError(t, err, `unknown edit op: "explode"`)
 }
+
+func TestAppendNarrative(t *testing.T) {
+	assert.Equal(t, "A\n\nB\n", AppendNarrative("A\n\n", []string{"B"}))
+	assert.Equal(t, "B\n\n# Obs\n- x\n", AppendNarrative("# Obs\n- x\n", []string{"B"}))
+	assert.Equal(t, "A\n\nB\n\n# H\n", AppendNarrative("A\n# H\n", []string{"B"}))
+	assert.Equal(t, "B\n", AppendNarrative("", []string{"B"}))
+}
+
+func TestSetSection(t *testing.T) {
+	assert.Equal(t, "p\n\n# Touched\n- a\n", SetSection("p\n", "Touched", []string{"- a"}))
+	assert.Equal(t, "p\n\n# Touched\n- b\n\n# After\nx\n", SetSection("p\n\n# Touched\n- a\n\n# After\nx\n", "Touched", []string{"- b"}))
+	assert.Equal(t, "p\n\n# After\nx\n", SetSection("p\n\n# Touched\n- a\n# After\nx\n", "Touched", nil))
+	assert.Equal(t, "", SetSection("", "Touched", nil))
+}

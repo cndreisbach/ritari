@@ -50,3 +50,64 @@ func EditBody(body, op, content, section, find string, count int) (string, error
 	}
 	return "", fmt.Errorf("unknown edit op: %q", op)
 }
+
+// AppendNarrative adds paragraphs at the end of the prose before the first
+// heading, leaving everything under headings untouched.
+func AppendNarrative(body string, paras []string) string {
+	if len(paras) == 0 {
+		return body
+	}
+	ls := lines(body)
+	h := len(ls)
+	for i, l := range ls {
+		if _, ok := parseHeading(l); ok {
+			h = i
+			break
+		}
+	}
+	out := trimBlank(ls[:h])
+	for _, p := range paras {
+		if len(out) > 0 {
+			out = append(out, "")
+		}
+		out = append(out, p)
+	}
+	if h < len(ls) {
+		out = append(append(out, ""), ls[h:]...)
+	}
+	return join(out)
+}
+
+// SetSection replaces the named section wholesale with `# name` and items,
+// creating it at the end of the body if missing, or removing it when items is
+// empty.
+func SetSection(body, name string, items []string) string {
+	ls := lines(body)
+	var section []string
+	if len(items) > 0 {
+		section = append([]string{"# " + name}, items...)
+	}
+	before, after := trimBlank(ls), []string(nil)
+	if start, end, ok := findSection(ls, name); ok {
+		before, after = trimBlank(ls[:start]), ls[end:]
+	}
+	out := before
+	for _, part := range [][]string{section, after} {
+		if len(part) == 0 {
+			continue
+		}
+		if len(out) > 0 {
+			out = append(out, "")
+		}
+		out = append(out, part...)
+	}
+	return join(out)
+}
+
+func trimBlank(ls []string) []string {
+	ls = slices.Clone(ls)
+	for len(ls) > 0 && strings.TrimSpace(ls[len(ls)-1]) == "" {
+		ls = ls[:len(ls)-1]
+	}
+	return ls
+}

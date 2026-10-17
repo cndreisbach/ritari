@@ -74,3 +74,8 @@ func withLock(root string, fn func() error) error {
 	defer func() { _ = fl.Unlock() }()
 	return fn()
 }
+
+func readAll(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	return string(data), err
+}
