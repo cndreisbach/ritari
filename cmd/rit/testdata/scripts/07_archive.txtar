@@ -1,0 +1,23 @@
+# Scenario 7: archive.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Old approach' --type decision --obs 'decision: sessions'
+exec rit note archive 'Old approach'
+stdout '^status: archived$'
+grep '^archived: true$' kb/decisions/old-approach.md
+grep '^# Archived$' kb/decisions/index.md
+
+exec rit search sessions
+stdout '^count: 0$'
+exec rit search sessions --include-archived
+stdout '^count: 1$'
+
+exec rit lint
+! stdout 'id: decisions/old-approach'
+
+! exec rit note archive decisions/old-approach
+stderr 'decisions/old-approach is already archived'
+exec rit note unarchive decisions/old-approach
+stdout '^status: restored$'
+! grep archived kb/decisions/old-approach.md
+
+okflint kb

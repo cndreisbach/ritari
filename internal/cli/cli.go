@@ -20,7 +20,7 @@ import (
 
 // CLI is the command tree.
 type CLI struct {
-	Output  string `short:"o" placeholder:"text|yaml" help:"Output format (default: yaml unless stdout is a terminal)."`
+	Output      string `short:"o" placeholder:"text|yaml" help:"Output format (default: yaml unless stdout is a terminal)."`
 	ProjectName string `name:"project" short:"p" placeholder:"NAME" help:"Project to operate on (default: RITARI_PROJECT, then the registry default)."`
 
 	Note    NoteCmd    `cmd:"" help:"Write, read, edit, and manage notes."`

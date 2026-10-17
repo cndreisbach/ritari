@@ -1,0 +1,36 @@
+# Scenario 4: additive vs. replace.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --obs 'decision: x'
+! exec rit note write --title 'Auth uses JWT' --content x
+stderr 'already exists; --content replaces the body, so use --force'
+! exec rit note write --title 'Auth uses JWT'
+stderr 'already exists and nothing to add'
+exec rit note write --title 'Auth uses JWT' --content x --force
+stdout '^status: replaced$'
+stdout '^id: decisions/auth-uses-jwt$'
+grep '^x$' kb/decisions/auth-uses-jwt.md
+! grep 'decision' kb/decisions/auth-uses-jwt.md
+
+# Values starting with - need --flag=value; - alone reads stdin.
+! exec rit note write --title Bullets --content '- item'
+stderr 'expected string value but got "- item"'
+exec rit note write --title Bullets --content='- item'
+grep '^- item$' kb/notes/bullets.md
+stdin body.md
+exec rit note write --title 'From stdin' --content -
+grep '^Piped body.$' kb/notes/from-stdin.md
+
+exec rit note write --title Dry --obs 'a: b' --dry-run
+stdout '^status: dry-run$'
+stdout '^rendered: \|$'
+! exists kb/notes/dry.md
+
+! exec rit note write --title Empty
+stderr 'refusing to write an empty note'
+! exec rit note write --title '!!!' --obs 'a: b'
+stderr 'note requires a title that slugifies to something'
+
+okflint kb
+
+-- body.md --
+Piped body.

@@ -1,0 +1,55 @@
+# Commands not covered by the numbered scenarios.
+exec rit version
+stdout '^success: true$'
+stdout '^version: '
+
+exec rit config author human:me@example.com
+stdout '^status: set$'
+exec rit config author
+stdout '^author: human:me@example.com$'
+grep '^author: human:me@example.com$' config.yaml
+
+exec rit skills install
+stdout '^installed: \[ritari, ritari-daily, ritari-ingest, ritari-lint, ritari-notes, ritari-reflect, ritari-tasks\]$'
+exists .agents/skills/ritari/SKILL.md
+exec rit skills install
+stdout '^installed: \[\]$'
+exec rit skills install --agent claude
+exists .claude/skills/ritari-lint/SKILL.md
+! exec rit skills install --agent claude --dir x
+stderr '--agent and --dir are alternatives; pass one'
+! exec rit skills install --agent vim
+stderr 'unknown agent "vim" \(known: agents, claude\); use --dir for anything else'
+
+exec rit project init work $WORK/kb --default
+stdin steps.md
+exec rit note write --title 'Task one' --type task --meta state=open --content -
+stdin ticked.md
+exec rit note edit 'Task one' --op replace_section --section Steps --content -
+stdout '^op: replace_section$'
+grep '^- \[x\] a$' kb/tasks/task-one.md
+exec rit note edit tasks/task-one --op find_replace --find='- [ ] b' --content='- [x] b' --count 1
+grep '^- \[x\] b$' kb/tasks/task-one.md
+! exec rit note edit tasks/task-one
+stderr 'nothing to do'
+exec rit note edit tasks/task-one --tags a,b --meta state=done
+grep '^tags: \[a, b\]$' kb/tasks/task-one.md
+grep '^state: done$' kb/tasks/task-one.md
+
+exec rit recent --limit 1
+stdout '^count: 1$'
+stdout '^modified: '
+exec rit ls tasks
+stdout '^ids: \[tasks/task-one\]$'
+exec rit -o text types
+stdout '^decision  decisions/  A choice made, with its rationale.$'
+
+okflint kb
+
+-- steps.md --
+# Steps
+- [ ] a
+- [ ] b
+-- ticked.md --
+- [x] a
+- [ ] b

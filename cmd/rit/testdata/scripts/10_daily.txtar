@@ -1,0 +1,69 @@
+# Scenario 10: daily notes.
+exec rit project init work $WORK/kb --default
+
+exec rit daily --note A --note B --obs 'open-thread: x'
+stdout '^status: created$'
+stdout '^id: daily/2026-07-29$'
+cmp kb/daily/2026-07-29.md want/day1.md
+
+exec rit daily --note C
+stdout '^status: updated$'
+grep -count=1 '^# Observations$' kb/daily/2026-07-29.md
+cmp kb/daily/2026-07-29.md want/day2.md
+
+exec rit note write --title Kept --obs 'a: b'
+exec rit note write --title Kept --obs 'a: c'
+exec rit note write --title Scratch --obs 'a: b'
+exec rit note delete notes/scratch
+stdout '^broke_links_in: \[\]$'
+
+exec rit daily --refresh
+stdout '^status: refreshed$'
+stdout '^touched: 2$'
+grep '^- \[Kept\]\(/notes/kept.md\) — created$' kb/daily/2026-07-29.md
+grep '^- notes/scratch — deleted$' kb/daily/2026-07-29.md
+
+exec rit daily 2026-01-01 --refresh
+stdout '^status: missing$'
+! exists kb/daily/2026-01-01.md
+exec rit -o text daily 2026-01-01 --refresh
+stdout '^No daily note for 2026-01-01.$'
+
+! exec rit daily 2026-7-1
+stderr 'daily notes are named by date: "2026-7-1" is not YYYY-MM-DD'
+
+exec rit search open
+stdout '^count: 0$'
+exec rit search open --include-daily
+stdout '^count: 1$'
+
+okflint kb
+
+-- want/day1.md --
+---
+type: daily
+title: "2026-07-29"
+generated: {by: claude-code, at: 2026-07-29T12:00:00Z}
+---
+
+A
+
+B
+
+# Observations
+- [open-thread] x
+-- want/day2.md --
+---
+type: daily
+title: "2026-07-29"
+generated: {by: claude-code, at: 2026-07-29T12:00:00Z}
+---
+
+A
+
+B
+
+C
+
+# Observations
+- [open-thread] x

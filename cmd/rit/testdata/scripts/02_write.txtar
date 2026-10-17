@@ -1,0 +1,70 @@
+# Scenario 2: write and read back.
+exec rit project init work $WORK/kb --default
+
+exec rit note write --title 'Auth uses JWT' --type decision --description 'Stateless auth.' --tags auth,security --obs 'decision: Use JWT for stateless auth #security' --rel 'depends_on: User Database Schema' --source 'PR #1234 https://github.com/acme/api/pull/1234'
+stdout '^status: created$'
+stdout '^id: decisions/auth-uses-jwt$'
+stdout '^path: .*/kb/decisions/auth-uses-jwt.md$'
+stdout '^added_observations: 1$'
+stdout '^added_relations: 1$'
+stdout '^added_sources: 1$'
+! stdout warning
+cmp kb/decisions/auth-uses-jwt.md want/auth.md
+cmp kb/log.md want/log.md
+cmp kb/decisions/index.md want/decisions-index.md
+grep '^\* \[Decisions\]\(/decisions/index.md\) \(`decision`\) - A choice made, with its rationale.$' kb/index.md
+
+exec rit note read 'auth uses jwt'
+stdout '^id: decisions/auth-uses-jwt$'
+stdout '^trust: unverified$'
+stdout '^generated_by: claude-code$'
+stdout '^observations: \["\[decision\] Use JWT for stateless auth #security \[\^1\]"\]$'
+stdout '^relations: \[depends_on -> notes/user-database-schema\]$'
+stdout '^sources: \["\[\^1\]: \[PR #1234\]\(https://github.com/acme/api/pull/1234\)"\]$'
+
+exec rit note view decisions/auth-uses-jwt
+cmp stdout want/auth.md
+exec rit read decisions/auth-uses-jwt.md
+cmp stdout want/auth.md
+
+exec rit lint
+stdout '^success: true$'
+stdout '^rule: dangling-link$'
+stdout '^message: links to notes/user-database-schema, which does not exist$'
+! exec rit lint --strict
+stdout '^success: false$'
+stdout '^error: 2 warning\(s\) with --strict$'
+stderr '^rit: 2 warning\(s\) with --strict$'
+
+okflint kb
+
+-- want/auth.md --
+---
+type: decision
+title: Auth uses JWT
+description: Stateless auth.
+tags: [auth, security]
+sources:
+  - id: "1"
+    resource: https://github.com/acme/api/pull/1234
+    title: "PR #1234"
+generated: {by: claude-code, at: 2026-07-29T12:00:00Z}
+---
+
+# Observations
+- [decision] Use JWT for stateless auth #security [^1]
+
+# Relations
+- depends_on [User Database Schema](/notes/user-database-schema.md)
+
+[^1]: [PR #1234](https://github.com/acme/api/pull/1234)
+-- want/log.md --
+# Update Log
+
+## 2026-07-29
+
+* **Create**: [Auth uses JWT](/decisions/auth-uses-jwt.md)
+-- want/decisions-index.md --
+# Decisions
+
+* [Auth uses JWT](/decisions/auth-uses-jwt.md) - Stateless auth.

@@ -1,0 +1,37 @@
+# Scenario 9: a custom vocabulary.
+exec rit project init work $WORK/kb --default
+cp vocab.yaml kb/ritari.yaml
+
+exec rit types
+stdout '^count: 3$'
+stdout '^name: incident$'
+stdout '^name: note$'
+stdout '^name: daily$'
+
+exec rit note write --title Standup --type meeting --obs 'a: b'
+stdout '^warning: type "meeting" is not one this knowledge base declares \(incident, note, daily\); it will live in meetings/$'
+exists kb/meetings/standup.md
+exec rit lint --rule unknown-type
+stdout '^rule: unknown-type$'
+
+exec rit types --yaml
+stdout '^types:$'
+stdout '^  - name: incident$'
+
+cp bad.yaml kb/ritari.yaml
+! exec rit ls
+stderr 'ritari.yaml: types "a" and "b" both use dir "x"'
+! exec rit search x
+stderr 'both use dir "x"'
+
+-- vocab.yaml --
+types:
+  - name: incident
+    dir: incidents
+    summary: An outage and its timeline.
+-- bad.yaml --
+types:
+  - name: a
+    dir: x
+  - name: b
+    dir: x

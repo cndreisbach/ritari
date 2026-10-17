@@ -1,0 +1,27 @@
+# Scenario 6: move rewrites links.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --description d --obs 'decision: x'
+exec rit note write --title 'Login flow' --type project --description d --rel 'uses: Auth uses JWT' --content 'See [the decision](../decisions/auth-uses-jwt.md#why).'
+exists kb/decisions/index.md
+
+exec rit note move decisions/auth-uses-jwt references/auth-uses-jwt
+stdout '^status: moved$'
+stdout '^from: decisions/auth-uses-jwt$'
+stdout '^to: references/auth-uses-jwt$'
+stdout '^rewrote_links_in: \[projects/login-flow\]$'
+exists kb/references/auth-uses-jwt.md
+! exists kb/decisions/auth-uses-jwt.md
+! exists kb/decisions/index.md
+grep '\(/references/auth-uses-jwt.md#why\)' kb/projects/login-flow.md
+grep '^- uses \[Auth uses JWT\]\(/references/auth-uses-jwt.md\)$' kb/projects/login-flow.md
+grep '^\* \*\*Move\*\*: \[Auth uses JWT\]\(/references/auth-uses-jwt.md\) \(was decisions/auth-uses-jwt\)$' kb/log.md
+
+! exec rit note move references/auth-uses-jwt projects/login-flow
+stderr 'destination already exists: projects/login-flow'
+
+exec rit context projects/login-flow
+stdout '^start: projects/login-flow$'
+stdout '^count: 2$'
+stdout '^id: references/auth-uses-jwt$'
+
+okflint kb

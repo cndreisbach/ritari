@@ -38,7 +38,6 @@ func rules(fs []Finding, id string) []string {
 	return out
 }
 
-
 func TestCleanBundle(t *testing.T) {
 	b := open(t, map[string]string{
 		"decisions/a.md": "---\ntype: decision\ntitle: A\ndescription: d\n---\n\n[b](/notes/b.md)\n",

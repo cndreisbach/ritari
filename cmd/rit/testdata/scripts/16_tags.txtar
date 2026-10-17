@@ -1,0 +1,9 @@
+# Scenario 16: #digits and #hex are not tags.
+exec rit project init work $WORK/kb --default
+exec rit note write --title Bugs --obs 'bug: Fixed #42 and color #ff00aa #auth'
+exec rit search --tags auth
+stdout '^count: 0$'
+exec rit search 42
+stdout '^count: 1$'
+exec rit search auth
+stdout '^matches: \["\[bug\] Fixed #42 and color #ff00aa"\]$'

@@ -1,0 +1,28 @@
+# Scenario 11: search ranking, prefix rule, and --meta.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'JWT choice' --type decision --meta state=active --obs 'decision: adopt it'
+exec rit note write --title 'Tokens' --content 'We use jwt tokens to authenticate.' --meta state=done
+exec rit note write --title 'Go to market' --obs 'plan: launch'
+
+exec rit search jwt
+stdout '^count: 2$'
+stdout '(?s)id: decisions/jwt-choice.*id: notes/tokens'
+
+exec rit search nothingmatches
+stdout '^count: 0$'
+
+exec rit search tok
+stdout '^count: 1$'
+stdout '^id: notes/tokens$'
+exec rit search to
+stdout '^count: 2$'
+
+! exec rit search --meta state=active --meta state=done
+stderr '--meta state given twice \(active and done\); use state=a\|b for alternatives'
+exec rit search --meta 'state=active|done'
+stdout '^count: 2$'
+
+exec rit -o text search jwt
+stdout '^JWT choice  \[decision\]  decisions/jwt-choice$'
+exec rit -o text search nothingmatches
+stdout '^No results.$'

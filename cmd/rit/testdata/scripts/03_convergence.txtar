@@ -1,0 +1,25 @@
+# Scenario 3: writes converge.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --obs 'decision: Use JWT for stateless auth #security' --rel 'depends_on: User Database Schema' --source 'PR #1234 https://github.com/acme/api/pull/1234'
+cp kb/decisions/auth-uses-jwt.md first.md
+
+env RITARI_TEST_NOW=2026-07-29T13:00:00Z
+exec rit note write --title 'Auth uses JWT' --type decision --obs 'decision: Use JWT for stateless auth #security' --rel 'depends_on: User Database Schema' --source 'PR #1234 https://github.com/acme/api/pull/1234'
+stdout '^status: updated$'
+stdout '^added_observations: 0$'
+stdout '^added_relations: 0$'
+stdout '^added_sources: 0$'
+cmp kb/decisions/auth-uses-jwt.md first.md
+
+exec rit note write --title 'Auth uses JWT' --obs 'decision: Use JWT for stateless auth #security' --source 'Security review https://wiki/sec'
+stdout '^added_observations: 0$'
+stdout '^added_sources: 1$'
+grep -count=1 'Use JWT for stateless auth' kb/decisions/auth-uses-jwt.md
+grep '^- \[decision\] Use JWT for stateless auth #security \[\^1\] \[\^2\]$' kb/decisions/auth-uses-jwt.md
+grep '^  - id: "2"$' kb/decisions/auth-uses-jwt.md
+grep '^\[\^1\]: \[PR #1234\]' kb/decisions/auth-uses-jwt.md
+grep '^\[\^2\]: \[Security review\]\(https://wiki/sec\)$' kb/decisions/auth-uses-jwt.md
+grep 'at: 2026-07-29T13:00:00Z' kb/decisions/auth-uses-jwt.md
+grep -count=1 '\*\*Update\*\*' kb/log.md
+
+okflint kb

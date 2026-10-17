@@ -11,15 +11,15 @@ import (
 
 // NoteCmd groups the note subcommands.
 type NoteCmd struct {
-	Write     NoteWriteCmd   `cmd:"" help:"Create a note, or add to an existing one."`
-	Read      NoteReadCmd    `cmd:"" help:"Show a parsed view of a note."`
-	View      ViewCmd        `cmd:"" help:"Print a note's raw markdown."`
-	Edit      NoteEditCmd    `cmd:"" help:"Edit a note's body and/or set frontmatter fields."`
-	Verify    NoteVerifyCmd  `cmd:"" help:"Record an independent confirmation of a note."`
-	Move      NoteMoveCmd    `cmd:"" help:"Relocate a note, rewriting links to it."`
-	Archive   NoteArchiveCmd `cmd:"" help:"Retire a note (keeps it linkable)."`
+	Write     NoteWriteCmd     `cmd:"" help:"Create a note, or add to an existing one."`
+	Read      NoteReadCmd      `cmd:"" help:"Show a parsed view of a note."`
+	View      ViewCmd          `cmd:"" help:"Print a note's raw markdown."`
+	Edit      NoteEditCmd      `cmd:"" help:"Edit a note's body and/or set frontmatter fields."`
+	Verify    NoteVerifyCmd    `cmd:"" help:"Record an independent confirmation of a note."`
+	Move      NoteMoveCmd      `cmd:"" help:"Relocate a note, rewriting links to it."`
+	Archive   NoteArchiveCmd   `cmd:"" help:"Retire a note (keeps it linkable)."`
 	Unarchive NoteUnarchiveCmd `cmd:"" help:"Restore an archived note."`
-	Delete    NoteDeleteCmd  `cmd:"" help:"Remove a note, reporting broken links."`
+	Delete    NoteDeleteCmd    `cmd:"" help:"Remove a note, reporting broken links."`
 }
 
 // NoteWriteCmd is `note write`.

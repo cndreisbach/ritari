@@ -1,0 +1,8 @@
+# Scenario 5: writing an existing title under another type adds to it.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --obs 'decision: x'
+exec rit note write --title 'Auth Uses JWT' --type reference --obs 'fact: y'
+stdout '^status: updated$'
+stdout '^id: decisions/auth-uses-jwt$'
+! exists kb/references
+grep '^- \[fact\] y$' kb/decisions/auth-uses-jwt.md

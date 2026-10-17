@@ -1,0 +1,45 @@
+# Scenario 1: create a project.
+exec rit project init work $WORK/kb --default
+stdout '^success: true$'
+stdout '^status: created$'
+stdout '^name: work$'
+exists kb/index.md
+grep '^okf_version: "0.2"$' kb/index.md
+exists kb/sources/README.txt
+! exists kb/ritari.yaml
+
+exec rit project list
+stdout '^default: work$'
+stdout '^name: work$'
+stdout '^is_default: true$'
+
+! exec rit project init work $WORK/other
+stdout '^success: false$'
+stdout 'project "work" already exists'
+stderr '^rit: project "work" already exists$'
+
+mkdir hasnotes/notes
+cp note.md hasnotes/notes/a.md
+! exec rit project init other $WORK/hasnotes
+stderr 'already holds notes; use `rit project add other '
+
+exec rit project add other $WORK/hasnotes
+stdout '^status: added$'
+! exec rit project add missing $WORK/nope
+stderr 'does not exist; use `rit project init missing '
+exec rit project default other
+stdout '^status: default$'
+exec rit project remove other
+stdout '^status: removed$'
+exec rit project list
+stdout '^default: work$'
+
+exec rit -o text project list
+stdout '^\* work  '
+
+okflint kb
+
+-- note.md --
+---
+type: note
+---

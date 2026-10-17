@@ -1,0 +1,32 @@
+# Scenario 13: index drift.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --description 'Old.' --obs 'decision: x'
+exec rit index --check
+stdout '^success: true$'
+stdout '^stale: \[\]$'
+
+cp edited.md kb/decisions/auth-uses-jwt.md
+! exec rit index --check
+stdout '^success: false$'
+stdout '^error: "1 index file\(s\) are stale \(run: rit index\)"$'
+stdout '^stale: \[decisions/index.md\]$'
+stdout -count=1 '^success'
+stderr '^rit: 1 index file\(s\) are stale'
+
+exec rit index
+stdout '^wrote: \[decisions/index.md\]$'
+grep 'New description.' kb/decisions/index.md
+exec rit index --check
+stdout '^success: true$'
+exec rit -o text index
+stdout '^Indexes are current.$'
+
+-- edited.md --
+---
+type: decision
+title: Auth uses JWT
+description: New description.
+---
+
+# Observations
+- [decision] x

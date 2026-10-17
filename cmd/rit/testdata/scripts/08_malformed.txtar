@@ -1,0 +1,26 @@
+# Scenario 8: a malformed file is skipped, not fatal.
+exec rit project init work $WORK/kb --default
+exec rit note write --title Good --obs 'fact: jwt'
+cp broken.md kb/notes/broken.md
+
+exec rit search jwt
+stdout '^count: 1$'
+exec rit recent
+stdout '^count: 1$'
+exec rit ls
+stdout '^ids: \[notes/broken, notes/good\]$'
+
+! exec rit lint
+stdout '^success: false$'
+stdout '^rule: unparseable$'
+stdout '^severity: error$'
+stdout 'message: "?frontmatter could not be parsed: '
+stderr '1 conformance error'
+
+! exec rit note read notes/broken
+stderr 'frontmatter could not be parsed'
+
+-- broken.md --
+---
+type: [jwt
+---
