@@ -1,4 +1,136 @@
 ---
 name: ritari
-description: placeholder
+description: Long-term memory across sessions with the `rit` CLI — search, read, write, link, and maintain a knowledge base of markdown notes. Use at the start of work to recall context, before writing anything new, and whenever something learned should outlive this conversation.
 ---
+
+# Ritari: long-term memory with `rit`
+
+`rit` keeps a knowledge base (a **bundle**) as plain markdown files in the Open
+Knowledge Format (OKF): one file per concept, YAML frontmatter on top. There is
+no database and no index that can drift — every listing, search, and link graph
+is computed from the files on demand. The files are the source of truth.
+
+## Output
+
+Run without a terminal (as agents do), `rit` prints **flat YAML**: a single
+document, or a stream of documents separated by `---` (a header with `success`
+and `count`, then one document per record). Failures print `success: false` and
+`error: …` and exit non-zero. Add `--output text` (or `-o text`) for human prose.
+`rit note view` and `rit read` always print the note's raw markdown bytes.
+
+## Values that start with `-`
+
+A flag value beginning with `-` must use `--flag=value`. Markdown bullets hit
+this constantly:
+
+```
+rit note edit tasks/ship-v2 --op append --content="- [ ] write release notes"
+rit note edit tasks/ship-v2 --op find_replace --find="- [ ] tag release" --content="- [x] tag release"
+```
+
+`--content -` (and `--note -` on `daily`) reads standard input instead.
+
+## Where to start
+
+```
+rit recent            # what changed lately
+rit daily             # today's note: what came up, open threads
+rit ls decisions      # concept IDs under a directory
+```
+
+The bundle root's `index.md` lists every directory with the type that lives
+there; each directory's `index.md` lists its notes with one-line descriptions.
+
+## Search before you write
+
+Always look for an existing note before creating one — writing to an existing
+title *adds* to it, and a near-duplicate under another title forks your memory.
+
+```
+rit search jwt auth                       # every term must match
+rit search --type decision --tags auth    # filters alone: newest first
+rit search token --category constraint    # notes with a [constraint] observation
+rit search --relation depends_on
+rit search --meta state=open --meta 'priority=high|urgent'
+rit search jwt --include-daily --include-archived --limit 50
+```
+
+Matching is by whole word or by prefix (terms of 3+ letters: `tok` finds
+`tokens`); there is no stemming, so try variants (`deploy`, `deployment`).
+Title matches rank highest, then description, tags, observations, body. Daily
+and archived notes are excluded unless asked for.
+
+## Writing
+
+```
+rit note write --title "Auth uses JWT" --type decision \
+  --description "Stateless auth via short-lived JWTs." --tags auth,security \
+  --obs "decision: Use JWT for stateless auth #security" \
+  --obs "constraint: Tokens expire after 15m" \
+  --rel "depends_on: User Database Schema" \
+  --source "PR #1234 https://github.com/acme/api/pull/1234"
+```
+
+The type decides the directory (`decisions/auth-uses-jwt`). Writing the same
+title again **adds** observations, relations, and sources without duplicating
+anything already there. `--content` sets the body of a new note; replacing an
+existing body needs `--force`. See the `ritari-notes` skill for writing well.
+
+## Reading and traversal
+
+A note can be addressed three equivalent ways: by **ID** (`decisions/auth-uses-jwt`),
+by **path** (`decisions/auth-uses-jwt.md`), or by **title** (`"Auth uses JWT"`).
+
+```
+rit note read "Auth uses JWT"     # parsed: observations, relations, sources, trust
+rit note view decisions/auth-uses-jwt   # raw markdown
+rit context decisions/auth-uses-jwt --depth 2   # follow links outward
+```
+
+## Editing and moving
+
+`note edit` **sets**; `note write` **merges**:
+
+- `rit note write --tags api` adds `api` to the existing tags; `rit note edit --tags api`
+  replaces the whole list with `api`.
+- `note edit --title` changes the stored title but never moves the file —
+  identity is the path.
+
+```
+rit note edit tasks/ship-v2 --op replace_section --section Steps --content="- [x] build"
+rit note edit decisions/auth-uses-jwt --description "Updated summary."
+```
+
+Body ops: `append`, `prepend`, `find_replace` (`--find`, optional `--count`),
+`replace_section`, `insert_before_section`, `insert_after_section` (`--section`).
+
+**`rit note move <ref> <dest>` is the only correct way to relocate a note.** It
+rewrites every link that pointed at the old path. Never rename files by hand.
+
+Retire notes with `rit note archive` (still linkable, out of search). Use
+`rit note delete` only for mistakes — it breaks inbound links.
+
+## Projects
+
+Each knowledge base is a registered project. The active one is `--project NAME`,
+else `RITARI_PROJECT`, else the registry default.
+
+```
+rit project list
+rit project init work ~/notes/work --default
+rit project add team ~/src/team-kb
+```
+
+## Housekeeping
+
+`index.md` and `log.md` are generated on every write — never edit them by hand.
+`rit index --check` reports drift (for example after a hand edit of a
+description); `rit index` regenerates. `rit lint` reports conformance errors and
+hygiene warnings (see `ritari-lint`).
+
+## Principles
+
+- Files are the source of truth; regenerate, don't hand-maintain, anything derived.
+- Search before writing; add to what exists.
+- One fact per observation.
+- Link generously — forward references to notes that don't exist yet are fine.
