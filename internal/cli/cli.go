@@ -236,8 +236,15 @@ func splitTags(s string) []string {
 // VersionCmd prints the version.
 type VersionCmd struct{}
 
+// version is set at link time for release builds:
+// -ldflags "-X github.com/cndreisbach/ritari/internal/cli.version=1.2.3".
+var version string
+
 // Version is the build's version string.
 func Version() string {
+	if version != "" {
+		return version
+	}
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return "dev"

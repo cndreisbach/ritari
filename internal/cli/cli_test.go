@@ -54,3 +54,10 @@ func TestHelpExits0(t *testing.T) {
 	assert.Equal(t, 0, code)
 	assert.Contains(t, out.String(), "Usage: rit")
 }
+
+func TestVersionFromLinker(t *testing.T) {
+	old := version
+	defer func() { version = old }()
+	version = "1.2.3"
+	assert.Equal(t, "1.2.3", Version())
+}
