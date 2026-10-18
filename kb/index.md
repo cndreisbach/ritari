@@ -6,3 +6,4 @@ okf_version: "0.2"
 
 * [Ideas](/ideas/index.md) (`idea`) - A possible feature or direction, not yet committed to.
 * [Projects](/projects/index.md) (`project`) - An ongoing effort.
+* [Tasks](/tasks/index.md) (`task`) - Work in progress, with state.

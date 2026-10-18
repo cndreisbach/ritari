@@ -7,3 +7,4 @@
 * **Create**: [Pi extension](/ideas/pi-extension.md)
 * **Create**: [Obsidian extension](/ideas/obsidian-extension.md)
 * **Update**: [Roadmap](/projects/roadmap.md)
+* **Create**: [Stop flagging links to index files as dangling](/tasks/stop-flagging-links-to-index-files-as-dangling.md)
