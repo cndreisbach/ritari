@@ -25,3 +25,7 @@
 * **Create**: [Match reserved file names exactly](/tasks/match-reserved-file-names-exactly.md)
 * **Create**: [Treat malformed frontmatter fields as warnings](/tasks/treat-malformed-frontmatter-fields-as-warnings.md)
 * **Update**: [Match reserved file names exactly](/tasks/match-reserved-file-names-exactly.md)
+* **Update**: [Treat malformed frontmatter fields as warnings](/tasks/treat-malformed-frontmatter-fields-as-warnings.md)
+* **Create**: [Allow nested type directories](/ideas/allow-nested-type-directories.md)
+* **Create**: [Rank notes that match every search term higher](/ideas/rank-notes-that-match-every-search-term-higher.md)
+* **Update**: [Test against the upstream OKF example bundles](/tasks/test-against-the-upstream-okf-example-bundles.md)
