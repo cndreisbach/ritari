@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Archive task notes whose state is done (pass --dry-run to preview)"
+#MISE depends=["build"]
 # Archive every task note with `state: done`. Archived notes stay linkable but
 # drop out of search and move under `# Archived` in tasks/index.md (§5.6).
 set -euo pipefail
@@ -33,4 +34,4 @@ while IFS= read -r id; do
     "$rit" note archive "$id" >/dev/null
     echo "archived $id"
   fi
-done <<< "$ids"
+done <<<"$ids"

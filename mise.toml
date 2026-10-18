@@ -8,6 +8,8 @@ uv = "0.13.1"
 "pipx:okflint" = "0.5.0"
 
 [tasks.build]
+sources=["./cmd/**/*.go", "./internal/**/*.go", "./go.mod", "./go.sum"]
+outputs=["./bin/rit"]
 description = "Build rit into bin/"
 run = "go build -o bin/rit ./cmd/rit"
 
