@@ -96,7 +96,8 @@ YAML that is easy to parse. In a terminal it prints readable text. Use
 `--output text` or `--output yaml` to choose. Writes are stamped with who made
 them: `rit` recognizes Claude Code, Codex, Cursor, and Rovo Dev, and otherwise
 uses your configured author (`rit config author human:you@example.com`) or your
-git email.
+git email. A bare author such as `rit config author you@example.com` is stored
+as `human:you@example.com`, so a person is never mistaken for an agent.
 
 ## Commands
 

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cndreisbach/ritari/internal/actor"
 	"github.com/cndreisbach/ritari/internal/bundle"
 	"github.com/cndreisbach/ritari/internal/output"
 	"github.com/cndreisbach/ritari/internal/registry"
@@ -219,7 +220,7 @@ func (cmd *ConfigAuthorCmd) Run(c *Ctx) error {
 		c.Printf("%s\n", r.Author)
 		return c.Emit(output.New().Set("success", true).Set("author", r.Author))
 	}
-	r.Author = strings.TrimSpace(cmd.Value)
+	r.Author = actor.Normalize(cmd.Value)
 	if err := r.Save(); err != nil {
 		return err
 	}

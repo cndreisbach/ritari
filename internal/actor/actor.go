@@ -46,12 +46,27 @@ func Agent(getenv func(string) string) string {
 	return ""
 }
 
+// Normalize gives a human identity its human: prefix (§9.4). A value that
+// already carries a prefix is returned trimmed and unchanged, so human:me and
+// process:nightly both survive. Agents are named bare and are detected
+// separately, never taken from the configured author.
+func Normalize(id string) string {
+	id = strings.TrimSpace(id)
+	if strings.HasSuffix(id, ":") {
+		return ""
+	}
+	if id == "" || strings.Contains(id, ":") {
+		return id
+	}
+	return "human:" + id
+}
+
 // Detect returns the actor string to stamp into generated.by / verified[].by.
 func Detect(l Lookup) string {
 	if a := Agent(l.Getenv); a != "" {
 		return a
 	}
-	if a := strings.TrimSpace(l.Author); a != "" {
+	if a := Normalize(l.Author); a != "" {
 		return a
 	}
 	if l.GitEmail != nil {

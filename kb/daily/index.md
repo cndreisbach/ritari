@@ -1,3 +1,3 @@
 # 2026
 
-* [2026-10-18](/daily/2026-10-18.md) - Swapped the OKF conformance check to okflint; fixed index.md links being flagged as dangling.
+* [2026-10-18](/daily/2026-10-18.md) - Reserved-name and malformed-field lint work, then a Pi extension review and the author identity fix.

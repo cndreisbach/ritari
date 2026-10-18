@@ -31,10 +31,29 @@ func TestAgent(t *testing.T) {
 	}
 }
 
+func TestNormalize(t *testing.T) {
+	cases := map[string]string{
+		"":                  "",
+		"   ":               "",
+		"cndreisbach":       "human:cndreisbach",
+		" me@example.com ":  "human:me@example.com",
+		"human:cndreisbach": "human:cndreisbach",
+		"process:nightly":   "process:nightly",
+		"human:":            "",
+		"process:":          "",
+		"CORP\\jane":        "human:CORP\\jane",
+	}
+	for in, want := range cases {
+		assert.Equal(t, want, Normalize(in), "%q", in)
+	}
+}
+
 func TestDetect(t *testing.T) {
 	none := func() string { return "" }
 	assert.Equal(t, "claude-code", Detect(Lookup{Getenv: env(map[string]string{"CLAUDECODE": "1"}), Author: "human:me"}))
 	assert.Equal(t, "human:me", Detect(Lookup{Getenv: env(nil), Author: " human:me ", GitEmail: func() string { return "x@y" }}))
+	assert.Equal(t, "human:me", Detect(Lookup{Getenv: env(nil), Author: "me", GitEmail: func() string { return "x@y" }}), "a bare author is a human id")
+	assert.Equal(t, "human:me", Detect(Lookup{Getenv: env(nil), Author: "me", Username: none}), "a bare author beats the OS user name")
 	assert.Equal(t, "human:x@y", Detect(Lookup{Getenv: env(nil), GitEmail: func() string { return "x@y\n" }}))
 	assert.Equal(t, "human:jane", Detect(Lookup{Getenv: env(nil), GitEmail: none, Username: func() string { return `CORP\jane` }}))
 	assert.Equal(t, "human:unknown", Detect(Lookup{Getenv: env(nil), GitEmail: none, Username: none}))
