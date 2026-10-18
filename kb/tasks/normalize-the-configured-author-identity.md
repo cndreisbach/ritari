@@ -7,7 +7,9 @@ sources:
   - id: "1"
     resource: /daily/2026-10-18.md
     title: Ritari KB review, session 2026-10-18
-generated: {by: cndreisbach, at: 2026-10-18T19:23:34Z}
+  - id: "2"
+    resource: Repair of existing notes, 2026-10-18
+generated: {by: human:cndreisbach, at: 2026-10-18T19:25:52Z}
 priority: medium
 state: open
 ---
@@ -29,5 +31,7 @@ state: open
 - [constraint] Agent names are bare, so human: is the only marker that separates people from agents in generated.by; anything that preserves that distinction is acceptable [^1]
 - [open-thread] Prefix when saving, prefix when stamping, or reject at set time? Decide before implementing [^1]
 - [next-step] Choose the approach, then change config author, actor.Detect or both, and add acceptance coverage [^1]
+- [context] Correcting six existing notes required a line-level rewrite of generated.by, because no rit command can change an existing stamp: note edit --meta generated=… would add a duplicate key, and any content edit restamps the time too [^2]
 
 [^1]: [Ritari KB review, session 2026-10-18](/daily/2026-10-18.md)
+[^2]: Repair of existing notes, 2026-10-18

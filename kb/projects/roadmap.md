@@ -6,7 +6,7 @@ tags: [roadmap]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-18
-generated: {by: cndreisbach, at: 2026-10-18T19:18:37Z}
+generated: {by: human:cndreisbach, at: 2026-10-18T19:18:37Z}
 ---
 
 The roadmap is a list of [idea](/ideas/index.md) notes linked from here. Ideas are possibilities, not commitments; an idea that gets committed to becomes a task.

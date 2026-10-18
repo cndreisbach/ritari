@@ -6,7 +6,7 @@ tags: [skills, routing, agents]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-18
-generated: {by: cndreisbach, at: 2026-10-18T19:19:44Z}
+generated: {by: human:cndreisbach, at: 2026-10-18T19:19:44Z}
 ---
 
 # Observations

@@ -7,7 +7,7 @@ sources:
   - id: "1"
     resource: /daily/2026-10-18.md
     title: Ritari KB review, session 2026-10-18
-generated: {by: cndreisbach, at: 2026-10-18T19:23:27Z}
+generated: {by: human:cndreisbach, at: 2026-10-18T19:23:27Z}
 priority: medium
 state: open
 ---
