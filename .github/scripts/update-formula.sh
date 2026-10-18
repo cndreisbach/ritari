@@ -13,6 +13,7 @@ class Ritari < Formula
   homepage "https://github.com/${repo}"
   url "https://github.com/${repo}/archive/refs/tags/v${version}.tar.gz"
   sha256 "${sha256}"
+  license "MIT"
 
   depends_on "go" => :build
 
