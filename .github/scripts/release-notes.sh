@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Prints markdown release notes for commits since the given tag (or all
-# commits if none), grouped by Conventional Commit type.
+# commits if none), grouped by Conventional Commit type. Non-breaking docs,
+# chore, and ci commits are omitted.
 # Usage: release-notes.sh [previous-tag]
 set -euo pipefail
 
@@ -13,7 +14,6 @@ breaking=() features=() fixes=() other=()
 while IFS= read -r sha; do
   subject=$(git log -1 --format=%s "$sha")
   body=$(git log -1 --format=%b "$sha")
-  case "$subject" in chore\(release\)*) continue ;; esac
   # "type(scope)!: description" -> "**scope:** description"
   entry=$(sed -E 's/^[a-z]+(\(([^)]+)\))?!?: (.*)$/\2|\3/' <<<"$subject")
   scope=${entry%%|*} desc=${entry#*|}
@@ -25,6 +25,9 @@ while IFS= read -r sha; do
     features+=("$line")
   elif [[ "$subject" =~ ^(fix|perf)(\(|:) ]]; then
     fixes+=("$line")
+  elif [[ "$subject" =~ ^(docs|chore|ci)(\(|:) ]]; then
+    # Housekeeping is left out of the notes unless it is a breaking change.
+    continue
   else
     other+=("$line")
   fi
