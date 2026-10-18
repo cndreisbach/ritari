@@ -146,11 +146,27 @@ func TestStaleIndex(t *testing.T) {
 }
 
 func TestReservedCasing(t *testing.T) {
-	b := open(t, map[string]string{
+	files := map[string]string{
 		"notes/a.md":     "---\ntype: note\ntitle: A\ndescription: d\n---\n",
 		"notes/Index.md": "---\ntype: note\ntitle: Overview\ndescription: d\n---\n",
 		"LOG.md":         "---\ntype: [\n---\n",
-	})
+	}
+	want := []Finding{
+		{Severity: "warning", Rule: "reserved-casing", ID: "LOG", Path: "LOG.md", Message: "LOG.md collides with the reserved log.md on this case-insensitive file system; rename it"},
+		{Severity: "warning", Rule: "reserved-casing", ID: "notes/Index", Path: "notes/Index.md", Message: "Index.md collides with the reserved index.md on this case-insensitive file system; rename it"},
+	}
+
+	if caseInsensitiveFS(t) {
+		// The variants are the reserved files here, so the fixture cannot also
+		// hold notes/index.md; open without generating indexes over it.
+		rep, err := Run(openRaw(t, files), Options{Rules: []string{"reserved-casing"}})
+		require.NoError(t, err)
+		assert.Equal(t, want, rep.Findings)
+		return
+	}
+
+	files["notes/index.md"] = "# Notes\n"
+	b := open(t, files)
 	rep, err := Run(b, Options{Rules: []string{"reserved-casing"}})
 	require.NoError(t, err)
 	assert.Empty(t, rep.Findings, "distinct files on a case-sensitive file system do not collide")
@@ -168,8 +184,5 @@ func TestReservedCasing(t *testing.T) {
 	require.NoError(t, err)
 	rep, err = Run(b, Options{Rules: []string{"reserved-casing"}})
 	require.NoError(t, err)
-	assert.Equal(t, []Finding{
-		{Severity: "warning", Rule: "reserved-casing", ID: "LOG", Path: "LOG.md", Message: "LOG.md collides with the reserved log.md on this case-insensitive file system; rename it"},
-		{Severity: "warning", Rule: "reserved-casing", ID: "notes/Index", Path: "notes/Index.md", Message: "Index.md collides with the reserved index.md on this case-insensitive file system; rename it"},
-	}, rep.Findings)
+	assert.Equal(t, want, rep.Findings)
 }

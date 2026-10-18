@@ -20,6 +20,17 @@ func writeFiles(t *testing.T, files map[string]string) string {
 	return root
 }
 
+// caseInsensitiveFS reports whether the file system holding t.TempDir() folds
+// case, as APFS does by default. Fixtures that need two names differing only in
+// case cannot exist there: the second write lands on the first file.
+func caseInsensitiveFS(t *testing.T) bool {
+	t.Helper()
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "probe"), nil, 0o644))
+	_, err := os.Stat(filepath.Join(dir, "PROBE"))
+	return err == nil
+}
+
 func openFiles(t *testing.T, files map[string]string) *Bundle {
 	t.Helper()
 	b, err := Open(writeFiles(t, files))
