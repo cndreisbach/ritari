@@ -30,3 +30,4 @@
 * **Create**: [Rank notes that match every search term higher](/ideas/rank-notes-that-match-every-search-term-higher.md)
 * **Update**: [Test against the upstream OKF example bundles](/tasks/test-against-the-upstream-okf-example-bundles.md)
 * **Create**: [Make reserved-name tests portable to case-insensitive filesystems](/tasks/make-reserved-name-tests-portable-to-case-insensitive-filesystems.md)
+* **Update**: [Make reserved-name tests portable to case-insensitive filesystems](/tasks/make-reserved-name-tests-portable-to-case-insensitive-filesystems.md)
