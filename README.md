@@ -151,9 +151,13 @@ Tools are managed with [mise](https://mise.jdx.dev):
 
 ```bash
 mise install
-go test ./...
-golangci-lint run ./...
+mise run build                         # builds bin/rit
+mise run test
+mise exec -- golangci-lint run ./...
 ```
+
+Run commands through mise (`mise run <task>` or `mise exec -- <command>`) so
+the pinned tools and environment from `mise.toml` are in place.
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 Merging to `main` runs the tests, then publishes a release whose version comes

@@ -10,33 +10,33 @@ Tasks, ideas, the roadmap, and design decisions for this project live in a
 Ritari knowledge base at `kb/`, registered as the project `ritari`. Use `rit`
 to read and update it as you work; the installed `ritari*` skills explain how.
 
-- **Always pass `-p ritari`** (or set `RITARI_PROJECT=ritari`). The registry's
-  default project is the user's personal knowledge base, not this one; a bare
-  `rit` command writes there.
+- **Run `rit` through mise** (`mise exec -- rit …`). `mise.toml` sets
+  `RITARI_PROJECT=ritari`; without it, `rit` uses the registry's default
+  project, which is the user's personal knowledge base, not this one.
 - Never edit `kb/index.md`, `kb/log.md`, or any `kb/*/index.md` by hand. Edit
   notes through `rit` so links, sources, and indexes stay consistent.
 - `kb/ritari.yaml` adds an `idea` type to the defaults. Run
-  `rit -p ritari types` to see them all.
+  `mise exec -- rit types` to see them all.
 
 | What | Where | How |
 | --- | --- | --- |
 | Roadmap | `projects/roadmap` | A `project` note that links to every idea with `includes` relations. |
-| Ideas | `ideas/` | `--type idea`, `--meta state=proposed` (then `accepted`, `rejected`, or `done`), `--rel "part_of: Roadmap"`. Add new ones to the roadmap with `rit -p ritari note write --title Roadmap --rel "includes: <Idea>"`. |
+| Ideas | `ideas/` | `--type idea`, `--meta state=proposed` (then `accepted`, `rejected`, or `done`), `--rel "part_of: Roadmap"`. Add new ones to the roadmap with `mise exec -- rit note write --title Roadmap --rel "includes: <Idea>"`. |
 | Tasks | `tasks/` | `--type task` with `state` in frontmatter and observations (see the `ritari-tasks` skill). An accepted idea becomes one or more tasks linked to it with `implements`. |
 | Decisions | `decisions/` | `--type decision` for design choices, linking to the spec section or idea they affect. |
-| Session log | `daily/` | `rit -p ritari daily` at the start of a session to pick up open threads, and `--note` / `--obs "open-thread: …"` before finishing. |
+| Session log | `daily/` | `mise exec -- rit daily` at the start of a session to pick up open threads, and `--note` / `--obs "open-thread: …"` before finishing. |
 
 Workflow:
 
-1. At the start of a session, read `rit -p ritari daily` and look for open
-   work: `rit -p ritari search --type task --meta 'state=open|blocked'`.
+1. At the start of a session, read `mise exec -- rit daily` and look for open
+   work: `mise exec -- rit search --type task --meta 'state=open|blocked'`.
 2. Before starting multi-step work, create or find its task note and keep it
    current as you go.
 3. Record design decisions as you make them, and new ideas when they come up.
-4. Search before writing (`rit -p ritari search …`). Writing to an existing
+4. Search before writing (`mise exec -- rit search …`). Writing to an existing
    title adds to that note.
 5. Before finishing, update the task's state, write the daily note, and run
-   `rit -p ritari lint`.
+   `mise exec -- rit lint`.
 6. Commit `kb/` changes with the code they relate to, or on their own as
    `docs(kb): …`.
 
@@ -72,17 +72,25 @@ Workflow:
 
 Tools are managed with mise (`mise.toml`): Go, golangci-lint, govulncheck,
 `okf` (the third-party OKF linter used as a conformance check), and `svu`
-(next-version calculation for releases).
+(next-version calculation for releases). `mise.toml` also sets environment
+variables (`RITARI_PROJECT`).
+
+**Run every command through mise** so the pinned tools and environment are in
+place: a defined task with `mise run <task>`, anything else with
+`mise exec -- <command>`.
 
 ```bash
-mise install
-mise run test          # go test ./...
-golangci-lint run ./...
-go build -o rit ./cmd/rit
+mise install                          # install the pinned tools
+mise run build                        # go build -o bin/rit ./cmd/rit (bin/ is git-ignored)
+mise run test                         # go test ./...
+mise run tidy                         # go mod tidy
+mise exec -- golangci-lint run ./...
+mise exec -- go vet ./...
+mise exec -- rit search roadmap       # the project knowledge base
 ```
 
-Before finishing any change: `gofmt`, `go vet ./...`, `go test ./...`, and
-`golangci-lint run ./...` must all be clean.
+Before finishing any change, `gofmt`, `go vet ./...`, `go test ./...`, and
+`golangci-lint run ./...`, each run through mise, must all be clean.
 
 ## CI and releases
 
