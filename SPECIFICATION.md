@@ -1462,7 +1462,8 @@ teach; wording is the implementer's.
    For every other finding, present 2–4 concrete options with consequences using the harness's
    structured multiple-choice tool if available, else a numbered list — with per-rule guidance
    for `orphan`, `duplicate-title`, `unknown-type`/`unknown-category`, `dangling-link`,
-   `stale-verification`, `missing-title`/`missing-description`, `missing-type`/`unparseable`.
+   `stale-verification`, `reserved-casing`, `missing-title`/`missing-description`,
+   `missing-type`/`unparseable`.
    Batch related questions and offer "skip the rest". Never guess at a merge or a relation;
    report mechanical fixes; an unresolved finding is fine; read the note before proposing.
 

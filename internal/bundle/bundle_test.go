@@ -1,6 +1,7 @@
 package bundle
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -29,6 +30,26 @@ func TestOpenSkipsReservedHiddenAndBroken(t *testing.T) {
 	require.Len(t, b.Problems, 1)
 	assert.Equal(t, "notes/broken.md", b.Problems[0].Path)
 	assert.Contains(t, b.Problems[0].Err.Error(), "frontmatter could not be parsed")
+}
+
+func TestReservedNamesMatchExactly(t *testing.T) {
+	b := openFiles(t, map[string]string{
+		"notes/Index.md": "---\ntype: note\n---\n",
+		"LOG.md":         "---\ntype: note\n---\n",
+		"notes/index.md": "# Notes\n",
+	})
+	assert.Equal(t, []string{"LOG", "notes/Index"}, b.Files, "case variants are ordinary concepts")
+	_, ok := b.ReservedCollision("notes/Index.md")
+	assert.False(t, ok, "a distinct file does not collide")
+	_, ok = b.ReservedCollision("LOG.md")
+	assert.False(t, ok, "no log.md exists")
+
+	require.NoError(t, os.Link(b.Abs("LOG.md"), b.Abs("log.md")))
+	reserved, ok := b.ReservedCollision("LOG.md")
+	assert.True(t, ok, "the same file under both names collides")
+	assert.Equal(t, "log.md", reserved)
+	_, ok = b.ReservedCollision("notes/index.md")
+	assert.False(t, ok, "an exact reserved name is not a variant")
 }
 
 func TestOpenBadVocabIsFatal(t *testing.T) {

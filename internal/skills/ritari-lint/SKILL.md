@@ -48,6 +48,10 @@ Per-rule guidance:
 - **`stale-verification`** (content changed after verification): ask the user to
   re-verify (`rit note verify`) after reviewing the change, or leave it
   unverified-in-effect.
+- **`reserved-casing`** (a file like `Index.md` that the generated `index.md`
+  would overwrite on this case-insensitive file system): propose a new name
+  and rename it with `rit note move <id> <dest>`, which rewrites links to it.
+  Recommend fixing it soon; the next index regeneration destroys the note.
 - **`missing-title` / `missing-description`**: propose a title or one-sentence
   description drawn from the note's content, for the user to accept or edit.
 - **`missing-type` / `unparseable`** (errors): show the frontmatter problem and

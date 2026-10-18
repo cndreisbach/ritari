@@ -147,7 +147,7 @@ func TestAddSources(t *testing.T) {
 }
 
 func TestReservedFileLinks(t *testing.T) {
-	for _, href := range []string{"/ideas/index.md", "../ideas/INDEX.md", "/log.md", "index.md#top"} {
+	for _, href := range []string{"/ideas/index.md", "../ideas/index.md", "/log.md", "index.md#top"} {
 		_, ok := ResolveLink(href, "projects/roadmap")
 		assert.False(t, ok, "%s is not a concept link", href)
 	}
@@ -161,6 +161,9 @@ func TestReservedFileLinks(t *testing.T) {
 	assert.False(t, ok)
 	_, ok = ReservedLink("https://x/index.md", "a")
 	assert.False(t, ok)
+	id, ok := ResolveLink("/ideas/Index.md", "a")
+	require.True(t, ok, "a case variant is an ordinary concept")
+	assert.Equal(t, "ideas/Index", id)
 	_, ok = ReservedLink("../../index.md", "a/b")
 	assert.False(t, ok, "escapes the bundle")
 
@@ -188,6 +191,9 @@ func TestBundlePath(t *testing.T) {
 		assert.Equal(t, c.ok, ok, c.href)
 		assert.Equal(t, c.want, got, c.href)
 	}
-	assert.True(t, IsReservedName("Index.MD"))
+	assert.True(t, IsReservedName("index.md"))
+	assert.True(t, IsReservedName("log.md"))
+	assert.False(t, IsReservedName("Index.md"), "reserved names match exactly")
+	assert.False(t, IsReservedName("LOG.MD"))
 	assert.False(t, IsReservedName("indexes.md"))
 }

@@ -140,3 +140,32 @@ func TestStaleIndex(t *testing.T) {
 	assert.Equal(t, Finding{Severity: "warning", Rule: "stale-index", Path: "notes/index.md", Message: "generated listing is out of date (run: rit index)"}, rep.Findings[0])
 	assert.Equal(t, "old/index.md", rep.Findings[1].Path)
 }
+
+func TestReservedCasing(t *testing.T) {
+	b := open(t, map[string]string{
+		"notes/a.md":     "---\ntype: note\ntitle: A\ndescription: d\n---\n",
+		"notes/Index.md": "---\ntype: note\ntitle: Overview\ndescription: d\n---\n",
+		"LOG.md":         "---\ntype: [\n---\n",
+	})
+	rep, err := Run(b, Options{Rules: []string{"reserved-casing"}})
+	require.NoError(t, err)
+	assert.Empty(t, rep.Findings, "distinct files on a case-sensitive file system do not collide")
+
+	// A hard link stands in for a case-insensitive file system, where the two
+	// names reach the same file.
+	for _, p := range [][2]string{{"notes/Index.md", "notes/index.md"}, {"LOG.md", "log.md"}} {
+		reserved := filepath.Join(b.Root, filepath.FromSlash(p[1]))
+		if err := os.Remove(reserved); !os.IsNotExist(err) {
+			require.NoError(t, err)
+		}
+		require.NoError(t, os.Link(filepath.Join(b.Root, filepath.FromSlash(p[0])), reserved))
+	}
+	b, err = bundle.Open(b.Root)
+	require.NoError(t, err)
+	rep, err = Run(b, Options{Rules: []string{"reserved-casing"}})
+	require.NoError(t, err)
+	assert.Equal(t, []Finding{
+		{Severity: "warning", Rule: "reserved-casing", ID: "LOG", Path: "LOG.md", Message: "LOG.md collides with the reserved log.md on this case-insensitive file system; rename it"},
+		{Severity: "warning", Rule: "reserved-casing", ID: "notes/Index", Path: "notes/Index.md", Message: "Index.md collides with the reserved index.md on this case-insensitive file system; rename it"},
+	}, rep.Findings)
+}

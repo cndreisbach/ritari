@@ -208,10 +208,9 @@ func BundlePath(href, fromID string) (string, bool) {
 }
 
 // IsReservedName reports whether a file name is one of OKF's reserved files
-// (index.md, log.md), which are never concepts.
+// (index.md, log.md), which are never concepts. Names match exactly (§3.1).
 func IsReservedName(name string) bool {
-	lower := strings.ToLower(name)
-	return lower == "index.md" || lower == "log.md"
+	return name == "index.md" || name == "log.md"
 }
 
 // ReservedLink reports whether a destination is a reserved-file link (§3.6),
