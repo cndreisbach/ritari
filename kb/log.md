@@ -8,3 +8,6 @@
 * **Create**: [Obsidian extension](/ideas/obsidian-extension.md)
 * **Update**: [Roadmap](/projects/roadmap.md)
 * **Create**: [Stop flagging links to index files as dangling](/tasks/stop-flagging-links-to-index-files-as-dangling.md)
+* **Create**: [2026-10-18](/daily/2026-10-18.md)
+* **Update**: [Stop flagging links to index files as dangling](/tasks/stop-flagging-links-to-index-files-as-dangling.md)
+* **Update**: [2026-10-18](/daily/2026-10-18.md)
