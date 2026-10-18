@@ -24,3 +24,7 @@
 * **Update**: [OKF structure lint rules](/ideas/okf-structure-lint-rules.md)
 * **Create**: [Match reserved file names exactly](/tasks/match-reserved-file-names-exactly.md)
 * **Create**: [Treat malformed frontmatter fields as warnings](/tasks/treat-malformed-frontmatter-fields-as-warnings.md)
+* **Update**: [Pi extension](/ideas/pi-extension.md)
+* **Create**: [Skill routing](/ideas/skill-routing.md)
+* **Create**: [Pi extension scope](/decisions/pi-extension-scope.md)
+* **Update**: [Skill routing](/ideas/skill-routing.md)

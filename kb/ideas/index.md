@@ -8,4 +8,5 @@
 * [Provenance and lifecycle lint rules](/ideas/provenance-and-lifecycle-lint-rules.md) - Lint for broken provenance and OKF lifecycle values that hand edits can introduce.
 * [rit fmt](/ideas/rit-fmt.md) - Rewrite hand-edited notes into rit's canonical form, with a --check mode for CI.
 * [Screen notes for hidden instructions](/ideas/screen-notes-for-hidden-instructions.md) - Detect content hidden from a human reader, and warn when hidden text reads like an instruction to a model.
+* [Skill routing](/ideas/skill-routing.md) - Collapse and re-scope the ritari skills so an agent reliably loads the right one.
 * [stale_after support](/ideas/stale-after-support.md) - Let notes declare when they expire (OKF stale_after) and surface expired ones.
