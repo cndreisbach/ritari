@@ -8,6 +8,7 @@ sources:
     resource: /daily/2026-10-18.md
     title: "PR #2 CI investigation, 2026-10-18"
 generated: {by: human:cndreisbach, at: 2026-10-18T19:38:45Z}
+archived: true
 priority: medium
 state: done
 ---

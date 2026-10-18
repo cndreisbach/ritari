@@ -8,6 +8,7 @@ sources:
     resource: /daily/2026-10-18.md
     title: Ritari KB review, session 2026-10-18
 generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-18T19:58:13Z}
+archived: true
 priority: medium
 state: done
 ---

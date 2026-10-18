@@ -1,5 +1,7 @@
 # Tasks
 
+# Archived
+
 * [Check links to non-markdown files by existence](/tasks/check-links-to-non-markdown-files-by-existence.md) - rit lint reports links to existing images and other files as dangling, and never checks links into sources/.
 * [Detect Pi as an agent](/tasks/detect-pi-as-an-agent.md) - Recognize the Pi coding agent in actor detection instead of falling back to the configured author.
 * [Make reserved-name tests portable to case-insensitive filesystems](/tasks/make-reserved-name-tests-portable-to-case-insensitive-filesystems.md) - Two tests cannot build their fixtures on APFS, so go test ./... is red on default macOS.

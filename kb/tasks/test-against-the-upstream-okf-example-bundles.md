@@ -12,6 +12,7 @@ sources:
   - id: "3"
     resource: Development session 2026-10-18 (cloud)
 generated: {by: claude-code, at: 2026-10-18T19:04:52Z}
+archived: true
 priority: medium
 state: done
 ---

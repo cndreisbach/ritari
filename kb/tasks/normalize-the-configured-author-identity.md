@@ -10,6 +10,7 @@ sources:
   - id: "2"
     resource: Repair of existing notes, 2026-10-18
 generated: {by: human:cndreisbach, at: 2026-10-18T19:29:58Z}
+archived: true
 priority: medium
 state: done
 ---

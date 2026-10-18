@@ -9,6 +9,7 @@ sources:
   - id: "2"
     resource: Development session 2026-10-18
 generated: {by: claude-code, at: 2026-10-18T16:11:46Z}
+archived: true
 state: done
 ---
 
