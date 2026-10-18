@@ -15,3 +15,6 @@
 * **Create**: [Note merge and delete with redirect](/ideas/note-merge-and-delete-with-redirect.md)
 * **Create**: [Provenance and lifecycle lint rules](/ideas/provenance-and-lifecycle-lint-rules.md)
 * **Create**: [stale_after support](/ideas/stale-after-support.md)
+* **Create**: [Check links to non-markdown files by existence](/tasks/check-links-to-non-markdown-files-by-existence.md)
+* **Create**: [Test against the upstream OKF example bundles](/tasks/test-against-the-upstream-okf-example-bundles.md)
+* **Update**: [Check links to non-markdown files by existence](/tasks/check-links-to-non-markdown-files-by-existence.md)
