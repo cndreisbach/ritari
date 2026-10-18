@@ -118,7 +118,15 @@ contract.
 ```
 
 A concept is any file whose name ends in `.md` (case-insensitive) other than the
-reserved files `index.md` and `log.md` (matched by file name, in any directory).
+reserved files `index.md` and `log.md`, in any directory. Reserved names match
+**exactly**, lowercase, as in OKF §3.1: `Index.md` and `LOG.md` are ordinary
+concepts (and, lacking a `type`, conformance errors).
+
+On a case-insensitive file system (the default on macOS and Windows), a concept
+named `Index.md` and the generated `index.md` are the same file, so writing the
+index would overwrite the concept. `lint` therefore reports such files as
+`reserved-casing` there (§8). The tool detects case-insensitivity for the
+bundle's own directory rather than assuming it from the operating system.
 Directories whose names begin with `.` are never traversed. Concepts may exist
 in nested subdirectories or loose at the root; the tool reads them all but only
 ever *creates* concepts at `<type-directory>/<slug>.md`.
@@ -167,9 +175,16 @@ Reading rules:
   `title` (OKF's `author`, `usage_count`, `last_modified`, …) are preserved.
 - `archived` is true when the value is boolean `true` or a string equal,
   case-insensitively, to `true` or `yes`.
-- Frontmatter that is not valid YAML, or whose recognized fields have
-  incompatible shapes (for example a `sources` that is not a list of mappings),
-  makes the file **unparseable** (§10.1).
+- Frontmatter that is not valid YAML, that is not a mapping, or that repeats a
+  key makes the file **unparseable** (§10.1). Nothing else does: OKF requires only
+  parseable YAML and a `type`.
+- A recognized field whose value has the wrong shape (a mapping for `title`, a
+  `sources` that is not a list of mappings, a `generated` that is not a mapping)
+  is a **malformed field**. The tool reads the note as if that field were absent
+  (a malformed `type` therefore counts as missing), keeps the value verbatim as an
+  ordinary extra key when it rewrites the note, and `lint` reports it as
+  `malformed-field` (§8). A write that sets the field replaces the malformed
+  value.
 - Leading spaces/tabs before the opening `---` are tolerated. If the content
   does not begin with a `---` line, the whole file is body and the frontmatter is
   empty. If an opening `---` has no closing `---` line, the whole file is body.
@@ -838,10 +853,12 @@ bundle over a missing optional field.
 | `unknown-category` | warning | Only when an allowed-category list is supplied: an observation category outside it (case-insensitive). Off by default; categories are open-ended. |
 | `stale-verification` | warning | The note has `verified` entries and `generated.at` is later than the newest well-formed `verified[].at`. Never fires for unverified notes. |
 | `orphan` | warning | Not archived, not a daily note, has no outbound edge to an existing concept, and no inbound edge from a non-daily note (a daily note's `# Touched` links do not count). |
+| `malformed-field` | warning | A recognized frontmatter field has the wrong shape and is being ignored (§3.2). One finding per field. Message: `<field> is malformed (<detail>) and is ignored`. |
+| `reserved-casing` | warning | Only on a case-insensitive file system: a file whose name equals `index.md` or `log.md` ignoring case, but not exactly (§3.1). The path is that file. Message: `<name> collides with the reserved <reserved> on this case-insensitive file system; rename it`. |
 
 **Archived notes** are exempt from every hygiene warning: they still receive
-`missing-type`/`unknown-type` (conformance applies), `dangling-link` and graph-level
-checks, but skip `missing-title`, `missing-description`, `type-directory-mismatch`,
+`missing-type`/`unknown-type` (conformance applies), `malformed-field`,
+`reserved-casing`, `dangling-link` and graph-level checks, but skip `missing-title`, `missing-description`, `type-directory-mismatch`,
 `duplicate-title`, `unknown-category`, `stale-verification`, and `orphan`.
 
 Findings are sorted by path, then errors before warnings, then rule name. A finding
@@ -1360,7 +1377,9 @@ Several agents may drive one bundle at once, so writers are serialized:
 The tool MUST work on macOS, Linux, and Windows. Concept IDs, links, and every path
 printed in machine output that is bundle-relative use `/`; absolute paths use the
 platform's native form. File names are compared case-sensitively when resolving IDs
-(even on case-insensitive file systems), except where this specification says otherwise.
+and when recognizing reserved files (even on case-insensitive file systems), except
+where this specification says otherwise. On a case-insensitive file system, `lint`
+reports names that differ from a reserved name only in case (§3.1).
 Files are written with `\n` line endings on every platform; `\r\n` is accepted on read.
 
 ---
