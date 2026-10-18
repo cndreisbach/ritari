@@ -28,3 +28,5 @@
 * **Create**: [Skill routing](/ideas/skill-routing.md)
 * **Create**: [Pi extension scope](/decisions/pi-extension-scope.md)
 * **Update**: [Skill routing](/ideas/skill-routing.md)
+* **Create**: [Detect Pi as an agent](/tasks/detect-pi-as-an-agent.md)
+* **Create**: [Normalize the configured author identity](/tasks/normalize-the-configured-author-identity.md)
