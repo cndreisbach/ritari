@@ -1,0 +1,53 @@
+# Scenario 19: Pi is a detected agent, and its model rides along (§9.4).
+env RITARI_AGENT=
+env AI_AGENT=pi
+env PI_MODEL=deepseek-flash-latest
+
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --description 'Stateless auth.' --obs 'decision: Use JWT'
+stdout '^status: created$'
+
+exec rit note read 'Auth uses JWT'
+stdout '^generated_by: pi/deepseek-flash-latest$'
+
+exec rit note view decisions/auth-uses-jwt
+stdout 'generated: \{by: pi/deepseek-flash-latest, at: 2026-07-29T12:00:00Z\}'
+
+# Without PI_MODEL the actor is the bare agent name.
+env PI_MODEL=
+exec rit note write --title 'Bare agent' --type note --description 'No model signal.' --obs 'note: no model'
+exec rit note read 'Bare agent'
+stdout '^generated_by: pi$'
+
+# PI_CODING_AGENT alone is enough.
+env AI_AGENT=
+env PI_CODING_AGENT=true
+exec rit note write --title 'Marker only' --type note --description 'Pi marker.' --obs 'note: marker'
+exec rit note read 'Marker only'
+stdout '^generated_by: pi$'
+
+# The generic marker must name Pi; another agent's value is not Pi, and with no
+# agent detected the write falls back to the configured identity.
+env PI_CODING_AGENT=
+env AI_AGENT=other
+exec rit note write --title 'Not Pi' --type note --description 'Foreign marker.' --obs 'note: not pi'
+exec rit note read 'Not Pi'
+! stdout '^generated_by: pi'
+
+# RITARI_AGENT wins over signals and RITARI_AGENT_MODEL pins the model.
+env AI_AGENT=pi
+env RITARI_AGENT=claude-code
+env RITARI_AGENT_MODEL=sonnet-4
+exec rit note write --title 'Pinned model' --type note --description 'Pinned.' --obs 'note: pinned'
+exec rit note read 'Pinned model'
+stdout '^generated_by: claude-code/sonnet-4$'
+
+# RITARI_AGENT=pi still takes the model from PI_MODEL.
+env RITARI_AGENT=pi
+env RITARI_AGENT_MODEL=
+env PI_MODEL=some-model
+exec rit note write --title 'Explicit pi' --type note --description 'Explicit.' --obs 'note: explicit'
+exec rit note read 'Explicit pi'
+stdout '^generated_by: pi/some-model$'
+
+okflint kb

@@ -16,7 +16,7 @@ type Lookup struct {
 	Username func() string
 }
 
-var agents = []string{"rovo", "claude-code", "cursor", "codex"}
+var agents = []string{"rovo", "claude-code", "cursor", "codex", "pi"}
 
 // Agent reports the detected agent name, or "" for none.
 func Agent(getenv func(string) string) string {
@@ -42,14 +42,30 @@ func Agent(getenv func(string) string) string {
 		return "cursor"
 	case set("CODEX_THREAD_ID") || strings.TrimSpace(getenv("CODEX_CI")) == "1" || set("CODEX_SANDBOX"):
 		return "codex"
+	case set("PI_CODING_AGENT") || strings.EqualFold(strings.TrimSpace(getenv("AI_AGENT")), "pi"):
+		return "pi"
+	}
+	return ""
+}
+
+// Model reports the model identifier to suffix an agent's actor with, or "".
+// RITARI_AGENT_MODEL wins so callers can pin it; otherwise only an agent whose
+// own environment names its model (Pi sets PI_MODEL) contributes one. A model
+// belongs to an agent, so a human identity never carries one.
+func Model(getenv func(string) string, agent string) string {
+	if m := strings.TrimSpace(getenv("RITARI_AGENT_MODEL")); m != "" {
+		return m
+	}
+	if agent == "pi" {
+		return strings.TrimSpace(getenv("PI_MODEL"))
 	}
 	return ""
 }
 
 // Normalize gives a human identity its human: prefix (§9.4). A value that
 // already carries a prefix is returned trimmed and unchanged, so human:me and
-// process:nightly both survive. Agents are named bare and are detected
-// separately, never taken from the configured author.
+// process:nightly both survive. Agents are detected separately and are never
+// taken from the configured author.
 func Normalize(id string) string {
 	id = strings.TrimSpace(id)
 	if strings.HasSuffix(id, ":") {
@@ -64,6 +80,9 @@ func Normalize(id string) string {
 // Detect returns the actor string to stamp into generated.by / verified[].by.
 func Detect(l Lookup) string {
 	if a := Agent(l.Getenv); a != "" {
+		if m := Model(l.Getenv, a); m != "" {
+			return a + "/" + m
+		}
 		return a
 	}
 	if a := Normalize(l.Author); a != "" {

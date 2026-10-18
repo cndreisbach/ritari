@@ -35,6 +35,18 @@ func TestAcceptance(t *testing.T) {
 		Setup: func(env *testscript.Env) error {
 			env.Setenv("RITARI_CONFIG", env.WorkDir+"/config.yaml")
 			env.Setenv("RITARI_TEST_NOW", "2026-07-29T12:00:00Z")
+			// Clear agent and model markers so the developer's environment cannot
+			// change the stamped actor; each scenario sets what it needs.
+			for _, k := range []string{
+				"ROVODEV_CLI", "ROVO_DEV_CLI_VERSION",
+				"CLAUDE_CODE_CHILD_SESSION", "CLAUDECODE",
+				"CURSOR_AGENT",
+				"CODEX_THREAD_ID", "CODEX_CI", "CODEX_SANDBOX",
+				"AI_AGENT", "PI_CODING_AGENT", "PI_MODEL",
+				"RITARI_AGENT_MODEL",
+			} {
+				env.Setenv(k, "")
+			}
 			env.Setenv("RITARI_AGENT", "claude-code")
 			env.Setenv("TZ", "UTC")
 			env.Setenv("HOME", env.WorkDir)

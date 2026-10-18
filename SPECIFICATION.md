@@ -619,9 +619,10 @@ last meaningfully changed.
   filled in; whenever its `generated.by` is blank, the current actor is filled in
   (so every written note has a complete `generated` field — OKF requires `by`).
 - `by` convention (OKF §7): `<producer>/<version>` for tools, `human:<id>` for
-  people, `process:<id>` for automated processes. This tool uses a bare producer
-  name for agents (no version is available); OKF requires the `human:` prefix only
-  for people, which the tool always uses (§9.4).
+  people, `process:<id>` for automated processes. This tool writes `agent/model`
+  for an agent whose model is known and the bare agent name otherwise; OKF
+  requires the `human:` prefix only for people, which the tool always uses
+  (§9.4).
 
 ### 5.5 `verified` and trust tiers
 
@@ -988,15 +989,21 @@ Operations:
 The actor string stamped into `generated.by` and `verified[].by`:
 
 1. **Agent detection.** `RITARI_AGENT` (case-insensitive, trimmed) may name one of
-   `unknown`, `human`, `claude-code`, `codex`, `cursor`, `rovo`; a recognized value is
-   taken as the detected identity immediately (`unknown`/`human` count as *not an
+   `unknown`, `human`, `claude-code`, `codex`, `cursor`, `rovo`, `pi`; a recognized value
+   is taken as the detected identity immediately (`unknown`/`human` count as *not an
    agent*). An unrecognized value is ignored. Otherwise the first matching signal in
-   this order wins (a variable counts as set if non-blank after trimming):
+   this order wins (a variable counts as set if non-blank after trimming, and `AI_AGENT`
+   counts only when it names this tool):
    - `rovo`: `ROVODEV_CLI` or `ROVO_DEV_CLI_VERSION`
    - `claude-code`: `CLAUDE_CODE_CHILD_SESSION` or `CLAUDECODE`
    - `cursor`: `CURSOR_AGENT`
    - `codex`: `CODEX_THREAD_ID`, or `CODEX_CI` equal to `1`, or `CODEX_SANDBOX`
-2. If an agent was detected, the actor is its bare name (`claude-code`, …).
+   - `pi`: `PI_CODING_AGENT`, or `AI_AGENT` equal to `pi`
+2. If an agent was detected, the actor is its bare name (`claude-code`, …), suffixed
+   with `/` and the model when one is known: `RITARI_AGENT_MODEL` when non-empty,
+   otherwise, for `pi` only, the trimmed `PI_MODEL` (`pi/deepseek-flash-latest`). With no
+   model signal the actor is the bare name. A model belongs to an agent; human
+   identities never carry one.
 3. Otherwise the registry's configured `author`, normalized: a value with no `:`
    in it is a person, so `human:` is prepended (`cndreisbach` becomes
    `human:cndreisbach`); a value that already carries a prefix (`human:me@x`,
@@ -1544,7 +1551,12 @@ machine mode.)
     `human:cndreisbach`; `config author human:me@example.com` and `config author process:nightly`
     are stored as written; a note written under the bare author carries `generated.by:
     human:cndreisbach`.
-15. **OKF conformance.** After each scenario above, `okflint validate` (§1) reports zero errors
+16. **Agent and model.** With `AI_AGENT=pi` and `PI_MODEL=deepseek-flash-latest` and no
+    `RITARI_AGENT`, a note write stamps `generated.by: pi/deepseek-flash-latest`; without
+    `PI_MODEL` it stamps `pi`; `AI_AGENT` naming another tool is not Pi; `RITARI_AGENT=claude-code`
+    with `RITARI_AGENT_MODEL=sonnet-4` stamps `claude-code/sonnet-4`; and a human author is
+    never given a model suffix.
+17. **OKF conformance.** After each scenario above, `okflint validate` (§1) reports zero errors
     for the bundle, and it reports an error for a bundle with a malformed file.
-16. **Tags.** `--obs "bug: Fixed #42 and color #ff00aa #auth"` yields the tag `auth` only; `#42`
+18. **Tags.** `--obs "bug: Fixed #42 and color #ff00aa #auth"` yields the tag `auth` only; `#42`
     and `#ff00aa` stay in the content.

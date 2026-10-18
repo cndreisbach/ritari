@@ -94,10 +94,12 @@ rit skills install --agent claude  # ~/.claude/skills
 When `rit` runs without a terminal, as it does under an agent, it prints flat
 YAML that is easy to parse. In a terminal it prints readable text. Use
 `--output text` or `--output yaml` to choose. Writes are stamped with who made
-them: `rit` recognizes Claude Code, Codex, Cursor, and Rovo Dev, and otherwise
+them: `rit` recognizes Claude Code, Codex, Cursor, Rovo Dev, and Pi, and otherwise
 uses your configured author (`rit config author human:you@example.com`) or your
-git email. A bare author such as `rit config author you@example.com` is stored
-as `human:you@example.com`, so a person is never mistaken for an agent.
+git email. An agent that names its model is stamped as `<agent>/<model>` — Pi's
+`PI_MODEL` gives `pi/deepseek-flash-latest` — and `RITARI_AGENT_MODEL` overrides
+the model for any agent. A bare author such as `rit config author you@example.com`
+is stored as `human:you@example.com`, so a person is never mistaken for an agent.
 
 ## Commands
 
