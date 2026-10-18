@@ -86,16 +86,53 @@ func TestParseTolerances(t *testing.T) {
 
 func TestParseUnparseable(t *testing.T) {
 	for name, src := range map[string]string{
-		"bad yaml":       "---\ntype: [unclosed\n---\n",
-		"not a mapping":  "---\n- a\n- b\n---\n",
-		"title mapping":  "---\ntitle: {a: b}\n---\n",
-		"sources scalar": "---\nsources: foo\n---\n",
-		"sources items":  "---\nsources: [a, b]\n---\n",
-		"duplicate key":  "---\ntype: a\ntype: b\n---\n",
+		"bad yaml":      "---\ntype: [unclosed\n---\n",
+		"not a mapping": "---\n- a\n- b\n---\n",
+		"duplicate key": "---\ntype: a\ntype: b\n---\n",
 	} {
 		_, err := Parse([]byte(src))
 		assert.Error(t, err, name)
 	}
+}
+
+func TestParseMalformedFields(t *testing.T) {
+	src := "---\ntype: note\ntitle: {a: b}\nsources: [a, b]\ngenerated: {by: [x], at: 2026-01-01T00:00:00Z}\n" +
+		"tags: [[x]]\nverified: yes\narchived: [true]\ndescription: fine\n---\n\nBody\n"
+	n, err := Parse([]byte(src))
+	require.NoError(t, err, "a malformed field does not make the note unparseable")
+	assert.Equal(t, []Malformed{
+		{Key: "title", Detail: "not a string"},
+		{Key: "sources", Detail: "not a list of mappings"},
+		{Key: "generated", Detail: "by is not a string"},
+		{Key: "tags", Detail: "not a list of strings"},
+		{Key: "verified", Detail: "not a list of {by, at} mappings"},
+		{Key: "archived", Detail: "not a boolean"},
+	}, n.FM.Malformed)
+	assert.Equal(t, "", n.FM.Title, "a malformed field reads as absent")
+	assert.Empty(t, n.FM.Sources)
+	assert.Nil(t, n.FM.Generated)
+	assert.False(t, n.FM.Archived)
+	assert.Equal(t, "fine", n.FM.Description)
+	assert.Equal(t, "---\ntype: note\ndescription: fine\narchived: [true]\ngenerated: {by: [x], at: 2026-01-01T00:00:00Z}\n"+
+		"sources: [a, b]\ntags: [[x]]\ntitle: {a: b}\nverified: yes\n---\n\nBody\n", string(Render(n)), "kept verbatim")
+
+	n.FM.Title = "Fixed"
+	n.FM.Generated = &Stamp{By: "me", At: "2026-02-01T00:00:00Z"}
+	n.FM.Archived = true
+	out := string(Render(n))
+	assert.Contains(t, out, "title: Fixed\n")
+	assert.Contains(t, out, "generated: {by: me, at: 2026-02-01T00:00:00Z}\n")
+	assert.Contains(t, out, "archived: true\n")
+	assert.NotContains(t, out, "{a: b}", "setting the field replaces the malformed value")
+	assert.NotContains(t, out, "[x]], at")
+	assert.NotContains(t, out, "[true]")
+	_, err = Parse([]byte(out))
+	require.NoError(t, err)
+
+	n, err = Parse([]byte("---\ntype: {a: b}\n---\n"))
+	require.NoError(t, err)
+	assert.Equal(t, "", n.FM.Type, "a malformed type counts as missing")
+	assert.Equal(t, "---\ntype: {a: b}\n---\n", string(Render(n)), "no default type is added beside it")
 }
 
 func TestExtraKeysPreservedVerbatim(t *testing.T) {

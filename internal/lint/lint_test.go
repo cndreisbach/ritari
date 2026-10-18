@@ -65,6 +65,8 @@ func TestRules(t *testing.T) {
 		"notes/fresh.md":      "---\ntype: note\ntitle: Fresh\ndescription: d\ngenerated: {by: x, at: 2026-01-01T00:00:00Z}\nverified: {by: human:a, at: 2026-02-01T00:00:00Z}\n---\n\n[b](/notes/b.md)\n",
 		"daily/2026-01-01.md": "---\ntype: daily\ntitle: \"2026-01-01\"\ndescription: d\n---\n\n# Touched\n- [Orphan](/notes/orph.md) — created\n",
 		"notes/orph.md":       "---\ntype: note\ntitle: Orphan\ndescription: d\n---\n",
+		"notes/shape.md":      "---\ntype: note\ntitle: {a: b}\ndescription: d\nsources: foo\narchived: true\n---\n\n[b](/notes/b.md)\n",
+		"notes/badtype.md":    "---\ntype: [note]\ntitle: Bad type\ndescription: d\n---\n\n[b](/notes/b.md)\n",
 	})
 	rep, err := Run(b, Options{Categories: []string{"fact"}})
 	require.NoError(t, err)
@@ -82,6 +84,8 @@ func TestRules(t *testing.T) {
 	assert.Equal(t, []string{}, rules(f, "notes/fresh"))
 	assert.Equal(t, []string{"orphan"}, rules(f, "notes/orph"), "Touched links do not count")
 	assert.Equal(t, []string{}, rules(f, "daily/2026-01-01"))
+	assert.Equal(t, []string{"malformed-field", "malformed-field"}, rules(f, "notes/shape"), "archived notes still get malformed-field")
+	assert.Equal(t, []string{"missing-type", "malformed-field"}, rules(f, "notes/badtype"), "a malformed type counts as missing")
 
 	for _, x := range f {
 		switch x.Rule {
@@ -98,8 +102,8 @@ func TestRules(t *testing.T) {
 			assert.Contains(t, x.Message, "frontmatter could not be parsed: ")
 		}
 	}
-	assert.Equal(t, 2, rep.Errors)
-	assert.Equal(t, "2 conformance error(s)", rep.Failure)
+	assert.Equal(t, 3, rep.Errors)
+	assert.Equal(t, "3 conformance error(s)", rep.Failure)
 	for i := 1; i < len(f); i++ {
 		assert.LessOrEqual(t, f[i-1].Path, f[i].Path, "sorted by path")
 	}

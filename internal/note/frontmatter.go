@@ -4,6 +4,7 @@ package note
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -49,6 +50,15 @@ type Frontmatter struct {
 	Verified    []Stamp
 	Archived    bool
 	Extra       []Extra
+	// Malformed lists recognized fields whose values have the wrong shape
+	// (§3.2). Each reads as absent and is kept verbatim in Extra.
+	Malformed []Malformed
+}
+
+// Malformed is a recognized frontmatter field with the wrong shape.
+type Malformed struct {
+	Key    string
+	Detail string
 }
 
 // Note is a parsed concept file.
@@ -134,15 +144,16 @@ func parseFrontmatter(text string) (*Frontmatter, error) {
 		}
 		seen[key] = true
 		var err error
+		before := *fm
 		switch key {
 		case "type":
-			fm.Type, err = scalarField(key, v)
+			fm.Type, err = scalarField("", v)
 		case "title":
-			fm.Title, err = scalarField(key, v)
+			fm.Title, err = scalarField("", v)
 		case "description":
-			fm.Description, err = scalarField(key, v)
+			fm.Description, err = scalarField("", v)
 		case "resource":
-			fm.Resource, err = scalarField(key, v)
+			fm.Resource, err = scalarField("", v)
 		case "tags":
 			fm.Tags, err = tagsField(v)
 		case "sources":
@@ -157,7 +168,10 @@ func parseFrontmatter(text string) (*Frontmatter, error) {
 			fm.Extra = append(fm.Extra, Extra{Key: key, Raw: rawChunk(root, i, lines), Value: v})
 		}
 		if err != nil {
-			return nil, err
+			extra, malformed := fm.Extra, fm.Malformed
+			*fm = before
+			fm.Extra = append(extra, Extra{Key: key, Raw: rawChunk(root, i, lines), Value: v})
+			fm.Malformed = append(malformed, Malformed{Key: key, Detail: err.Error()})
 		}
 	}
 	return fm, nil
@@ -195,12 +209,17 @@ func isNull(v *yaml.Node) bool {
 	return v.Kind == yaml.ScalarNode && v.ShortTag() == "!!null"
 }
 
-func scalarField(key string, v *yaml.Node) (string, error) {
+// scalarField reads a string field. path names a nested field in the error
+// ("" for a top-level one).
+func scalarField(path string, v *yaml.Node) (string, error) {
 	if isNull(v) {
 		return "", nil
 	}
 	if v.Kind != yaml.ScalarNode {
-		return "", fmt.Errorf("%q must be a string", key)
+		if path == "" {
+			return "", errors.New("not a string")
+		}
+		return "", fmt.Errorf("%s is not a string", path)
 	}
 	return v.Value, nil
 }
@@ -218,7 +237,7 @@ func tagsField(v *yaml.Node) ([]string, error) {
 		var tags []string
 		for _, e := range v.Content {
 			if e.Kind != yaml.ScalarNode {
-				return nil, fmt.Errorf(`"tags" must be a list of strings`)
+				return nil, errors.New("not a list of strings")
 			}
 			if !isNull(e) {
 				tags = append(tags, e.Value)
@@ -226,21 +245,21 @@ func tagsField(v *yaml.Node) ([]string, error) {
 		}
 		return tags, nil
 	}
-	return nil, fmt.Errorf(`"tags" must be a list of strings`)
+	return nil, errors.New("not a list of strings")
 }
 
-func stampField(key string, v *yaml.Node) (Stamp, error) {
+func stampField(v *yaml.Node) (Stamp, error) {
 	if v.Kind != yaml.MappingNode {
-		return Stamp{}, fmt.Errorf("%q must be a {by, at} mapping", key)
+		return Stamp{}, errors.New("not a {by, at} mapping")
 	}
 	var s Stamp
 	for i := 0; i+1 < len(v.Content); i += 2 {
 		var err error
 		switch v.Content[i].Value {
 		case "by":
-			s.By, err = scalarField(key+".by", v.Content[i+1])
+			s.By, err = scalarField("by", v.Content[i+1])
 		case "at":
-			s.At, err = scalarField(key+".at", v.Content[i+1])
+			s.At, err = scalarField("at", v.Content[i+1])
 		}
 		if err != nil {
 			return Stamp{}, err
@@ -253,7 +272,7 @@ func generatedField(v *yaml.Node) (*Stamp, error) {
 	if isNull(v) {
 		return nil, nil
 	}
-	s, err := stampField("generated", v)
+	s, err := stampField(v)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +284,7 @@ func verifiedField(v *yaml.Node) ([]Stamp, error) {
 	case isNull(v):
 		return nil, nil
 	case v.Kind == yaml.MappingNode:
-		s, err := stampField("verified", v)
+		s, err := stampField(v)
 		if err != nil {
 			return nil, err
 		}
@@ -273,7 +292,7 @@ func verifiedField(v *yaml.Node) ([]Stamp, error) {
 	case v.Kind == yaml.SequenceNode:
 		var out []Stamp
 		for _, e := range v.Content {
-			s, err := stampField("verified", e)
+			s, err := stampField(e)
 			if err != nil {
 				return nil, err
 			}
@@ -281,7 +300,7 @@ func verifiedField(v *yaml.Node) ([]Stamp, error) {
 		}
 		return out, nil
 	}
-	return nil, fmt.Errorf(`"verified" must be a list of {by, at} mappings`)
+	return nil, errors.New("not a list of {by, at} mappings")
 }
 
 func sourcesField(v *yaml.Node) ([]Source, error) {
@@ -289,12 +308,12 @@ func sourcesField(v *yaml.Node) ([]Source, error) {
 		return nil, nil
 	}
 	if v.Kind != yaml.SequenceNode {
-		return nil, fmt.Errorf(`"sources" must be a list of mappings`)
+		return nil, errors.New("not a list of mappings")
 	}
 	var out []Source
 	for _, e := range v.Content {
 		if e.Kind != yaml.MappingNode {
-			return nil, fmt.Errorf(`"sources" must be a list of mappings`)
+			return nil, errors.New("not a list of mappings")
 		}
 		var s Source
 		for i := 0; i+1 < len(e.Content); i += 2 {
@@ -302,11 +321,11 @@ func sourcesField(v *yaml.Node) ([]Source, error) {
 			var err error
 			switch k.Value {
 			case "id":
-				s.ID, err = scalarField("sources[].id", val)
+				s.ID, err = scalarField("id", val)
 			case "resource":
-				s.Resource, err = scalarField("sources[].resource", val)
+				s.Resource, err = scalarField("resource", val)
 			case "title":
-				s.Title, err = scalarField("sources[].title", val)
+				s.Title, err = scalarField("title", val)
 			default:
 				s.Extra = append(s.Extra, k, val)
 			}
@@ -324,7 +343,7 @@ func archivedField(v *yaml.Node) (bool, error) {
 		return false, nil
 	}
 	if v.Kind != yaml.ScalarNode {
-		return false, fmt.Errorf(`"archived" must be a boolean`)
+		return false, errors.New("not a boolean")
 	}
 	switch strings.ToLower(strings.TrimSpace(v.Value)) {
 	case "true", "yes":
@@ -375,7 +394,9 @@ func renderFrontmatter(fm *Frontmatter) string {
 	if strings.TrimSpace(typ) == "" {
 		typ = "note"
 	}
-	b.WriteString("type: " + yamlx.Scalar(typ) + "\n")
+	if fm.isSet("type") || !fm.isMalformed("type") {
+		b.WriteString("type: " + yamlx.Scalar(typ) + "\n")
+	}
 	for _, kv := range [][2]string{{"title", fm.Title}, {"description", fm.Description}, {"resource", fm.Resource}} {
 		if strings.TrimSpace(kv[1]) != "" {
 			b.WriteString(kv[0] + ": " + yamlx.Scalar(kv[1]) + "\n")
@@ -409,13 +430,49 @@ func renderFrontmatter(fm *Frontmatter) string {
 	}
 	sort.SliceStable(extra, func(i, j int) bool { return extra[i].Key < extra[j].Key })
 	for _, e := range extra {
-		if knownKeys[e.Key] && e.Key != "archived" {
+		// A recognized key appears in Extra only when malformed (or set
+		// with --meta); it gives way once the field itself is set.
+		if knownKeys[e.Key] && e.Value != nil && fm.isSet(e.Key) {
 			continue
 		}
 		b.WriteString(e.Raw + "\n")
 	}
 	b.WriteString("---\n")
 	return b.String()
+}
+
+// isSet reports whether a recognized field has a value that rendering writes.
+func (fm *Frontmatter) isSet(key string) bool {
+	switch key {
+	case "type":
+		return strings.TrimSpace(fm.Type) != ""
+	case "title":
+		return strings.TrimSpace(fm.Title) != ""
+	case "description":
+		return strings.TrimSpace(fm.Description) != ""
+	case "resource":
+		return strings.TrimSpace(fm.Resource) != ""
+	case "tags":
+		return len(cleanTags(fm.Tags)) > 0
+	case "sources":
+		return len(fm.Sources) > 0
+	case "generated":
+		return fm.Generated != nil
+	case "verified":
+		return len(fm.Verified) > 0
+	case "archived":
+		return fm.Archived
+	}
+	return false
+}
+
+func (fm *Frontmatter) isMalformed(key string) bool {
+	for _, m := range fm.Malformed {
+		if m.Key == key {
+			return true
+		}
+	}
+	return false
 }
 
 func renderStamp(s Stamp) string {

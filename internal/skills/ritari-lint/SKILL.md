@@ -48,6 +48,10 @@ Per-rule guidance:
 - **`stale-verification`** (content changed after verification): ask the user to
   re-verify (`rit note verify`) after reviewing the change, or leave it
   unverified-in-effect.
+- **`malformed-field`** (a known field like `title` or `sources` has the wrong
+  shape and is being ignored): show the value and propose the corrected one.
+  Set it with the matching flag (`note edit --title`, `note write --source`),
+  which replaces the malformed value.
 - **`reserved-casing`** (a file like `Index.md` that the generated `index.md`
   would overwrite on this case-insensitive file system): propose a new name
   and rename it with `rit note move <id> <dest>`, which rewrites links to it.

@@ -33,12 +33,13 @@ const (
 	UnknownCategory       = "unknown-category"
 	StaleVerification     = "stale-verification"
 	Orphan                = "orphan"
+	MalformedField        = "malformed-field"
 	ReservedCasing        = "reserved-casing"
 )
 
 // Rules lists every rule name, sorted.
 var Rules = []string{
-	DanglingLink, DuplicateTitle, MissingDescription, MissingTitle, MissingType, Orphan,
+	DanglingLink, DuplicateTitle, MalformedField, MissingDescription, MissingTitle, MissingType, Orphan,
 	ReservedCasing, StaleIndex, StaleVerification, TypeDirectoryMismatch, UnknownCategory, UnknownType, Unparseable,
 }
 
@@ -133,6 +134,9 @@ func findings(b *bundle.Bundle, categories []string) ([]Finding, error) {
 			add(Warning, DanglingLink, c, fmt.Sprintf("links to %s, which does not exist", t))
 		}
 		casing(c.ID, c.Path)
+		for _, m := range fm.Malformed {
+			add(Warning, MalformedField, c, fmt.Sprintf("%s is malformed (%s) and is ignored", m.Key, m.Detail))
+		}
 		if !live {
 			continue
 		}
