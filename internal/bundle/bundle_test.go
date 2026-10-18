@@ -33,6 +33,17 @@ func TestOpenSkipsReservedHiddenAndBroken(t *testing.T) {
 }
 
 func TestReservedNamesMatchExactly(t *testing.T) {
+	if caseInsensitiveFS(t) {
+		// LOG.md is the reserved log.md here, so the variant cannot be a
+		// distinct concept; the collision is inherent rather than simulated.
+		b := openFiles(t, map[string]string{"LOG.md": "---\ntype: note\n---\n"})
+		assert.Equal(t, []string{"LOG"}, b.Files)
+		reserved, ok := b.ReservedCollision("LOG.md")
+		assert.True(t, ok, "a case variant reaches the reserved file")
+		assert.Equal(t, "log.md", reserved)
+		return
+	}
+
 	b := openFiles(t, map[string]string{
 		"notes/Index.md": "---\ntype: note\n---\n",
 		"LOG.md":         "---\ntype: note\n---\n",

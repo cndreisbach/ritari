@@ -36,3 +36,5 @@
 * **Create**: [Detect Pi as an agent](/tasks/detect-pi-as-an-agent.md)
 * **Create**: [Normalize the configured author identity](/tasks/normalize-the-configured-author-identity.md)
 * **Update**: [Normalize the configured author identity](/tasks/normalize-the-configured-author-identity.md)
+* **Create**: [Make reserved-name tests portable to case-insensitive filesystems](/tasks/make-reserved-name-tests-portable-to-case-insensitive-filesystems.md)
+* **Update**: [Make reserved-name tests portable to case-insensitive filesystems](/tasks/make-reserved-name-tests-portable-to-case-insensitive-filesystems.md)
