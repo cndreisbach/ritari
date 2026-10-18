@@ -313,23 +313,27 @@ Link classification for a destination `href`:
 - **In-bundle**: anything else. Strip any `#fragment`. A destination starting
   with `/` is relative to the bundle root; otherwise it is relative to the
   directory of the linking note. Normalize (`.` and `..` segments). If the result
-  escapes the bundle root, it has no target. If it lies under `sources/` (raw
-  material, §3.8), it has no target. If its last segment is a reserved file name
-  (`index.md` or `log.md`, matched as in §3.1), it is a **reserved-file link**:
-  it names that file, not a concept, and has no target. Otherwise the target
-  concept ID is the normalized path minus a trailing `.md`.
+  escapes the bundle root, it has no target. It is a **file link**, naming a
+  file rather than a concept and having no target, if it lies under `sources/`
+  (raw material, §3.8), if its last segment is a reserved file name (`index.md`
+  or `log.md`, matched as in §3.1), or if its last segment has a file extension
+  other than `.md` (case-insensitive), such as `img/diagram.png`. Otherwise the
+  target concept ID is the normalized path minus a trailing `.md`. (Slugs never
+  contain `.`, so an extension-less link such as `../decisions/auth-uses-jwt`
+  still names a concept.)
 
 The **graph** has a directed edge from each concept to each distinct in-bundle
 target. Edges to targets that do not exist are **dangling** and are tracked
 separately (they appear in `lint`, not in traversal). The tool MUST tolerate
 dangling links everywhere — forward references are cheap and intended.
 
-A reserved-file link (a link to a directory listing or a change log, which OKF
-§8–9 define) is never an edge: it doesn't count for traversal, `context`,
-`links` in `note read`, or `orphan`. It is dangling only if no file exists at
-its normalized path, for example a link to the `index.md` of a directory that
-no longer holds any concepts. A dangling reserved-file link is reported by its
-bundle-relative path including the file name (`ideas/index.md`).
+A file link (to an image, a raw source, a directory listing, or a change log,
+which OKF §8–9 define) is never an edge: it doesn't count for traversal,
+`context`, `links` in `note read`, or `orphan`. It is dangling only if nothing
+exists at its normalized path, for example a link to a deleted
+`sources/call.txt` or to the `index.md` of a directory that no longer holds any
+concepts. A dangling file link is reported by its bundle-relative path including
+the file name (`ideas/index.md`).
 
 ### 3.7 Sources and source references
 
@@ -848,7 +852,7 @@ bundle over a missing optional field.
 | `missing-description` | warning | `description` blank (the note appears bare in listings). |
 | `type-directory-mismatch` | warning | The note's directory differs from the directory its type implies. Message includes the fix: the move command with the proposed destination `<expected-dir>/<current-basename>`. |
 | `duplicate-title` | warning | Two or more notes share a title (case-insensitive, trimmed; title falls back to the last path segment). One finding per involved note naming the others. |
-| `dangling-link` | warning | A note links to an in-bundle target that does not exist, or a reserved-file link points at a missing file (§3.6) (one finding per distinct (note, target) pair). Message: `links to <target>, which does not exist`. |
+| `dangling-link` | warning | A note links to an in-bundle target that does not exist, or a file link points at a missing file (§3.6) (one finding per distinct (note, target) pair). Message: `links to <target>, which does not exist`. |
 | `stale-index` | warning | A generated listing is out of date or should be removed; the path is the index file. Message points at the regenerate command. |
 | `unknown-category` | warning | Only when an allowed-category list is supplied: an observation category outside it (case-insensitive). Off by default; categories are open-ended. |
 | `stale-verification` | warning | The note has `verified` entries and `generated.at` is later than the newest well-formed `verified[].at`. Never fires for unverified notes. |
@@ -1469,7 +1473,8 @@ teach; wording is the implementer's.
    For every other finding, present 2–4 concrete options with consequences using the harness's
    structured multiple-choice tool if available, else a numbered list — with per-rule guidance
    for `orphan`, `duplicate-title`, `unknown-type`/`unknown-category`, `dangling-link`,
-   `stale-verification`, `missing-title`/`missing-description`, `missing-type`/`unparseable`.
+   `stale-verification`, `malformed-field`, `reserved-casing`,
+   `missing-title`/`missing-description`, `missing-type`/`unparseable`.
    Batch related questions and offer "skip the rest". Never guess at a merge or a relation;
    report mechanical fixes; an unresolved finding is fine; read the note before proposing.
 

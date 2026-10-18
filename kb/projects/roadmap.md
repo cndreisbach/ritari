@@ -25,6 +25,8 @@ The roadmap is a list of [idea](/ideas/index.md) notes linked from here. Ideas a
 - includes [stale_after support](/ideas/stale-after-support.md)
 - includes [Screen notes for hidden instructions](/ideas/screen-notes-for-hidden-instructions.md)
 - includes [OKF structure lint rules](/ideas/okf-structure-lint-rules.md)
+- includes [Allow nested type directories](/ideas/allow-nested-type-directories.md)
+- includes [Rank notes that match every search term higher](/ideas/rank-notes-that-match-every-search-term-higher.md)
 - includes [Skill routing](/ideas/skill-routing.md)
 
 [^1]: Clinton, development session 2026-10-18

@@ -101,6 +101,28 @@ func IsConceptFile(name string) bool {
 	return strings.HasSuffix(strings.ToLower(name), ".md") && !note.IsReservedName(name)
 }
 
+// ReservedCollision reports whether the concept file rel is the same file as
+// the reserved file its name matches ignoring case, as on a case-insensitive
+// file system, where writing that reserved file would overwrite it (§3.1). It
+// returns the reserved name.
+func (b *Bundle) ReservedCollision(rel string) (string, bool) {
+	name := path.Base(rel)
+	reserved := strings.ToLower(name)
+	if name == reserved || !note.IsReservedName(reserved) {
+		return "", false
+	}
+	full := b.Abs(rel)
+	fi, err := os.Stat(full)
+	if err != nil {
+		return "", false
+	}
+	ri, err := os.Stat(filepath.Join(filepath.Dir(full), reserved))
+	if err != nil {
+		return "", false
+	}
+	return reserved, os.SameFile(fi, ri)
+}
+
 func idOf(rel string) string {
 	return rel[:len(rel)-3]
 }

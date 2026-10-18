@@ -1,0 +1,54 @@
+# A malformed field is ignored and reported, not fatal to the note (§3.2).
+env RITARI_TEST_NOW=2026-07-29T14:30:00Z
+env RITARI_AGENT=claude-code
+exec rit project init work $WORK/kb --default
+exec rit note write --title Other --obs 'fact: x' --rel 'relates_to: Shape'
+cp shape.md kb/notes/shape.md
+
+exec rit search jwt
+stdout '^count: 1$'
+stdout '^id: notes/shape$'
+
+exec rit lint --rule malformed-field
+stdout '^success: true$'
+stdout '^warnings: 2$'
+stdout 'message: "?sources is malformed \(not a list of mappings\) and is ignored'
+stdout 'message: "?title is malformed \(not a string\) and is ignored'
+
+# Writing other fields keeps the malformed values verbatim.
+exec rit note write --title shape --obs 'fact: more'
+cmp kb/notes/shape.md kept.md
+
+# Setting the field replaces the malformed value.
+exec rit note write --title shape --source 'https://example.com/jwt'
+exec rit note edit notes/shape --title Shape
+exec rit lint --rule malformed-field
+stdout '^warnings: 0$'
+grep '^title: Shape$' kb/notes/shape.md
+grep '^    resource: https://example.com/jwt$' kb/notes/shape.md
+! grep 'nope' kb/notes/shape.md
+
+okflint kb
+
+-- shape.md --
+---
+type: note
+title: {nope: 1}
+description: About jwt.
+sources: nope
+---
+
+# Observations
+- [fact] jwt
+-- kept.md --
+---
+type: note
+description: About jwt.
+generated: {by: claude-code, at: 2026-07-29T14:30:00Z}
+sources: nope
+title: {nope: 1}
+---
+
+# Observations
+- [fact] jwt
+- [fact] more
