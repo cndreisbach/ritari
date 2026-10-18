@@ -33,12 +33,14 @@ const (
 	UnknownCategory       = "unknown-category"
 	StaleVerification     = "stale-verification"
 	Orphan                = "orphan"
+	MalformedField        = "malformed-field"
+	ReservedCasing        = "reserved-casing"
 )
 
 // Rules lists every rule name, sorted.
 var Rules = []string{
-	DanglingLink, DuplicateTitle, MissingDescription, MissingTitle, MissingType, Orphan,
-	StaleIndex, StaleVerification, TypeDirectoryMismatch, UnknownCategory, UnknownType, Unparseable,
+	DanglingLink, DuplicateTitle, MalformedField, MissingDescription, MissingTitle, MissingType, Orphan,
+	ReservedCasing, StaleIndex, StaleVerification, TypeDirectoryMismatch, UnknownCategory, UnknownType, Unparseable,
 }
 
 // Finding is one problem.
@@ -107,8 +109,15 @@ func findings(b *bundle.Bundle, categories []string) ([]Finding, error) {
 	add := func(sev, rule string, c *bundle.Concept, msg string) {
 		out = append(out, Finding{Severity: sev, Rule: rule, ID: c.ID, Path: c.Path, Message: msg})
 	}
+	casing := func(id, rel string) {
+		if reserved, ok := b.ReservedCollision(rel); ok {
+			out = append(out, Finding{Severity: Warning, Rule: ReservedCasing, ID: id, Path: rel,
+				Message: fmt.Sprintf("%s collides with the reserved %s on this case-insensitive file system; rename it", path.Base(rel), reserved)})
+		}
+	}
 	for _, p := range b.Problems {
 		out = append(out, Finding{Severity: Error, Rule: Unparseable, ID: p.ID, Path: p.Path, Message: p.Err.Error()})
+		casing(p.ID, p.Path)
 	}
 	g := b.Graph()
 	titles := map[string][]*bundle.Concept{}
@@ -123,6 +132,10 @@ func findings(b *bundle.Bundle, categories []string) ([]Finding, error) {
 		}
 		for _, t := range g.Dangling[c.ID] {
 			add(Warning, DanglingLink, c, fmt.Sprintf("links to %s, which does not exist", t))
+		}
+		casing(c.ID, c.Path)
+		for _, m := range fm.Malformed {
+			add(Warning, MalformedField, c, fmt.Sprintf("%s is malformed (%s) and is ignored", m.Key, m.Detail))
 		}
 		if !live {
 			continue

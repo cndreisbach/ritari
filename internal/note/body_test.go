@@ -146,22 +146,41 @@ func TestAddSources(t *testing.T) {
 	assert.Equal(t, Source{ID: "6", Resource: "https://new"}, out[3])
 }
 
-func TestReservedFileLinks(t *testing.T) {
-	for _, href := range []string{"/ideas/index.md", "../ideas/INDEX.md", "/log.md", "index.md#top"} {
+func TestFileLinks(t *testing.T) {
+	for _, href := range []string{"/ideas/index.md", "../ideas/index.md", "/log.md", "index.md#top"} {
 		_, ok := ResolveLink(href, "projects/roadmap")
 		assert.False(t, ok, "%s is not a concept link", href)
 	}
-	p, ok := ReservedLink("../ideas/index.md#x", "projects/roadmap")
+	p, ok := FileLink("../ideas/index.md#x", "projects/roadmap")
 	require.True(t, ok)
 	assert.Equal(t, "ideas/index.md", p)
-	p, ok = ReservedLink("log.md", "a")
+	p, ok = FileLink("log.md", "a")
 	require.True(t, ok)
 	assert.Equal(t, "log.md", p)
-	_, ok = ReservedLink("/ideas/mcp-server.md", "a")
+	_, ok = FileLink("/ideas/mcp-server.md", "a")
 	assert.False(t, ok)
-	_, ok = ReservedLink("https://x/index.md", "a")
+	_, ok = FileLink("https://x/index.md", "a")
 	assert.False(t, ok)
-	_, ok = ReservedLink("../../index.md", "a/b")
+	for href, want := range map[string]string{
+		"../img/diagram.PNG": "img/diagram.PNG",
+		"/sources/call.txt":  "sources/call.txt",
+		"/sources/notes.md":  "sources/notes.md",
+		"/sources":           "sources",
+	} {
+		p, ok = FileLink(href, "projects/roadmap")
+		require.True(t, ok, href)
+		assert.Equal(t, want, p, href)
+		_, ok = ResolveLink(href, "projects/roadmap")
+		assert.False(t, ok, "%s is not a concept link", href)
+	}
+	for _, href := range []string{"/ideas/mcp-server.MD", "../decisions/auth-uses-jwt", "other"} {
+		_, ok = FileLink(href, "projects/roadmap")
+		assert.False(t, ok, "%s names a concept", href)
+	}
+	id, ok := ResolveLink("/ideas/Index.md", "a")
+	require.True(t, ok, "a case variant is an ordinary concept")
+	assert.Equal(t, "ideas/Index", id)
+	_, ok = FileLink("../../index.md", "a/b")
 	assert.False(t, ok, "escapes the bundle")
 
 	assert.Equal(t, []string{"ideas/mcp-server"}, Targets("[i](/ideas/index.md) [m](/ideas/mcp-server.md) [l](../log.md)", "projects/roadmap"))
@@ -188,6 +207,9 @@ func TestBundlePath(t *testing.T) {
 		assert.Equal(t, c.ok, ok, c.href)
 		assert.Equal(t, c.want, got, c.href)
 	}
-	assert.True(t, IsReservedName("Index.MD"))
+	assert.True(t, IsReservedName("index.md"))
+	assert.True(t, IsReservedName("log.md"))
+	assert.False(t, IsReservedName("Index.md"), "reserved names match exactly")
+	assert.False(t, IsReservedName("LOG.MD"))
 	assert.False(t, IsReservedName("indexes.md"))
 }

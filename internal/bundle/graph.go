@@ -13,8 +13,8 @@ type Graph struct {
 	// In maps a concept ID to the concepts linking to it.
 	In map[string][]string
 	// Dangling maps a concept ID to the distinct in-bundle targets it links to
-	// that do not exist: concept IDs, or reserved-file paths (ideas/index.md)
-	// whose file is missing.
+	// that do not exist: concept IDs, or file-link paths (ideas/index.md,
+	// img/diagram.png) whose file is missing.
 	Dangling map[string][]string
 }
 
@@ -35,15 +35,15 @@ func (b *Bundle) Graph() *Graph {
 				g.Dangling[c.ID] = append(g.Dangling[c.ID], t)
 			}
 		}
-		// Reserved-file links are not edges; they dangle only if the file is missing.
+		// File links are not edges; they dangle only if nothing is there.
 		seen := map[string]bool{}
 		for _, l := range note.Links(c.Note.Body) {
-			p, ok := note.ReservedLink(l.Href, c.ID)
+			p, ok := note.FileLink(l.Href, c.ID)
 			if !ok || seen[p] {
 				continue
 			}
 			seen[p] = true
-			if info, err := os.Stat(b.Abs(p)); err != nil || !info.Mode().IsRegular() {
+			if _, err := os.Stat(b.Abs(p)); err != nil {
 				g.Dangling[c.ID] = append(g.Dangling[c.ID], p)
 			}
 		}
