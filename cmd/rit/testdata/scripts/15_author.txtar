@@ -1,0 +1,30 @@
+# Scenario 15: a configured author is a human identity (§9.4, §9.19).
+env RITARI_AGENT=
+
+exec rit config author cndreisbach
+stdout '^success: true$'
+stdout '^status: set$'
+stdout '^author: human:cndreisbach$'
+grep '^author: human:cndreisbach$' config.yaml
+
+exec rit config author human:me@example.com
+stdout '^author: human:me@example.com$'
+grep '^author: human:me@example.com$' config.yaml
+
+exec rit config author process:nightly
+stdout '^author: process:nightly$'
+grep '^author: process:nightly$' config.yaml
+
+exec rit config author
+stdout '^author: process:nightly$'
+
+exec rit config author cndreisbach
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --description 'Stateless auth.' --obs 'decision: Use JWT'
+stdout '^status: created$'
+
+exec rit note read 'Auth uses JWT'
+stdout '^generated_by: human:cndreisbach$'
+stdout '^generated_at: "2026-07-29T12:00:00Z"$'
+
+okflint kb
