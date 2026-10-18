@@ -42,8 +42,8 @@ frontmatter fields where OKF defines one (`type`, `title`, `description`,
 extensions live only in the markdown body and in optional extra frontmatter
 keys, which OKF permits. Any OKF-aware tool MUST be able to read a bundle
 produced by this tool. There is no official OKF reference linter; a bundle
-produced by this tool MUST satisfy OKF §11 conformance and MUST pass `okf lint`
-(<https://github.com/abcubed3/okf>) without errors.
+produced by this tool MUST satisfy OKF §11 conformance and MUST pass
+`okflint validate` (<https://github.com/mattdav/okflint>) without errors.
 
 The following principles are binding design decisions; changing one changes the
 contract.
@@ -1500,6 +1500,7 @@ machine mode.)
     the stale index; `index` rewrites only that file; `index --check` then exits 0.
 14. **Output failures.** Any failing command run in machine mode prints `success: false` and an
     `error` on stdout, a message on stderr, and exits non-zero.
-15. **OKF conformance.** After each scenario above, `okf lint <bundle>` (§1) reports zero errors.
+15. **OKF conformance.** After each scenario above, `okflint validate` (§1) reports zero errors
+    for the bundle, and it reports an error for a bundle with a malformed file.
 16. **Tags.** `--obs "bug: Fixed #42 and color #ff00aa #auth"` yields the tag `auth` only; `#42`
     and `#ff00aa` stay in the content.

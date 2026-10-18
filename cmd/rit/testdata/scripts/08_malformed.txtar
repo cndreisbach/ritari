@@ -20,6 +20,9 @@ stderr '1 conformance error'
 ! exec rit note read notes/broken
 stderr 'frontmatter could not be parsed'
 
+# okflint agrees the bundle is not OKF-conformant.
+! okflint kb
+
 -- broken.md --
 ---
 type: [jwt

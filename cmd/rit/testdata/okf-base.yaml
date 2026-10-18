@@ -1,0 +1,26 @@
+# okflint manifest for the bundles the acceptance tests build
+# (cmd/rit/testdata/scripts). It checks the OKF core plus okflint's hygiene
+# rules, and declares no profile: rit accepts any type, so a profile's
+# declared-types rule (F101) would contradict it. Only errors fail a test;
+# hygiene findings are warnings.
+okf_version: "0.2"
+
+base:
+  name: ritari-acceptance
+  roots:
+    - path: "."
+  reserved_files:
+    index: "index.md"
+    log: "log.md"
+  link_resolution:
+    scope: base
+    external_refs: []
+
+hygiene:
+  broken_links: warn
+  split_candidates: off   # S202 is a statistical signal, noise for tiny test notes
+  reserved_files: off
+  unknown_fields: off
+  okf_v02_shapes: warn
+  legacy_forms: warn
+  stale_content: warn

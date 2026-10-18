@@ -11,13 +11,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      # okf is slow to build (large dependency tree); the acceptance tests skip it in CI.
-      RITARI_SKIP_OKF: "1"
+      # The acceptance tests check every bundle they build with okflint; fail
+      # rather than skip if it is missing.
+      RITARI_REQUIRE_OKFLINT: "1"
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5
         with:
-          install_args: go golangci-lint go:golang.org/x/vuln/cmd/govulncheck
+          install_args: go golangci-lint go:golang.org/x/vuln/cmd/govulncheck uv pipx:okflint
           cache: true
       - name: Test
         run: go test ./...

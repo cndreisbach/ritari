@@ -71,8 +71,8 @@ Workflow:
 ## Tooling
 
 Tools are managed with mise (`mise.toml`): Go, golangci-lint, govulncheck,
-`okf` (the third-party OKF linter used as a conformance check), and `svu`
-(next-version calculation for releases). `mise.toml` also sets environment
+okflint (the third-party OKF linter used as a conformance check, installed
+with uv), and `svu` (next-version calculation for releases). `mise.toml` also sets environment
 variables (`RITARI_PROJECT`).
 
 **Run every command through mise** so the pinned tools and environment are in
@@ -95,9 +95,8 @@ Before finishing any change, `gofmt`, `go vet ./...`, `go test ./...`, and
 ## CI and releases
 
 - `.github/workflows/ci.yml` runs on every PR: `go test ./...`,
-  `golangci-lint`, and `govulncheck` on Linux. It sets `RITARI_SKIP_OKF=1`, so
-  the acceptance tests skip `okf lint` there (okf takes a long time to build).
-  Run the full suite locally (with okf installed) before merging.
+  `golangci-lint`, and `govulncheck` on Linux, with okflint installed and
+  `RITARI_REQUIRE_OKFLINT=1` so a missing okflint fails the run.
 - `.github/workflows/release.yml` runs on every push to `main`: the CI job,
   then the release. The next version comes from the Conventional Commits since
   the last `v*` tag (via `svu`): a breaking change bumps major, `feat` bumps
@@ -126,7 +125,10 @@ Before finishing any change, `gofmt`, `go vet ./...`, `go test ./...`, and
   the writer lock, testify for tests, testscript for acceptance tests.
 - **Tests:** every package has unit tests with testify. CLI behavior is tested
   end to end in `cmd/rit/testdata/scripts`; each scenario ends with
-  `okflint <bundle>`, which runs `okf lint` (skipped if it isn't installed).
+  `okflint <bundle>`, which runs `okflint validate` against
+  `cmd/rit/testdata/okf-base.yaml` and fails on OKF errors (warnings are
+  logged only). It is skipped if okflint isn't installed, unless
+  `RITARI_REQUIRE_OKFLINT` is set; `RITARI_SKIP_OKFLINT` skips it outright.
   Acceptance tests pin the clock with `RITARI_TEST_NOW` (RFC 3339) and the actor
   with `RITARI_AGENT`. `RITARI_TEST_NOW` is a test hook, not a user feature.
   testscript can't take multi-line quoted arguments; use `stdin <file>` with
