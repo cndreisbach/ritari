@@ -11,6 +11,11 @@ uv = "0.12.23"
 description = "Build rit into bin/"
 run = "go build -o bin/rit ./cmd/rit"
 
+[tasks.setup]
+description = "Build rit and register kb/ as the ritari project (safe to re-run)"
+depends = ["build"]
+run = "./bin/rit -p ritari types >/dev/null 2>&1 || ./bin/rit project add ritari ./kb"
+
 [tasks.test]
 description = "Run tests"
 run = "go test ./..."

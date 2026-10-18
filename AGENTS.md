@@ -10,6 +10,10 @@ Tasks, ideas, the roadmap, and design decisions for this project live in a
 Ritari knowledge base at `kb/`, registered as the project `ritari`. Use `rit`
 to read and update it as you work; the installed `ritari*` skills explain how.
 
+- **First time on a machine** (including a cloud session), run `mise install`
+  and then `mise run setup`. It builds `bin/rit` and registers `kb/` as the
+  `ritari` project, and is safe to re-run. Use `mise exec -- ./bin/rit …`
+  where no installed `rit` exists.
 - **Run `rit` through mise** (`mise exec -- rit …`). `mise.toml` sets
   `RITARI_PROJECT=ritari`; without it, `rit` uses the registry's default
   project, which is the user's personal knowledge base, not this one.
@@ -81,6 +85,7 @@ place: a defined task with `mise run <task>`, anything else with
 
 ```bash
 mise install                          # install the pinned tools
+mise run setup                        # build rit and register kb/ as the ritari project
 mise run build                        # go build -o bin/rit ./cmd/rit (bin/ is git-ignored)
 mise run test                         # go test ./...
 mise run tidy                         # go mod tidy
