@@ -1,0 +1,34 @@
+# The complete list of types this knowledge base recognizes.
+# It replaces the built-in types rather than adding to them.
+# `note` and `daily` are always present, even if omitted here.
+types:
+  - name: decision
+    dir: decisions
+    summary: A choice made, with its rationale.
+  - name: note
+    dir: notes
+    summary: General knowledge that does not fit a more specific type.
+  - name: idea
+    dir: ideas
+    summary: A possible feature or direction, not yet committed to.
+  - name: task
+    dir: tasks
+    summary: Work in progress, with state.
+  - name: person
+    dir: people
+    summary: A human and what you know about them.
+  - name: project
+    dir: projects
+    summary: An ongoing effort.
+  - name: meeting
+    dir: meetings
+    summary: A meeting and what came out of it.
+  - name: reference
+    dir: references
+    summary: A pointer to an external resource.
+  - name: preference
+    dir: preferences
+    summary: How the user wants things done.
+  - name: daily
+    dir: daily
+    summary: "A day's narrative: what came up, and what it touched."
