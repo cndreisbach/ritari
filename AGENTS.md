@@ -4,6 +4,42 @@ Ritari (`rit`) is a long-term memory CLI for AI agents. It stores a knowledge
 base as an OKF v0.2 bundle (plain markdown files with YAML frontmatter) and
 computes everything else from those files. Written in Go.
 
+## Project knowledge base (use Ritari while working on Ritari)
+
+Tasks, ideas, the roadmap, and design decisions for this project live in a
+Ritari knowledge base at `kb/`, registered as the project `ritari`. Use `rit`
+to read and update it as you work; the installed `ritari*` skills explain how.
+
+- **Always pass `-p ritari`** (or set `RITARI_PROJECT=ritari`). The registry's
+  default project is the user's personal knowledge base, not this one; a bare
+  `rit` command writes there.
+- Never edit `kb/index.md`, `kb/log.md`, or any `kb/*/index.md` by hand. Edit
+  notes through `rit` so links, sources, and indexes stay consistent.
+- `kb/ritari.yaml` adds an `idea` type to the defaults. Run
+  `rit -p ritari types` to see them all.
+
+| What | Where | How |
+| --- | --- | --- |
+| Roadmap | `projects/roadmap` | A `project` note that links to every idea with `includes` relations. |
+| Ideas | `ideas/` | `--type idea`, `--meta state=proposed` (then `accepted`, `rejected`, or `done`), `--rel "part_of: Roadmap"`. Add new ones to the roadmap with `rit -p ritari note write --title Roadmap --rel "includes: <Idea>"`. |
+| Tasks | `tasks/` | `--type task` with `state` in frontmatter and observations (see the `ritari-tasks` skill). An accepted idea becomes one or more tasks linked to it with `implements`. |
+| Decisions | `decisions/` | `--type decision` for design choices, linking to the spec section or idea they affect. |
+| Session log | `daily/` | `rit -p ritari daily` at the start of a session to pick up open threads, and `--note` / `--obs "open-thread: …"` before finishing. |
+
+Workflow:
+
+1. At the start of a session, read `rit -p ritari daily` and look for open
+   work: `rit -p ritari search --type task --meta 'state=open|blocked'`.
+2. Before starting multi-step work, create or find its task note and keep it
+   current as you go.
+3. Record design decisions as you make them, and new ideas when they come up.
+4. Search before writing (`rit -p ritari search …`). Writing to an existing
+   title adds to that note.
+5. Before finishing, update the task's state, write the daily note, and run
+   `rit -p ritari lint`.
+6. Commit `kb/` changes with the code they relate to, or on their own as
+   `docs(kb): …`.
+
 ## Source of truth
 
 - **`SPECIFICATION.md` is the contract.** File formats, CLI flags, output keys,
@@ -115,7 +151,7 @@ commit:
 - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`,
   `chore`, `style`, `revert`.
 - Scopes are optional; use a package or area name when it helps: `note`,
-  `bundle`, `vocab`, `search`, `lint`, `cli`, `skills`, `registry`, `spec`.
+  `bundle`, `vocab`, `search`, `lint`, `cli`, `skills`, `registry`, `spec`, `kb`.
 - Breaking changes: add `!` after the type/scope (`feat(cli)!: …`) and a
   `BREAKING CHANGE:` footer describing the break.
 - One logical change per commit. Keep the subject under ~72 characters.
