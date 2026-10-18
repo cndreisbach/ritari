@@ -1,0 +1,19 @@
+# Links to index.md and log.md are links to those files, not dangling concept links.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Auth uses JWT' --type decision --description d --obs 'decision: x'
+exec rit note write --title Overview --description d --content 'All [decisions](/decisions/index.md), the [log](../log.md), and [JWT](/decisions/auth-uses-jwt.md).'
+
+exec rit lint --rule dangling-link
+stdout '^warnings: 0$'
+exec rit note read notes/overview
+stdout '^links: \[decisions/auth-uses-jwt\]$'
+exec rit context notes/overview
+stdout '^count: 2$'
+
+# A link to the index of a directory with no concepts does dangle.
+exec rit note write --title Overview --obs 'see: [Ideas](/ideas/index.md)'
+exec rit lint --rule dangling-link
+stdout '^warnings: 1$'
+stdout '^message: links to ideas/index.md, which does not exist$'
+
+okflint kb

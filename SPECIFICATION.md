@@ -299,13 +299,22 @@ Link classification for a destination `href`:
   with `/` is relative to the bundle root; otherwise it is relative to the
   directory of the linking note. Normalize (`.` and `..` segments). If the result
   escapes the bundle root, it has no target. If it lies under `sources/` (raw
-  material, §3.8), it has no target. Otherwise the target concept ID is the
-  normalized path minus a trailing `.md`.
+  material, §3.8), it has no target. If its last segment is a reserved file name
+  (`index.md` or `log.md`, matched as in §3.1), it is a **reserved-file link**:
+  it names that file, not a concept, and has no target. Otherwise the target
+  concept ID is the normalized path minus a trailing `.md`.
 
 The **graph** has a directed edge from each concept to each distinct in-bundle
 target. Edges to targets that do not exist are **dangling** and are tracked
 separately (they appear in `lint`, not in traversal). The tool MUST tolerate
 dangling links everywhere — forward references are cheap and intended.
+
+A reserved-file link (a link to a directory listing or a change log, which OKF
+§8–9 define) is never an edge: it doesn't count for traversal, `context`,
+`links` in `note read`, or `orphan`. It is dangling only if no file exists at
+its normalized path, for example a link to the `index.md` of a directory that
+no longer holds any concepts. A dangling reserved-file link is reported by its
+bundle-relative path including the file name (`ideas/index.md`).
 
 ### 3.7 Sources and source references
 
@@ -824,7 +833,7 @@ bundle over a missing optional field.
 | `missing-description` | warning | `description` blank (the note appears bare in listings). |
 | `type-directory-mismatch` | warning | The note's directory differs from the directory its type implies. Message includes the fix: the move command with the proposed destination `<expected-dir>/<current-basename>`. |
 | `duplicate-title` | warning | Two or more notes share a title (case-insensitive, trimmed; title falls back to the last path segment). One finding per involved note naming the others. |
-| `dangling-link` | warning | A note links to an in-bundle target that does not exist (one finding per distinct (note, target) pair). Message: `links to <target>, which does not exist`. |
+| `dangling-link` | warning | A note links to an in-bundle target that does not exist, or a reserved-file link points at a missing file (§3.6) (one finding per distinct (note, target) pair). Message: `links to <target>, which does not exist`. |
 | `stale-index` | warning | A generated listing is out of date or should be removed; the path is the index file. Message points at the regenerate command. |
 | `unknown-category` | warning | Only when an allowed-category list is supplied: an observation category outside it (case-insensitive). Off by default; categories are open-ended. |
 | `stale-verification` | warning | The note has `verified` entries and `generated.at` is later than the newest well-formed `verified[].at`. Never fires for unverified notes. |

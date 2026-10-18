@@ -145,3 +145,49 @@ func TestAddSources(t *testing.T) {
 	assert.Len(t, out, 4)
 	assert.Equal(t, Source{ID: "6", Resource: "https://new"}, out[3])
 }
+
+func TestReservedFileLinks(t *testing.T) {
+	for _, href := range []string{"/ideas/index.md", "../ideas/INDEX.md", "/log.md", "index.md#top"} {
+		_, ok := ResolveLink(href, "projects/roadmap")
+		assert.False(t, ok, "%s is not a concept link", href)
+	}
+	p, ok := ReservedLink("../ideas/index.md#x", "projects/roadmap")
+	require.True(t, ok)
+	assert.Equal(t, "ideas/index.md", p)
+	p, ok = ReservedLink("log.md", "a")
+	require.True(t, ok)
+	assert.Equal(t, "log.md", p)
+	_, ok = ReservedLink("/ideas/mcp-server.md", "a")
+	assert.False(t, ok)
+	_, ok = ReservedLink("https://x/index.md", "a")
+	assert.False(t, ok)
+	_, ok = ReservedLink("../../index.md", "a/b")
+	assert.False(t, ok, "escapes the bundle")
+
+	assert.Equal(t, []string{"ideas/mcp-server"}, Targets("[i](/ideas/index.md) [m](/ideas/mcp-server.md) [l](../log.md)", "projects/roadmap"))
+
+	rels := Relations("- see [Ideas](/ideas/index.md)\n", "projects/roadmap")
+	require.Len(t, rels, 1)
+	assert.Equal(t, "", rels[0].Target, "a reserved file is not a relation target")
+}
+
+func TestBundlePath(t *testing.T) {
+	cases := []struct {
+		href, from, want string
+		ok               bool
+	}{
+		{"../sources/call.txt", "notes/a", "sources/call.txt", true},
+		{"/decisions/a.md#why", "x", "decisions/a.md", true},
+		{"other", "notes/a", "notes/other", true},
+		{"../../x.md", "notes/a", "", false},
+		{"https://x", "a", "", false},
+		{"#frag", "a", "", false},
+	}
+	for _, c := range cases {
+		got, ok := BundlePath(c.href, c.from)
+		assert.Equal(t, c.ok, ok, c.href)
+		assert.Equal(t, c.want, got, c.href)
+	}
+	assert.True(t, IsReservedName("Index.MD"))
+	assert.False(t, IsReservedName("indexes.md"))
+}

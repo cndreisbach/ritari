@@ -1,6 +1,8 @@
 package bundle
 
 import (
+	"os"
+
 	"github.com/cndreisbach/ritari/internal/note"
 )
 
@@ -11,7 +13,8 @@ type Graph struct {
 	// In maps a concept ID to the concepts linking to it.
 	In map[string][]string
 	// Dangling maps a concept ID to the distinct in-bundle targets it links to
-	// that do not exist.
+	// that do not exist: concept IDs, or reserved-file paths (ideas/index.md)
+	// whose file is missing.
 	Dangling map[string][]string
 }
 
@@ -30,6 +33,18 @@ func (b *Bundle) Graph() *Graph {
 				g.In[t] = append(g.In[t], c.ID)
 			case !files[t]: // an unparseable target exists but is not traversable
 				g.Dangling[c.ID] = append(g.Dangling[c.ID], t)
+			}
+		}
+		// Reserved-file links are not edges; they dangle only if the file is missing.
+		seen := map[string]bool{}
+		for _, l := range note.Links(c.Note.Body) {
+			p, ok := note.ReservedLink(l.Href, c.ID)
+			if !ok || seen[p] {
+				continue
+			}
+			seen[p] = true
+			if info, err := os.Stat(b.Abs(p)); err != nil || !info.Mode().IsRegular() {
+				g.Dangling[c.ID] = append(g.Dangling[c.ID], p)
 			}
 		}
 	}

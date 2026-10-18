@@ -89,7 +89,7 @@ func TestDelete(t *testing.T) {
 func TestMove(t *testing.T) {
 	root := seed(t)
 	// Give the moved note a relative link and a self-link.
-	_, err := Edit(root, testEnv(), "decisions/auth-uses-jwt", EditOpts{Op: "append", Content: "Back to [login](../projects/login-flow.md) and [me](auth-uses-jwt.md)."})
+	_, err := Edit(root, testEnv(), "decisions/auth-uses-jwt", EditOpts{Op: "append", Content: "Back to [login](../projects/login-flow.md) and [me](auth-uses-jwt.md). See [all](index.md) and [raw](../sources/call.txt)."})
 	require.NoError(t, err)
 
 	_, err = Move(root, testEnv(), "decisions/auth-uses-jwt", "decisions/auth-uses-jwt")
@@ -106,6 +106,7 @@ func TestMove(t *testing.T) {
 	assert.Contains(t, login, "- uses [Auth uses JWT](/references/auth-uses-jwt.md)")
 	moved := readFile(t, root, "references/auth-uses-jwt.md")
 	assert.Contains(t, moved, "Back to [login](/projects/login-flow.md) and [me](/references/auth-uses-jwt.md).")
+	assert.Contains(t, moved, "See [all](/decisions/index.md) and [raw](/sources/call.txt).", "reserved-file and sources links keep pointing where they did")
 	assert.Contains(t, moved, "- depends_on [User Database Schema](/notes/user-database-schema.md)")
 	_, err = os.Stat(filepath.Join(root, "decisions", "index.md"))
 	assert.True(t, os.IsNotExist(err))

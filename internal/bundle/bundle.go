@@ -98,8 +98,7 @@ func Open(root string) (*Bundle, error) {
 
 // IsConceptFile reports whether a file name is a concept (not reserved).
 func IsConceptFile(name string) bool {
-	lower := strings.ToLower(name)
-	return strings.HasSuffix(lower, ".md") && lower != "index.md" && lower != "log.md"
+	return strings.HasSuffix(strings.ToLower(name), ".md") && !note.IsReservedName(name)
 }
 
 func idOf(rel string) string {

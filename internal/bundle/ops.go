@@ -223,12 +223,11 @@ func Move(root string, env Env, ref, dest string) (MoveResult, error) {
 		// The moved note's own relative links would break: make them absolute,
 		// and point any self-links at the new location.
 		if err := rewriteLinks(b.Abs(newRel), func(href string) (string, bool) {
-			target, ok := note.ResolveLink(href, c.ID)
-			switch {
-			case ok && target == c.ID:
+			if target, ok := note.ResolveLink(href, c.ID); ok && target == c.ID {
 				return "/" + newID + ".md" + fragment(href), true
-			case ok && !strings.HasPrefix(href, "/"):
-				return "/" + target + ".md" + fragment(href), true
+			}
+			if p, ok := note.BundlePath(href, c.ID); ok && !strings.HasPrefix(href, "/") {
+				return "/" + p + fragment(href), true
 			}
 			return "", false
 		}); err != nil {

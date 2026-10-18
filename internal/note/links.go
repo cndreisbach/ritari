@@ -182,30 +182,54 @@ func Classify(href string) LinkKind {
 	return InBundle
 }
 
-// ResolveLink resolves an in-bundle destination to a concept ID. ok is false
-// for external and fragment links, links escaping the bundle, and links into
-// sources/.
-func ResolveLink(href, fromID string) (string, bool) {
+// BundlePath resolves an in-bundle destination to a normalized,
+// bundle-relative file path, as written (extension included). ok is false for
+// external and fragment links, empty destinations, and links escaping the
+// bundle.
+func BundlePath(href, fromID string) (string, bool) {
 	if Classify(href) != InBundle {
 		return "", false
 	}
 	if i := strings.IndexByte(href, '#'); i >= 0 {
 		href = href[:i]
 	}
-	if href == "" {
+	if href == "" || escapes(href, fromID) {
 		return "", false
 	}
-	var p string
-	if strings.HasPrefix(href, "/") {
-		p = strings.TrimPrefix(href, "/")
-	} else {
+	p := href
+	if !strings.HasPrefix(href, "/") {
 		p = path.Join(path.Dir(fromID), href)
 	}
-	if escapes(href, fromID) {
+	p = strings.TrimPrefix(path.Clean("/"+p), "/")
+	if p == "" || p == "." {
 		return "", false
 	}
-	p = strings.TrimPrefix(path.Clean("/"+p), "/")
-	if p == "" || p == "." || p == "sources" || strings.HasPrefix(p, "sources/") {
+	return p, true
+}
+
+// IsReservedName reports whether a file name is one of OKF's reserved files
+// (index.md, log.md), which are never concepts.
+func IsReservedName(name string) bool {
+	lower := strings.ToLower(name)
+	return lower == "index.md" || lower == "log.md"
+}
+
+// ReservedLink reports whether a destination is a reserved-file link (§3.6),
+// returning the reserved file's bundle-relative path.
+func ReservedLink(href, fromID string) (string, bool) {
+	p, ok := BundlePath(href, fromID)
+	if !ok || !IsReservedName(path.Base(p)) {
+		return "", false
+	}
+	return p, true
+}
+
+// ResolveLink resolves an in-bundle destination to a concept ID. ok is false
+// for external and fragment links, links escaping the bundle, links into
+// sources/, and reserved-file links.
+func ResolveLink(href, fromID string) (string, bool) {
+	p, ok := BundlePath(href, fromID)
+	if !ok || p == "sources" || strings.HasPrefix(p, "sources/") || IsReservedName(path.Base(p)) {
 		return "", false
 	}
 	if strings.HasSuffix(strings.ToLower(p), ".md") {
