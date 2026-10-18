@@ -107,3 +107,17 @@ func TestGraphReservedFileLinks(t *testing.T) {
 	assert.Equal(t, []string{"ideas/index.md"}, g.Dangling["projects/p"], "only the missing reserved file dangles")
 	assert.Empty(t, g.In["decisions/index"])
 }
+
+func TestGraphFileLinks(t *testing.T) {
+	b := openFiles(t, map[string]string{
+		"img/diagram.png":  "png",
+		"sources/call.txt": "raw",
+		"notes/a.md":       "---\ntype: note\n---\n",
+		"notes/p.md": "---\ntype: note\n---\n" +
+			"[d](/img/diagram.png) [d2](../img/diagram.png#x) [call](/sources/call.txt) [gone](/sources/gone.txt) " +
+			"[pic](missing.jpg) [a](a) [b](/notes/b)\n",
+	})
+	g := b.Graph()
+	assert.Equal(t, []string{"notes/a"}, g.Out["notes/p"], "file links are not edges")
+	assert.Equal(t, []string{"notes/b", "sources/gone.txt", "notes/missing.jpg"}, g.Dangling["notes/p"], "only missing files dangle")
+}

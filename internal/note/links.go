@@ -213,22 +213,32 @@ func IsReservedName(name string) bool {
 	return name == "index.md" || name == "log.md"
 }
 
-// ReservedLink reports whether a destination is a reserved-file link (§3.6),
-// returning the reserved file's bundle-relative path.
-func ReservedLink(href, fromID string) (string, bool) {
+// FileLink reports whether a destination is a file link (§3.6): one that names
+// a file rather than a concept, because it lies under sources/, names a
+// reserved file, or has an extension other than .md. It returns the file's
+// bundle-relative path.
+func FileLink(href, fromID string) (string, bool) {
 	p, ok := BundlePath(href, fromID)
-	if !ok || !IsReservedName(path.Base(p)) {
+	if !ok || !isFilePath(p) {
 		return "", false
 	}
 	return p, true
 }
 
+func isFilePath(p string) bool {
+	if p == "sources" || strings.HasPrefix(p, "sources/") {
+		return true
+	}
+	base := path.Base(p)
+	ext := path.Ext(base)
+	return IsReservedName(base) || ext != "" && !strings.EqualFold(ext, ".md")
+}
+
 // ResolveLink resolves an in-bundle destination to a concept ID. ok is false
-// for external and fragment links, links escaping the bundle, links into
-// sources/, and reserved-file links.
+// for external and fragment links, links escaping the bundle, and file links.
 func ResolveLink(href, fromID string) (string, bool) {
 	p, ok := BundlePath(href, fromID)
-	if !ok || p == "sources" || strings.HasPrefix(p, "sources/") || IsReservedName(path.Base(p)) {
+	if !ok || isFilePath(p) {
 		return "", false
 	}
 	if strings.HasSuffix(strings.ToLower(p), ".md") {

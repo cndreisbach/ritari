@@ -1,4 +1,5 @@
-# Links to index.md and log.md are links to those files, not dangling concept links.
+# Links to index.md, log.md, images, and sources are links to those files,
+# not dangling concept links (§3.6).
 exec rit project init work $WORK/kb --default
 exec rit note write --title 'Auth uses JWT' --type decision --description d --obs 'decision: x'
 exec rit note write --title Overview --description d --content 'All [decisions](/decisions/index.md), the [log](../log.md), and [JWT](/decisions/auth-uses-jwt.md).'
@@ -16,4 +17,24 @@ exec rit lint --rule dangling-link
 stdout '^warnings: 1$'
 stdout '^message: links to ideas/index.md, which does not exist$'
 
+
+# Images and raw sources count when they exist and dangle when they don't.
+mkdir kb/img
+cp diagram.png kb/img/diagram.png
+cp call.txt kb/sources/call.txt
+exec rit note write --title Overview --obs 'see: [Diagram](/img/diagram.png) and [call](/sources/call.txt)'
+exec rit lint --rule dangling-link
+stdout '^warnings: 1$'
+exec rit note read notes/overview
+stdout '^links: \[decisions/auth-uses-jwt\]$'
+rm kb/sources/call.txt
+exec rit lint --rule dangling-link
+stdout '^warnings: 2$'
+stdout '^message: links to sources/call.txt, which does not exist$'
+
 okflint kb
+
+-- diagram.png --
+not really a png
+-- call.txt --
+Raw call notes.
