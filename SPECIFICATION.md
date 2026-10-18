@@ -997,7 +997,11 @@ The actor string stamped into `generated.by` and `verified[].by`:
    - `cursor`: `CURSOR_AGENT`
    - `codex`: `CODEX_THREAD_ID`, or `CODEX_CI` equal to `1`, or `CODEX_SANDBOX`
 2. If an agent was detected, the actor is its bare name (`claude-code`, …).
-3. Otherwise the registry's configured `author` if non-empty.
+3. Otherwise the registry's configured `author`, normalized: a value with no `:`
+   in it is a person, so `human:` is prepended (`cndreisbach` becomes
+   `human:cndreisbach`); a value that already carries a prefix (`human:me@x`,
+   `process:nightly`) is used trimmed and unchanged, and a dangling prefix such
+   as `human:` counts as unset.
 4. Otherwise `human:<email>` from the VCS user email (`git config user.email`) if
    obtainable.
 5. Otherwise `human:<username>` from the operating system's current user name
@@ -1301,7 +1305,10 @@ is to start from the current set and edit it.
 
 `config author [VALUE]`: with no value prints the configured author (machine: `success`,
 `author`, omitted when unset); with a value stores it in the registry (`success`,
-`status: set`, `author`). Values are conventionally `human:<id>`.
+`status: set`, `author`). A stored value is normalized as in §9.4: a bare value
+(`cndreisbach`) becomes `human:cndreisbach`, while a value that already has a
+prefix (`human:<id>`, `process:<id>`) is stored as written. The reported `author`
+is the stored value.
 
 ### 9.20 `skills install`
 
@@ -1533,6 +1540,10 @@ machine mode.)
     the stale index; `index` rewrites only that file; `index --check` then exits 0.
 14. **Output failures.** Any failing command run in machine mode prints `success: false` and an
     `error` on stdout, a message on stderr, and exits non-zero.
+15. **Author identity.** With no agent detected, `config author cndreisbach` reports and stores
+    `human:cndreisbach`; `config author human:me@example.com` and `config author process:nightly`
+    are stored as written; a note written under the bare author carries `generated.by:
+    human:cndreisbach`.
 15. **OKF conformance.** After each scenario above, `okflint validate` (§1) reports zero errors
     for the bundle, and it reports an error for a bundle with a malformed file.
 16. **Tags.** `--obs "bug: Fixed #42 and color #ff00aa #auth"` yields the tag `auth` only; `#42`
