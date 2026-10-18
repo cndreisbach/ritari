@@ -9,7 +9,7 @@ sources:
   - id: "2"
     resource: https://openknowledge.ai/docs/plugins/okf
     title: OpenKnowledge OKF plugin rules
-generated: {by: claude-code, at: 2026-10-18T17:52:30Z}
+generated: {by: claude-code, at: 2026-10-18T18:38:31Z}
 priority: medium
 state: proposed
 ---
@@ -24,6 +24,7 @@ state: proposed
 - [context] stale-index already catches hand edits to generated indexes; these rules also cover bundles rit did not write [^1] [^2]
 - [decision] Skip OpenKnowledge's project-no-mdx rule; Ritari will never use MDX [^1] [^2]
 - [open-thread] rit matches index.md and log.md case-insensitively (SPECIFICATION.md 3.1), so it treats Index.md as reserved while OKF tools treat it as a concept missing a type; switch to exact matching? [^1] [^2]
+- [decision] Resolved the casing open thread: exact matching, with reserved-casing as a lint warning on case-insensitive file systems (tasks/match-reserved-file-names-exactly) [^1]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)

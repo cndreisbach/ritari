@@ -12,7 +12,7 @@ sources:
   - id: "3"
     resource: https://openknowledge.ai/docs/plugins/okf
     title: OpenKnowledge OKF plugin rules
-generated: {by: claude-code, at: 2026-10-18T17:52:23Z}
+generated: {by: claude-code, at: 2026-10-18T18:38:31Z}
 priority: medium
 state: proposed
 ---
@@ -25,6 +25,7 @@ state: proposed
 - [idea] Every provenance timestamp (generated.at, verified[].at, stale_after, sources[].last_modified, usage_window bounds) must be an ISO 8601 datetime with an explicit UTC offset; flag bare dates and offset-less datetimes [^3]
 - [idea] Check the shape of usage_window, and of title, description, resource, and tags (OpenKnowledge's frontmatter-recommended) [^3]
 - [open-thread] rit makes a known field with the wrong shape (title: {a: b}) unparseable, an error that hides the note, but OKF only requires parseable YAML and a type; should wrong shapes be warnings instead? [^3]
+- [decision] Resolved the shape open thread: malformed known fields become warnings (tasks/treat-malformed-frontmatter-fields-as-warnings) [^1]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)

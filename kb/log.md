@@ -22,3 +22,5 @@
 * **Create**: [OKF structure lint rules](/ideas/okf-structure-lint-rules.md)
 * **Update**: [Provenance and lifecycle lint rules](/ideas/provenance-and-lifecycle-lint-rules.md)
 * **Update**: [OKF structure lint rules](/ideas/okf-structure-lint-rules.md)
+* **Create**: [Match reserved file names exactly](/tasks/match-reserved-file-names-exactly.md)
+* **Create**: [Treat malformed frontmatter fields as warnings](/tasks/treat-malformed-frontmatter-fields-as-warnings.md)
