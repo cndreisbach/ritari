@@ -5,6 +5,10 @@ golangci-lint = "2.12.2"
 "go:github.com/abcubed3/okf/cmd/okf" = "0.1.7"
 svu = "3.4.1"
 
+[tasks.build]
+description = "Build rit into bin/"
+run = "go build -o bin/rit ./cmd/rit"
+
 [tasks.test]
 description = "Run tests"
 run = "go test ./..."
@@ -12,3 +16,6 @@ run = "go test ./..."
 [tasks.tidy]
 description = "Tidy modules"
 run = "go mod tidy"
+
+[env]
+RITARI_PROJECT = "ritari"
