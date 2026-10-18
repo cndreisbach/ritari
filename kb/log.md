@@ -18,3 +18,7 @@
 * **Create**: [Check links to non-markdown files by existence](/tasks/check-links-to-non-markdown-files-by-existence.md)
 * **Create**: [Test against the upstream OKF example bundles](/tasks/test-against-the-upstream-okf-example-bundles.md)
 * **Update**: [Check links to non-markdown files by existence](/tasks/check-links-to-non-markdown-files-by-existence.md)
+* **Create**: [Screen notes for hidden instructions](/ideas/screen-notes-for-hidden-instructions.md)
+* **Create**: [OKF structure lint rules](/ideas/okf-structure-lint-rules.md)
+* **Update**: [Provenance and lifecycle lint rules](/ideas/provenance-and-lifecycle-lint-rules.md)
+* **Update**: [OKF structure lint rules](/ideas/okf-structure-lint-rules.md)
