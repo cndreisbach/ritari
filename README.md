@@ -87,13 +87,13 @@ tasks, ingesting documents, consolidating what it learned, and cleaning up lint
 findings. Install them for your agent:
 
 ```bash
-rit skills install                 # ~/.agents/skills
-rit skills install --agent claude  # ~/.claude/skills
+rit install skills                 # ~/.agents/skills
+rit install skills --agent claude  # ~/.claude/skills
 ```
 
 Run it again after upgrading. If an earlier version installed a `ritari-*`
-skill that this one no longer ships, `rit skills install` warns about it, and
-`rit skills install --cleanup` removes it.
+skill that this one no longer ships, `rit install skills` warns about it, and
+`rit install skills --cleanup` removes it.
 
 When `rit` runs without a terminal, as it does under an agent, it prints flat
 YAML that is easy to parse. In a terminal it prints readable text. Use
@@ -124,7 +124,7 @@ is stored as `human:you@example.com`, so a person is never mistaken for an agent
 | `rit index` | Regenerate the `index.md` listings |
 | `rit types` | Show the note types this knowledge base uses |
 | `rit project` | Manage registered knowledge bases |
-| `rit skills install` | Install the agent skills |
+| `rit install skills` | Install the agent skills |
 
 Run `rit <command> --help` for flags. A flag value that starts with `-` must
 be written as `--flag=value`, for example `--content="- [ ] write tests"`.

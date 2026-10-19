@@ -228,12 +228,17 @@ func (cmd *ConfigAuthorCmd) Run(c *Ctx) error {
 	return c.Emit(output.New().Set("success", true).Set("status", "set").Set("author", r.Author))
 }
 
-// SkillsCmd groups skill subcommands.
+// InstallCmd groups the commands that install agent integrations.
+type InstallCmd struct {
+	Skills SkillsInstallCmd `cmd:"" help:"Install the agent skills."`
+}
+
+// SkillsCmd keeps the old `skills install` spelling working.
 type SkillsCmd struct {
 	Install SkillsInstallCmd `cmd:"" help:"Install the agent skills."`
 }
 
-// SkillsInstallCmd is `skills install`.
+// SkillsInstallCmd is `install skills` (also `skills install`).
 type SkillsInstallCmd struct {
 	Agent   string `help:"Target agent: agents (~/.agents/skills) or claude (~/.claude/skills)."`
 	Dir     string `help:"Install into this directory instead."`
@@ -241,7 +246,7 @@ type SkillsInstallCmd struct {
 	Cleanup bool   `help:"Remove installed ritari-* skills this version no longer ships."`
 }
 
-// Run executes `skills install`.
+// Run executes `install skills`.
 func (cmd *SkillsInstallCmd) Run(c *Ctx) error {
 	if cmd.Agent != "" && cmd.Dir != "" {
 		return errors.New("--agent and --dir are alternatives; pass one")

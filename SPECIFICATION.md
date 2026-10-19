@@ -942,10 +942,10 @@ nothing nests.
 | `types` | list the vocabulary (or emit it as config) |
 | `project list/init/add/remove/default` | manage the project registry |
 | `config author` | get/set the configured actor identity |
-| `skills install` | install the agent skills |
+| `install skills` | install the agent skills |
 | `version` | print the version |
 
-All commands except `project`, `config`, `skills`, and `version` operate on the
+All commands except `project`, `config`, `install`, and `version` operate on the
 **active project's bundle**: resolved as `--project`, else `RITARI_PROJECT`, else the
 registry default (an empty `RITARI_PROJECT` counts as unset). If none can be
 determined: `no project specified and no default set (try: rit project init <name>
@@ -1317,11 +1317,14 @@ is to start from the current set and edit it.
 prefix (`human:<id>`, `process:<id>`) is stored as written. The reported `author`
 is the stored value.
 
-### 9.20 `skills install`
+### 9.20 `install skills`
 
 ```
-rit skills install [--agent agents|claude] [--dir PATH] [--force] [--cleanup]
+rit install skills [--agent agents|claude] [--dir PATH] [--force] [--cleanup]
 ```
+
+`rit skills install`, the original spelling, is accepted as a hidden alias with the same
+flags and output.
 
 Writes each embedded skill (§11) to `<dir>/<skill-name>/SKILL.md`. Default target is
 `~/.agents/skills` (agent `agents`); agent `claude` is `~/.claude/skills`. `--agent` and
@@ -1415,7 +1418,7 @@ Files are written with `\n` line endings on every platform; `\r\n` is accepted o
 ## 11. Agent skills
 
 The tool carries, inside the executable, a fixed set of **agent skills**: markdown
-documents that teach an agent to drive the tool, installed by `skills install` (§9.20).
+documents that teach an agent to drive the tool, installed by `install skills` (§9.20).
 Each skill document begins with YAML frontmatter containing `name` (the skill name, which is
 also its install directory name) and `description` (one line stating what it is for and when
 to use it), followed by guidance. The skills are part of the product: **any behavior change

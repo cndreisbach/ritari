@@ -70,7 +70,7 @@ Workflow:
 | `internal/output` | Machine-mode flat YAML document streams |
 | `internal/yamlx` | YAML scalar quoting that round-trips exactly |
 | `internal/cli` | kong command tree; text and machine output |
-| `internal/skills` | Embedded agent skills, installed by `rit skills install` |
+| `internal/skills` | Embedded agent skills, installed by `rit install skills` |
 
 ## Tooling
 

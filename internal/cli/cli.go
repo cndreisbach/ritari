@@ -35,7 +35,8 @@ type CLI struct {
 	Types   TypesCmd   `cmd:"" help:"List the type vocabulary."`
 	Project ProjectCmd `cmd:"" help:"Manage the project registry."`
 	Config  ConfigCmd  `cmd:"" help:"Get or set configuration."`
-	Skills  SkillsCmd  `cmd:"" help:"Install the agent skills."`
+	Install InstallCmd `cmd:"" help:"Install agent integrations."`
+	Skills  SkillsCmd  `cmd:"" hidden:"" help:"Old spelling of install skills."`
 	Version VersionCmd `cmd:"" help:"Print the version."`
 }
 
