@@ -6,7 +6,7 @@ tags: [skills, routing, agents]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-19
-generated: {by: claude-code, at: 2026-10-19T03:06:22Z}
+generated: {by: claude-code, at: 2026-10-19T03:07:19Z}
 ---
 
 # Observations
@@ -21,6 +21,7 @@ generated: {by: claude-code, at: 2026-10-19T03:06:22Z}
 - [outcome] rit skills install reports retired ritari-* skills and removes them with --cleanup (spec §9.20) [^1]
 - [decision] Session hooks are project-scoped (a repo's .claude/settings.json or .pi/extensions/), never installed into user-level settings that fire in every project [^1]
 - [context] In Pi, the agent wrote the daily note seven times but never read it, despite AGENTS.md asking it to at session start [^1]
+- [decision] Agent integrations install under rit install: rit install skills now, rit install hooks next; rit skills install stays as a hidden alias [^1]
 
 # Relations
 - affects [Skill routing](/ideas/skill-routing.md)
