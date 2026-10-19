@@ -6,7 +6,7 @@ tags: [skills, routing, agents]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-19
-generated: {by: claude-code, at: 2026-10-19T03:07:19Z}
+generated: {by: claude-code, at: 2026-10-19T03:30:10Z}
 ---
 
 # Observations
@@ -22,6 +22,9 @@ generated: {by: claude-code, at: 2026-10-19T03:07:19Z}
 - [decision] Session hooks are project-scoped (a repo's .claude/settings.json or .pi/extensions/), never installed into user-level settings that fire in every project [^1]
 - [context] In Pi, the agent wrote the daily note seven times but never read it, despite AGENTS.md asking it to at session start [^1]
 - [decision] Agent integrations install under rit install: rit install skills now, rit install hooks next; rit skills install stays as a hidden alias [^1]
+- [outcome] Consolidation drafted on feat/consolidate-skills: ritari with references/writing.md, tasks.md, daily.md and lint.md, plus ritari-ingest and ritari-reflect; spec §11 rewritten [^1]
+- [decision] rit install skills installs per file and reports skills whose installed files differ as outdated; --force --cleanup is the upgrade path [^1]
+- [context] Clinton chose to make the change without more routing data because the tool is a day old, and may not merge it [^1]
 
 # Relations
 - affects [Skill routing](/ideas/skill-routing.md)
