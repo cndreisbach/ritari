@@ -6,7 +6,9 @@ tags: [skills, routing, agents]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-18
-generated: {by: human:cndreisbach, at: 2026-10-18T19:19:44Z}
+  - id: "2"
+    resource: Clinton, development session 2026-10-19
+generated: {by: claude-code, at: 2026-10-19T02:48:56Z}
 ---
 
 # Observations
@@ -19,8 +21,12 @@ generated: {by: human:cndreisbach, at: 2026-10-18T19:19:44Z}
 - [idea] Instrument routing before rewriting — record which skills are loaded per session and how often rit is called after being advertised [^1]
 - [constraint] Shipped skills must stay portable (they install to ~/.agents/skills for any Agent Skills implementation), so no Pi-specific frontmatter such as disable-model-invocation [^1]
 - [open-thread] Is the failure that agents load ritari and skip the rit calls, or that they never load it? Measure before rewriting [^1]
+- [decision] Direction agreed; see Skill set after routing review [^2]
+- [context] mise run skill-usage reports skill loads, rit calls, daily-note use and unanswered memory cues from local transcripts [^2]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)
+- decided_by [Skill set after routing review](/decisions/skill-set-after-routing-review.md)
 
 [^1]: Clinton, development session 2026-10-18
+[^2]: Clinton, development session 2026-10-19
