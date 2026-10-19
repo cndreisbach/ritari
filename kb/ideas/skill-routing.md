@@ -8,7 +8,9 @@ sources:
     resource: Clinton, development session 2026-10-18
   - id: "2"
     resource: Clinton, development session 2026-10-19
-generated: {by: claude-code, at: 2026-10-19T02:48:56Z}
+  - id: "3"
+    resource: skill-usage report, Clinton's transcripts, 2026-10-19
+generated: {by: claude-code, at: 2026-10-19T02:51:37Z}
 ---
 
 # Observations
@@ -23,6 +25,11 @@ generated: {by: claude-code, at: 2026-10-19T02:48:56Z}
 - [open-thread] Is the failure that agents load ritari and skip the rit calls, or that they never load it? Measure before rewriting [^1]
 - [decision] Direction agreed; see Skill set after routing review [^2]
 - [context] mise run skill-usage reports skill loads, rit calls, daily-note use and unanswered memory cues from local transcripts [^2]
+- [context] First skill-usage run (7 Claude Code and 2 Pi sessions, mostly ritari development): one model-routed skill load in nine sessions, and the core ritari skill was never loaded [^3]
+- [context] rit was called about 300 times regardless, including a Pi session with 100+ calls and no SKILL.md read, so AGENTS.md and user instructions drive rit use more than skill descriptions [^3]
+- [context] The one load was ritari-notes and ritari-tasks, after rit was already in use — loaded at the moment of writing, the pattern references/ pointers tied to commands would rely on [^3]
+- [context] No session read rit daily in its first 10 tool calls, so session-start continuity is not happening [^3]
+- [open-thread] Rerun skill-usage with the parser fixes and --skip-project ritari to see usage outside ritari development [^3]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)
@@ -30,3 +37,4 @@ generated: {by: claude-code, at: 2026-10-19T02:48:56Z}
 
 [^1]: Clinton, development session 2026-10-18
 [^2]: Clinton, development session 2026-10-19
+[^3]: skill-usage report, Clinton's transcripts, 2026-10-19
