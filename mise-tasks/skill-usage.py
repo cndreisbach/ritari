@@ -45,7 +45,10 @@ CUE = re.compile(
 )
 SLASH = re.compile(r"<command-name>/?(ritari(?:-[a-z]+)?)</command-name>|^/skill:(ritari(?:-[a-z]+)?)\b|<skill name=\"(ritari(?:-[a-z]+)?)\"")
 REMINDER = re.compile(r"<system-reminder>.*?</system-reminder>", re.DOTALL)
-SPLIT = re.compile(r"&&|\|\||[;|\n]|\$\(|`")
+# A heredoc body, from the << line to its delimiter; its lines aren't commands.
+HEREDOC = re.compile(r"<<-?[ \t]*(['\"]?)(\w+)\1[^\n]*\n.*?\n[ \t]*\2[ \t]*(?=\n|$)", re.DOTALL)
+# Tokens that separate simple commands.
+OPERATORS = set(";&|()\n")
 # rit subcommands that take a second word (rit note write, rit skills install).
 GROUPS = {"note", "project", "skills", "config"}
 # rit global flags that take a value, skipped when finding the subcommand.
@@ -53,8 +56,7 @@ VALUE_FLAGS = {"-p", "--project", "-o", "--output"}
 WRAPPERS = {"env", "sudo", "command", "exec", "nohup", "time"}
 # Shell commands that count as reading a skill file.
 READERS = {"cat", "head", "tail", "sed", "less", "more", "bat", "nl"}
-# Any skill listing at all, to tell "not advertised" from "not logged".
-LISTING = re.compile(r"(?m)^- [\w:-]+[ :(]|<available_skills>")
+
 READ_TOOLS = {"read", "view", "read_file"}
 SHELL_TOOLS = {"bash", "shell", "exec_command"}
 # How many tool calls count as "the start of a session" for rit daily.
@@ -73,11 +75,12 @@ class Session:
         # Ordered events: (timestamp, seq, kind, value)
         self.events = []
 
-    def saw(self, text):
-        """Note whether text advertises the ritari skills."""
+    def saw(self, text, listing=False):
+        """Note whether text advertises the ritari skills. Only a known skill
+        listing can show that they were not advertised."""
         if ADVERTISED.search(text):
             self.advertised = "yes"
-        elif self.advertised == "unknown" and LISTING.search(text) and "skill" in text.lower():
+        elif listing and self.advertised == "unknown":
             self.advertised = "no"
 
     def add(self, ts, kind, value):
@@ -86,12 +89,9 @@ class Session:
 
 def simple_commands(command):
     """Yield the words of each simple command in a shell command line, with
-    env assignments and wrappers such as `mise exec --` removed."""
-    for segment in SPLIT.split(command):
-        try:
-            words = shlex.split(segment, comments=True)
-        except ValueError:
-            words = segment.split()
+    env assignments and wrappers such as `mise exec --` removed. Operators
+    inside quotes and heredoc bodies don't split commands."""
+    for words in split_commands(HEREDOC.sub("", command)):
         while words and (re.match(r"^\w+=", words[0]) or words[0] in WRAPPERS):
             words.pop(0)
         if words[:3] == ["mise", "exec", "--"]:
@@ -100,6 +100,26 @@ def simple_commands(command):
             words = words[2:]
         if words:
             yield [os.path.basename(words[0])] + words[1:]
+
+
+def split_commands(command):
+    """Split a command line into word lists at unquoted ; & | ( ) and newlines."""
+    lex = shlex.shlex(command, posix=True, punctuation_chars="".join(OPERATORS))
+    lex.whitespace = " \t\r"
+    lex.whitespace_split = True
+    words = []
+    try:
+        for tok in lex:
+            if tok and set(tok) <= OPERATORS:
+                if words:
+                    yield words
+                words = []
+            elif tok != "$":  # the $ of $(...)
+                words.append(tok)
+    except ValueError:  # unbalanced quotes: give up on the rest
+        pass
+    if words:
+        yield words
 
 
 def skill_reads(command):
@@ -123,7 +143,7 @@ def rit_commands(command):
             if flag in VALUE_FLAGS and rest:
                 rest.pop(0)
         if not rest:
-            yield "rit", []
+            yield "(no subcommand)", []
             continue
         sub = rest[0]
         if sub in GROUPS and len(rest) > 1 and not rest[1].startswith("-"):
@@ -241,7 +261,8 @@ def load_claude(root):
             # Newer versions log the listing as an attachment; older ones
             # put it in a system reminder inside a user message.
             if kind == "attachment":
-                s.saw(strings(obj.get("attachment")))
+                att = obj.get("attachment") or {}
+                s.saw(strings(att), listing=isinstance(att, dict) and att.get("type") == "skill_listing")
             elif kind == "user":
                 s.saw(text_of(msg.get("content")))
             if kind == "assistant":
@@ -403,10 +424,11 @@ def report(rows, out):
         print(f"  wrote to the daily note:              {sum(r['wrote_daily'] for r in callers)} of {len(callers)}", file=out)
         print(f"  called rit before loading any skill:  {before} of {len(both)}", file=out)
 
-        cues = sum(r["cues"] for r in rs)
-        answered = sum(r["cues_answered"] for r in rs)
-        missed = sum(1 for r in rs if r["cues"] and r["outcome"] == "neither")
-        print("\nmemory cues in user messages", file=out)
+        cued = [r for r in rs if r["advertised"] != "no"]
+        cues = sum(r["cues"] for r in cued)
+        answered = sum(r["cues_answered"] for r in cued)
+        missed = sum(1 for r in rs if r["cues"] and r["outcome"] == "neither" and r["advertised"] != "no")
+        print("\nmemory cues in user messages (sessions where ritari wasn't known to be unadvertised)", file=out)
         print(f"  cues: {cues}; answered in the same turn by a load or rit call: {answered} ({pct(answered, cues)})", file=out)
         print(f"  sessions with a cue but no load and no rit call: {missed}", file=out)
         print(file=out)
@@ -423,6 +445,7 @@ def main():
     p.add_argument("--pi", type=Path, default=pi_default, help=f"Pi sessions dir (default {pi_default})")
     p.add_argument("--since", help="only sessions starting on or after YYYY-MM-DD")
     p.add_argument("--project", help="only sessions whose working directory contains this text")
+    p.add_argument("--skip-project", action="append", default=[], metavar="TEXT", help="leave out sessions whose working directory contains this text (repeatable)")
     p.add_argument("--csv", type=Path, help="also write one row per session to this file")
     a = p.parse_args()
 
@@ -438,6 +461,8 @@ def main():
         if a.since and s.start[:10] < a.since:
             continue
         if a.project and a.project not in s.cwd:
+            continue
+        if any(t in s.cwd for t in a.skip_project):
             continue
         if not s.events:
             continue
