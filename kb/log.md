@@ -7,6 +7,7 @@
 * **Create**: [2026-10-19](/daily/2026-10-19.md)
 * **Update**: [2026-10-19](/daily/2026-10-19.md)
 * **Update**: [Skill set after routing review](/decisions/skill-set-after-routing-review.md)
+* **Create**: [Session-start hooks](/decisions/session-start-hooks.md)
 
 ## 2026-10-18
 
