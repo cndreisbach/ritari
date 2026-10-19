@@ -315,7 +315,7 @@ type SkillsCmd struct {
 type SkillsInstallCmd struct {
 	Agent   string `help:"Target agent: agents (~/.agents/skills) or claude (~/.claude/skills)."`
 	Dir     string `help:"Install into this directory instead."`
-	Force   bool   `help:"Overwrite existing SKILL.md files."`
+	Force   bool   `help:"Overwrite installed skill files that differ from this version."`
 	Cleanup bool   `help:"Remove installed ritari-* skills this version no longer ships."`
 }
 
@@ -343,7 +343,7 @@ func (cmd *SkillsInstallCmd) Run(c *Ctx) error {
 	if err != nil {
 		return err
 	}
-	installed, err := skills.Install(dir, cmd.Force)
+	installed, outdated, err := skills.Install(dir, cmd.Force)
 	if err != nil {
 		return err
 	}
@@ -359,18 +359,23 @@ func (cmd *SkillsInstallCmd) Run(c *Ctx) error {
 		removed, retired = retired, []string{}
 	}
 	if len(installed) == 0 {
-		c.Printf("All skills already present in %s (use --force to overwrite).\n", dir)
+		c.Printf("All skills already present in %s.\n", dir)
 	} else {
 		c.Printf("Installed skills to %s: %s\n", dir, strings.Join(installed, ", "))
 	}
 	if len(removed) > 0 {
 		c.Printf("Removed retired skills: %s\n", strings.Join(removed, ", "))
 	}
+	if len(outdated) > 0 {
+		c.Printf("warning: %s has skills that differ from this version: %s (use --force to update them)\n",
+			dir, strings.Join(outdated, ", "))
+	}
 	if len(retired) > 0 {
 		c.Printf("warning: %s has skills this version no longer ships: %s (use --cleanup to remove them)\n",
 			dir, strings.Join(retired, ", "))
 	}
 	return c.Emit(output.New().Set("success", true).Set("dir", dir).Set("count", len(installed)).
-		Set("installed", output.ExplicitList(installed)).Set("retired", output.ExplicitList(retired)).
+		Set("installed", output.ExplicitList(installed)).Set("outdated", output.ExplicitList(outdated)).
+		Set("retired", output.ExplicitList(retired)).
 		Set("removed", output.ExplicitList(removed)))
 }

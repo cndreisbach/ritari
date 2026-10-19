@@ -21,7 +21,7 @@ Requirement words (MUST, SHOULD, MAY) are used in their usual sense.
 | `ritari.yaml` | the per-bundle configuration file name (§4.5) |
 | `RITARI_CONFIG`, `RITARI_PROJECT`, `RITARI_OUTPUT`, `RITARI_AGENT` | environment variables (§9) |
 | `<config-dir>/ritari/config.yaml` | the project registry location (§9.3) |
-| `ritari`, `ritari-notes`, `ritari-daily`, `ritari-tasks`, `ritari-ingest`, `ritari-reflect`, `ritari-lint` | the agent skills (§11) |
+| `ritari`, `ritari-ingest`, `ritari-reflect` | the agent skills (§11) |
 
 ---
 
@@ -1328,23 +1328,29 @@ rit install skills [--agent agents|claude] [--dir PATH] [--force] [--cleanup]
 `rit skills install`, the original spelling, is accepted as a hidden alias with the same
 flags and output.
 
-Writes each embedded skill (§11) to `<dir>/<skill-name>/SKILL.md`. Default target is
+Writes each embedded skill (§11) to `<dir>/<skill-name>/`: its `SKILL.md` and any
+`references/` files. Default target is
 `~/.agents/skills` (agent `agents`); agent `claude` is `~/.claude/skills`. `--agent` and
 `--dir` are mutually exclusive (`--agent and --dir are alternatives; pass one`); an unknown
 agent is `unknown agent "<x>" (known: agents, claude); use --dir for anything else`. Existing
-`SKILL.md` files are left alone unless `--force`.
+A missing file is always written. An installed file that differs from this build's
+(edited, or from another version) is left alone and its skill reported as **outdated**,
+unless `--force`, which overwrites it. Identical files are not rewritten.
 
 A **retired** skill is a directory in `<dir>` whose name starts with `ritari-` and that
 this build does not ship, such as one an earlier version installed. Retired skills are
 reported and left in place; `--cleanup` removes each one's whole directory. Other
 directories in `<dir>` are never touched.
 
-Result: `success`, `dir`, `count`, `installed` (sorted skill names), `retired` (sorted
+Result: `success`, `dir`, `count`, `installed` (sorted names of skills any file was written
+for), `outdated` (sorted names of skills left with a differing file), `retired` (sorted
 names still present), `removed` (sorted names `--cleanup` deleted); each list is an
 explicit `[]` when empty. Text: `Installed skills to <dir>: a, b` or `All skills already
-present in <dir> (use --force to overwrite).`, then `Removed retired skills: a, b` when
-any were removed, then `warning: <dir> has skills this version no longer ships: a, b (use
---cleanup to remove them)` when any remain.
+present in <dir>.`, then `Removed retired skills: a, b` when any were removed, then
+`warning: <dir> has skills that differ from this version: a, b (use --force to update
+them)` and `warning: <dir> has skills this version no longer ships: a, b (use --cleanup to
+remove them)` when any remain. Upgrading from a version with other skills is
+`install skills --force --cleanup`.
 
 ### 9.21 `version`
 
@@ -1478,86 +1484,109 @@ Files are written with `\n` line endings on every platform; `\r\n` is accepted o
 
 The tool carries, inside the executable, a fixed set of **agent skills**: markdown
 documents that teach an agent to drive the tool, installed by `install skills` (§9.20).
-Each skill document begins with YAML frontmatter containing `name` (the skill name, which is
-also its install directory name) and `description` (one line stating what it is for and when
-to use it), followed by guidance. The skills are part of the product: **any behavior change
-that alters how an agent should drive the CLI requires the matching skill to be updated in
-the same change.**
+Each skill is a directory: a `SKILL.md` that begins with YAML frontmatter containing `name`
+(the skill name, which is also its directory name) and `description` (one line, at most 1024
+characters, stating what it is for and when to use it), followed by guidance; and optionally
+`references/*.md`, supporting files the agent reads on demand. The skills are part of the
+product: **any behavior change that alters how an agent should drive the CLI requires the
+matching skill or reference to be updated in the same change.**
 
-The implementer MUST ship these seven skills (`ritari` is the core skill's name and the
-others are prefixed by it). Content below states what each must
-teach; wording is the implementer's.
+Agents that implement skills advertise only each skill's name and description, and the
+description alone decides whether the agent loads the skill, so every shipped skill is a
+routing alternative for the same request. The set is therefore small, and each description
+names cues a user actually says rather than moments in a session (an agent cannot route on
+"the start of a session"; that is what session hooks, §9.22, are for). A reference is read
+only when the agent decides to read it, so a `SKILL.md` MUST name each of its references
+alongside the command or moment that should prompt reading it.
 
-1. **`ritari`** (core). The bundle model (markdown files, no database). The output contract
+The implementer MUST ship these three skills (`ritari` is the core skill's name and the
+others are prefixed by it). Content below states what each must teach; wording is the
+implementer's.
+
+1. **`ritari`** (core). Its description covers recall ("what do we know / what did we
+   decide"), being asked to remember or record something, picking up earlier work or a task,
+   writing the day's notes, and checking or cleaning up a knowledge base.
+   `SKILL.md`: a table of its references and when to read each; that ingesting material and
+   consolidating daily notes are the other two skills; a session's shape (start with `brief`,
+   or with its output when a hook already ran it; work; finish by updating task state, the
+   daily note, and lint). The bundle model (markdown files, no database). The output contract
    (§9.1) including that `note view`/`read` return raw bytes and that `--output text` gives
-   human output. The leading-`-` rule: values starting with `-` need `--flag=value`
-   (with examples for `--content` and `--find`). Where to start (`brief`, `recent`, `ls`).
-   **Search before you write**, with the full set of search filters and the note that
-   matching is by whole word or prefix with no stemming. Writing (including that writing to an
-   existing title *adds*). Reading and traversal (`note read`, `note view`, `context`; the three
-   equivalent ways to address a note). Editing and moving, and that **`move` is the only correct
-   way to relocate a note**; the difference between `note edit`'s *set* semantics and `note
-   write`'s *merge* semantics for frontmatter flags; archive rather than delete. Projects
-   and their resolution order. Housekeeping (`index`, `index --check`; never hand-edit
-   generated files). Principles: files are the source of truth; search before writing; one fact
-   per observation; link generously.
-2. **`ritari-notes`** (writing well). The note format and an annotated example; identity is the path;
-   how to pick a type (a table of the default types and when to use each, preferring a specific
-   type over `note`); that a bundle may declare its own vocabulary and how to discover it (the
-   root index names the type beside each directory; `types`; the write-time warning); always
-   write a description; observations (one fact per line, reusable categories, tags, context,
-   checkboxes are not observations); relations as links (single-token types with underscores,
-   title or ID targets, forward references are fine, prose links are edges too); recording
-   sources (`--source`, `--resource`); trust signals (`generated` is automatic, `verified` is
-   deliberate and not to be called reflexively); archiving; writing again adds; **`--tags` merges
-   but `--description`/`--resource` replace and `--meta` replaces per key**, with a warning about
-   batch loops that would clobber existing descriptions; a before-you-write checklist (search,
-   add to existing, link).
-3. **`ritari-daily`** (session continuity). Read recent notes when starting with `brief`, which
-   does not create today's note as bare `daily` does, and which a session hook (§9.22) may
-   already have run; write the
-   narrative and open threads before finishing; `--note` is repeatable (one paragraph each) and
-   repeat calls append; sections the agent adds under its own heading are left alone while prose
-   above the first heading *is* the narrative; never write `# Touched` (generated; refresh with
-   `--refresh`); what belongs where (narrative vs observations vs task state — task state belongs
-   to the task, not the day); daily notes are excluded from search by default; promote durable
-   facts out; close open threads.
-4. **`ritari-tasks`** (multi-step work that survives context loss). A task is a note of type `task`;
-   when to create one; creating with steps, queryable state in **both** frontmatter (`state`,
-   never `status`, which is OKF lifecycle) and an observation, and resumption context; finding open tasks; updating progress (tick steps with a
-   section replace, record learnings with sources, move a pointer); completing with an outcome;
-   writing for resumability (context beats steps; reusable categories such as `state`, `context`,
-   `decision`, `blocked`, `outcome`, `next-step`); guidelines (one task per unit of work, concrete
-   steps, externalize early, link the work, close finished tasks, state lives in the task).
-5. **`ritari-ingest`** (external material into notes). The tool never fetches: the agent acquires
+   human output. The leading-`-` rule: values starting with `-` need `--flag=value` (with
+   examples for `--content` and `--find`). Where to look (`brief`, `recent`, `ls`). **Search
+   before you write**, with the full set of search filters and the note that matching is by
+   whole word or prefix with no stemming. Writing (including that writing to an existing title
+   *adds*). Reading and traversal (`note read`, `note view`, `context`; the three equivalent
+   ways to address a note). Editing and moving, and that **`move` is the only correct way to
+   relocate a note**; the difference between `note edit`'s *set* semantics and `note write`'s
+   *merge* semantics for frontmatter flags; archive rather than delete. Projects and their
+   resolution order. Housekeeping (`index`, `index --check`; never hand-edit generated files).
+   Principles: files are the source of truth; search before writing; one fact per
+   observation; link generously.
+   - **`references/writing.md`** (read before the session's first `note write` or `note
+     edit`). The note format and an annotated example; identity is the path; how to pick a
+     type (a table of the default types and when to use each, preferring a specific type over
+     `note`); that a bundle may declare its own vocabulary and how to discover it (the root
+     index names the type beside each directory; `types`; the write-time warning); always
+     write a description; observations (one fact per line, reusable categories, tags,
+     context, checkboxes are not observations); relations as links (single-token types with
+     underscores, title or ID targets, forward references are fine, prose links are edges
+     too); recording sources (`--source`, `--resource`); trust signals (`generated` is
+     automatic, `verified` is deliberate and not to be called reflexively); archiving; writing
+     again adds; **`--tags` merges but `--description`/`--resource` replace and `--meta`
+     replaces per key**, with a warning about batch loops that would clobber existing
+     descriptions; a before-you-write checklist (search, add to existing, link).
+   - **`references/tasks.md`** (read before creating or updating a task). A task is a note of
+     type `task`; when to create one; creating with steps, queryable state in **both**
+     frontmatter (`state`, never `status`, which is OKF lifecycle) and an observation, and
+     resumption context; finding open tasks; updating progress (tick steps with a section
+     replace, record learnings with sources, move a pointer); completing with an outcome;
+     writing for resumability (context beats steps; reusable categories such as `state`,
+     `context`, `decision`, `blocked`, `outcome`, `next-step`); guidelines (one task per unit
+     of work, concrete steps, externalize early, link the work, close finished tasks, state
+     lives in the task).
+   - **`references/daily.md`** (read before writing to the daily note). Read recent notes
+     when starting with `brief`, which does not create today's note as bare `daily` does, and
+     which a session hook (§9.22) may already have run; write the narrative and open threads
+     before finishing; `--note` is repeatable (one paragraph each) and repeat calls append;
+     sections the agent adds under its own heading are left alone while prose above the first
+     heading *is* the narrative; never write `# Touched` (generated; refresh with
+     `--refresh`); what belongs where (narrative vs observations vs task state — task state
+     belongs to the task, not the day); daily notes are excluded from search by default;
+     promote durable facts out; close open threads.
+   - **`references/lint.md`** (read before running `lint`, or when asked to check or clean
+     up a knowledge base). Lint finds problems; judgment belongs to the user. Workflow: run,
+     triage, fix mechanical ones (and say so), ask about the rest, log. Mechanical fixes:
+     `stale-index` (regenerate) and `type-directory-mismatch` (the move the message names).
+     For every other finding, present 2–4 concrete options with consequences using the
+     harness's structured multiple-choice tool if available, else a numbered list — with
+     per-rule guidance for `orphan`, `duplicate-title`, `unknown-type`/`unknown-category`,
+     `dangling-link`, `stale-verification`, `malformed-field`, `reserved-casing`,
+     `missing-title`/`missing-description`, `missing-type`/`unparseable`. Batch related
+     questions and offer "skip the rest". Never guess at a merge or a relation; report
+     mechanical fixes; an unresolved finding is fine; read the note before proposing.
+2. **`ritari-ingest`** (external material into notes). Points to the core skill's
+   `references/writing.md` before writing. The tool never fetches: the agent acquires
    material with its own tools; provenance is a pointer, not a copy (`--resource`, `--source`,
-   short summary, never paste the source; record an "as of" observation for changing sources);
-   whether a source is a concept or merely a vehicle (meetings and documents get notes, emails and
-   chat messages usually do not — their facts go on the notes they belong to, cited to the
-   message); workflow (acquire, classify, extract, search, plan, write); search several ways before
-   proposing; present **one plan and take one approval**; write the source note and update the
-   notes it touches, each cited to the same source; action items become tasks; a source with no
-   URL is a plain-text descriptor (`--source "Email from …, 2026-07-29"`); raw material kept in
-   `sources/` is cited by bundle path (`/sources/<file>`); `sources/` rules (never `.md`, never hidden directories);
-   hedge inferences; do not re-ingest.
-6. **`ritari-reflect`** (consolidation). Daily notes accumulate; reflection turns them into durable
-   memory. When to run (end of session, on a schedule, after compaction). Workflow: gather
-   (`recent`, daily notes, open threads, active tasks), evaluate (will this still be true next
-   month? durability not importance), promote (observations on **typed** notes, cited with a link
-   to the day, search first, additive), log (record the reflection in today's note). Resolving
-   open threads. **Never rewrite daily notes** (they are the raw record). Guidelines: distil,
-   be selective, prefer updating over creating, flag uncertainty, archive what is superseded,
-   run lint occasionally.
-7. **`ritari-lint`** (findings into decisions). Lint finds problems; judgment belongs to the user.
-   Workflow: run, triage, fix mechanical ones (and say so), ask about the rest, log. Mechanical
-   fixes: `stale-index` (regenerate) and `type-directory-mismatch` (the move the message names).
-   For every other finding, present 2–4 concrete options with consequences using the harness's
-   structured multiple-choice tool if available, else a numbered list — with per-rule guidance
-   for `orphan`, `duplicate-title`, `unknown-type`/`unknown-category`, `dangling-link`,
-   `stale-verification`, `malformed-field`, `reserved-casing`,
-   `missing-title`/`missing-description`, `missing-type`/`unparseable`.
-   Batch related questions and offer "skip the rest". Never guess at a merge or a relation;
-   report mechanical fixes; an unresolved finding is fine; read the note before proposing.
+   short summary, never paste the source; record an "as of" observation for changing
+   sources); whether a source is a concept or merely a vehicle (meetings and documents get
+   notes, emails and chat messages usually do not — their facts go on the notes they belong
+   to, cited to the message); workflow (acquire, classify, extract, search, plan, write);
+   search several ways before proposing; present **one plan and take one approval**; write
+   the source note and update the notes it touches, each cited to the same source; action
+   items become tasks (per `references/tasks.md`); a source with no URL is a plain-text
+   descriptor (`--source "Email from …, 2026-07-29"`); raw material kept in `sources/` is
+   cited by bundle path (`/sources/<file>`); `sources/` rules (never `.md`, never hidden
+   directories); hedge inferences; do not re-ingest.
+3. **`ritari-reflect`** (consolidation). Its description covers being asked to reflect on,
+   consolidate, or review recent work, and scheduled reflection. Daily notes accumulate;
+   reflection turns them into durable memory. When to run (end of session, on a schedule,
+   after compaction). Workflow: gather (`recent`, `brief` over several days, open threads,
+   active tasks), evaluate (will this still be true next month? durability not importance),
+   promote (observations on **typed** notes, cited with a link to the day, search first,
+   additive), log (record the reflection in today's note). Resolving open threads. **Never
+   rewrite daily notes** (they are the raw record). Guidelines: distil, be selective, prefer
+   updating over creating, flag uncertainty, archive what is superseded, run lint
+   occasionally (per `references/lint.md`).
 
 ---
 

@@ -1,9 +1,6 @@
----
-name: ritari-daily
-description: Session continuity with Ritari daily notes — read today's and recent days' notes when starting, and record the narrative and open threads before finishing. Use at the start and end of every working session.
----
-
 # Daily notes: continuity between sessions
+
+Read this before you write to the daily note, usually just before finishing.
 
 A daily note (`daily/YYYY-MM-DD`) is the authored record of a day: what came
 up, what was learned, what is unresolved. It is how the next session picks up
@@ -56,7 +53,7 @@ rit daily --note "Debugged the token refresh race; root cause was a stale cache.
 - **Narrative** (`--note`): what happened, in a sentence or two each.
 - **Observations** on the daily note: open threads and loose facts of the day.
 - **Task state belongs to the task**, not the day: update the task note (see
-  `ritari-tasks`) and let `# Touched` record that you did.
+  `tasks.md`) and let `# Touched` record that you did.
 - Durable facts belong on typed notes (decisions, people, projects). Daily notes
   are excluded from search by default (`--include-daily` to include them), so a
   fact left only in a daily note is hard to find later.
@@ -64,6 +61,7 @@ rit daily --note "Debugged the token refresh race; root cause was a stale cache.
 ## Promote and close
 
 - When a fact will still matter next month, promote it to a typed note, citing
-  the day: `--source "Daily note /daily/2026-07-29.md"` (see `ritari-reflect`).
+  the day: `--source "Daily note /daily/2026-07-29.md"` (the `ritari-reflect` skill does
+  this in bulk).
 - When an open thread is resolved, say so in today's narrative and record the
   outcome where it belongs (often a decision note).

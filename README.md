@@ -91,9 +91,12 @@ rit install skills                 # ~/.agents/skills
 rit install skills --agent claude  # ~/.claude/skills
 ```
 
-Run it again after upgrading. If an earlier version installed a `ritari-*`
-skill that this one no longer ships, `rit install skills` warns about it, and
-`rit install skills --cleanup` removes it.
+There are three: `ritari` (the core skill, with reference files it reads
+before writing notes, tasks, and daily notes, and before linting),
+`ritari-ingest`, and `ritari-reflect`. Run `rit install skills` again after
+upgrading: it adds missing files and warns about skills whose installed files
+differ from this version or that this version no longer ships.
+`rit install skills --force --cleanup` brings an install fully up to date.
 
 To have an agent start each session already knowing the latest daily notes and
 open tasks, install a session hook into a project:

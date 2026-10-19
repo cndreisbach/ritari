@@ -1,6 +1,6 @@
 ---
 name: ritari
-description: Long-term memory across sessions with the `rit` CLI — search, read, write, link, and maintain a knowledge base of markdown notes. Use at the start of work to recall context, before writing anything new, and whenever something learned should outlive this conversation.
+description: Long-term memory across sessions with the `rit` CLI. Use when the user asks what we know, decided, or did before; asks you to remember, note, or record something; when you pick up earlier work or track a multi-step task; when you write the day's notes; or when asked to check or clean up the knowledge base.
 ---
 
 # Ritari: long-term memory with `rit`
@@ -9,6 +9,34 @@ description: Long-term memory across sessions with the `rit` CLI — search, rea
 Knowledge Format (OKF): one file per concept, YAML frontmatter on top. There is
 no database and no index that can drift — every listing, search, and link graph
 is computed from the files on demand. The files are the source of truth.
+
+## Read the reference before the command
+
+This file covers driving `rit`. The details of doing each job well are in
+`references/`, next to this file. Each is short; read the whole file at the
+moment named here, not before.
+
+| Before you… | Read |
+| --- | --- |
+| run your first `rit note write` or `rit note edit` in a session | `references/writing.md`: types, descriptions, observations, relations, sources |
+| create or update a note of type `task` | `references/tasks.md`: state, steps, writing for resumability |
+| write to the daily note (`rit daily --note` / `--obs`), usually just before finishing | `references/daily.md`: what goes in the narrative, observations, and tasks |
+| run `rit lint`, or check or clean up a knowledge base | `references/lint.md`: which findings to fix and which to ask about |
+
+Two jobs have their own skills: **`ritari-ingest`** for turning a document,
+transcript, email, or page into notes, and **`ritari-reflect`** for
+consolidating recent daily notes into durable ones.
+
+## A session
+
+1. **Start**: `rit brief` prints the latest daily notes and open tasks. If your
+   context already holds its output (a session hook installed with
+   `rit install hooks` runs it), don't run it again. Pick up open threads and
+   open tasks before starting something new.
+2. **Work**: search before you write; record decisions and facts as they come
+   up; keep a task note current for work that spans steps or sessions.
+3. **Finish**: update the task's state, write the daily note's narrative and
+   open threads, and run `rit lint` if you changed several notes.
 
 ## Output
 
@@ -30,10 +58,10 @@ rit note edit tasks/ship-v2 --op find_replace --find="- [ ] tag release" --conte
 
 `--content -` (and `--note -` on `daily`) reads standard input instead.
 
-## Where to start
+## Where to look
 
 ```
-rit brief             # latest daily notes and open tasks (a session hook may have run it)
+rit brief             # latest daily notes and open tasks
 rit recent            # what changed lately
 rit ls decisions      # concept IDs under a directory
 ```
@@ -74,7 +102,8 @@ rit note write --title "Auth uses JWT" --type decision \
 The type decides the directory (`decisions/auth-uses-jwt`). Writing the same
 title again **adds** observations, relations, and sources without duplicating
 anything already there. `--content` sets the body of a new note; replacing an
-existing body needs `--force`. See the `ritari-notes` skill for writing well.
+existing body needs `--force`. Read `references/writing.md` before your first
+write of the session.
 
 ## Reading and traversal
 
@@ -126,7 +155,7 @@ rit project add team ~/src/team-kb
 `index.md` and `log.md` are generated on every write — never edit them by hand.
 `rit index --check` reports drift (for example after a hand edit of a
 description); `rit index` regenerates. `rit lint` reports conformance errors and
-hygiene warnings (see `ritari-lint`).
+hygiene warnings; read `references/lint.md` before acting on them.
 
 ## Principles
 
