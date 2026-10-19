@@ -95,6 +95,20 @@ Run it again after upgrading. If an earlier version installed a `ritari-*`
 skill that this one no longer ships, `rit install skills` warns about it, and
 `rit install skills --cleanup` removes it.
 
+To have an agent start each session already knowing the latest daily notes and
+open tasks, install a session hook into a project:
+
+```bash
+cd ~/src/my-app
+rit -p work install hooks --agent claude,pi   # .claude/settings.json, .pi/extensions/ritari.ts
+rit -p work install hooks --agent claude --local   # .claude/settings.local.json instead
+```
+
+The hook runs `rit --project work --output text brief`, so `rit` must be on the
+agent's `PATH`. Hooks are written only into the project directory (the current
+one, or `--dir`), never into your user-level agent settings, so they fire only
+for sessions in that project.
+
 When `rit` runs without a terminal, as it does under an agent, it prints flat
 YAML that is easy to parse. In a terminal it prints readable text. Use
 `--output text` or `--output yaml` to choose. Writes are stamped with who made
@@ -119,12 +133,14 @@ is stored as `human:you@example.com`, so a person is never mistaken for an agent
 | `rit search` | Search by text, type, tags, observation category, relation, or any frontmatter field |
 | `rit context` | Follow links outward from a note |
 | `rit daily` | Read or write today's (or any day's) note |
+| `rit brief` | The latest daily notes and open tasks, for the start of a session |
 | `rit recent` / `rit ls` | Recently changed notes; all note IDs |
 | `rit lint` | Check OKF conformance and note hygiene |
 | `rit index` | Regenerate the `index.md` listings |
 | `rit types` | Show the note types this knowledge base uses |
 | `rit project` | Manage registered knowledge bases |
 | `rit install skills` | Install the agent skills |
+| `rit install hooks` | Install session-start hooks into a project |
 
 Run `rit <command> --help` for flags. A flag value that starts with `-` must
 be written as `--flag=value`, for example `--content="- [ ] write tests"`.

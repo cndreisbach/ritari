@@ -6,10 +6,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/cndreisbach/ritari/internal/actor"
 	"github.com/cndreisbach/ritari/internal/bundle"
+	"github.com/cndreisbach/ritari/internal/hooks"
 	"github.com/cndreisbach/ritari/internal/output"
 	"github.com/cndreisbach/ritari/internal/registry"
 	"github.com/cndreisbach/ritari/internal/skills"
@@ -231,6 +233,77 @@ func (cmd *ConfigAuthorCmd) Run(c *Ctx) error {
 // InstallCmd groups the commands that install agent integrations.
 type InstallCmd struct {
 	Skills SkillsInstallCmd `cmd:"" help:"Install the agent skills."`
+	Hooks  HooksInstallCmd  `cmd:"" help:"Install session-start hooks into a project."`
+}
+
+// HooksInstallCmd is `install hooks`.
+type HooksInstallCmd struct {
+	Agent []string `required:"" placeholder:"claude|pi" help:"Agent to install for: claude or pi (repeatable, or comma-separated)."`
+	Dir   string   `help:"Project directory to install into (default: the current directory)."`
+	Local bool     `help:"Claude Code: write .claude/settings.local.json instead of settings.json."`
+	Force bool     `help:"Pi: replace a .pi/extensions/ritari.ts that rit did not write."`
+}
+
+// Run executes `install hooks`.
+func (cmd *HooksInstallCmd) Run(c *Ctx) error {
+	agents := map[string]bool{}
+	for _, a := range cmd.Agent {
+		if !slices.Contains(hooks.Agents, a) {
+			return fmt.Errorf("unknown agent %q (known: %s)", a, strings.Join(hooks.Agents, ", "))
+		}
+		agents[a] = true
+	}
+	if cmd.Local && !agents["claude"] {
+		return errors.New("--local applies only to --agent claude")
+	}
+	dir := cmd.Dir
+	if dir == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		dir = wd
+	}
+	dir, err := registry.ExpandPath(dir)
+	if err != nil {
+		return err
+	}
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		return fmt.Errorf("%s is not a directory", dir)
+	}
+	r, err := c.Registry()
+	if err != nil {
+		return err
+	}
+	p, err := r.Active(c.projectFlag, c.Getenv)
+	if err != nil {
+		return err
+	}
+
+	var results []hooks.Result
+	for _, a := range hooks.Agents {
+		if !agents[a] {
+			continue
+		}
+		var res hooks.Result
+		if a == "claude" {
+			res, err = hooks.Claude(dir, p.Name, cmd.Local)
+		} else {
+			res, err = hooks.Pi(dir, p.Name, cmd.Force)
+		}
+		if err != nil {
+			return err
+		}
+		results = append(results, res)
+	}
+	docs := []*output.Doc{output.New().Set("success", true).Set("project", p.Name).Set("dir", dir).
+		Set("command", hooks.Command(p.Name)).Set("count", len(results))}
+	for _, res := range results {
+		docs = append(docs, output.New().Set("agent", res.Agent).Set("path", res.Path).Set("status", res.Status))
+		c.Printf("%s: %s %s\n", res.Agent, res.Status, res.Path)
+	}
+	c.Printf("At session start, each runs: %s\n", hooks.Command(p.Name))
+	return c.Emit(docs...)
 }
 
 // SkillsCmd keeps the old `skills install` spelling working.

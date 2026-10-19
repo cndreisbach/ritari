@@ -28,12 +28,13 @@ to read and update it as you work; the installed `ritari*` skills explain how.
 | Ideas | `ideas/` | `--type idea`, `--meta state=proposed` (then `accepted`, `rejected`, or `done`), `--meta priority=high` (or `medium`, `low`), `--rel "part_of: Roadmap"`. Add new ones to the roadmap with `mise exec -- rit note write --title Roadmap --rel "includes: <Idea>"`. |
 | Tasks | `tasks/` | `--type task` with `state` in frontmatter and observations (see the `ritari-tasks` skill). An accepted idea becomes one or more tasks linked to it with `implements`. |
 | Decisions | `decisions/` | `--type decision` for design choices, linking to the spec section or idea they affect. |
-| Session log | `daily/` | `mise exec -- rit daily` at the start of a session to pick up open threads, and `--note` / `--obs "open-thread: …"` before finishing. |
+| Session log | `daily/` | `mise exec -- rit brief` at the start of a session to pick up open threads, and `mise exec -- rit daily --note …` / `--obs "open-thread: …"` before finishing. |
 
 Workflow:
 
-1. At the start of a session, read `mise exec -- rit daily` and look for open
-   work: `mise exec -- rit search --type task --meta 'state=open|blocked'`.
+1. At the start of a session, read `mise exec -- rit brief` (the latest daily
+   notes and open tasks) unless a session hook has already put its output in
+   your context.
 2. Before starting multi-step work, create or find its task note and keep it
    current as you go.
 3. Record design decisions as you make them, and new ideas when they come up.
@@ -71,6 +72,7 @@ Workflow:
 | `internal/yamlx` | YAML scalar quoting that round-trips exactly |
 | `internal/cli` | kong command tree; text and machine output |
 | `internal/skills` | Embedded agent skills, installed by `rit install skills` |
+| `internal/hooks` | Project-scoped session hooks for Claude Code and Pi, installed by `rit install hooks` |
 
 ## Tooling
 

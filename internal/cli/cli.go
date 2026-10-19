@@ -28,6 +28,7 @@ type CLI struct {
 	Search  SearchCmd  `cmd:"" help:"Search notes by text and structured filters."`
 	Context ContextCmd `cmd:"" help:"Follow links outward from a note."`
 	Daily   DailyCmd   `cmd:"" help:"Open or write a day's note."`
+	Brief   BriefCmd   `cmd:"" help:"Print the latest daily notes and open tasks, for the start of a session."`
 	Recent  RecentCmd  `cmd:"" help:"List recently modified notes."`
 	Ls      LsCmd      `cmd:"" help:"List concept IDs."`
 	Index   IndexCmd   `cmd:"" help:"Regenerate or check index.md files."`
