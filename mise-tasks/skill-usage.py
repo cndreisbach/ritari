@@ -59,6 +59,8 @@ READERS = {"cat", "head", "tail", "sed", "less", "more", "bat", "nl"}
 
 READ_TOOLS = {"read", "view", "read_file"}
 SHELL_TOOLS = {"bash", "shell", "exec_command"}
+# rit daily flags that change the note; without any, rit daily reads it.
+DAILY_WRITES = {"--note", "--obs", "--rel", "--source", "--description", "--refresh"}
 # How many tool calls count as "the start of a session" for rit daily.
 START_WINDOW = 10
 
@@ -91,7 +93,8 @@ def simple_commands(command):
     """Yield the words of each simple command in a shell command line, with
     env assignments and wrappers such as `mise exec --` removed. Operators
     inside quotes and heredoc bodies don't split commands."""
-    for words in split_commands(HEREDOC.sub("", command)):
+    command = HEREDOC.sub("", command).replace("\\\n", " ")  # join continued lines
+    for words in split_commands(command):
         while words and (re.match(r"^\w+=", words[0]) or words[0] in WRAPPERS):
             words.pop(0)
         if words[:3] == ["mise", "exec", "--"]:
@@ -339,9 +342,9 @@ def summarize(s):
             if first_rit is None:
                 first_rit = tools
             if sub == "daily":
-                writes = any(a.split("=")[0] in ("--note", "--obs") for a in rest)
-                wrote_daily |= writes
-                read_daily_early |= not writes and tools < START_WINDOW
+                flags = {a.split("=")[0] for a in rest}
+                wrote_daily |= bool(flags & {"--note", "--obs"})
+                read_daily_early |= not flags & DAILY_WRITES and tools < START_WINDOW
             if pending:
                 answered += 1
                 pending = False
