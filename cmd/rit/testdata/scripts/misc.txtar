@@ -9,17 +9,33 @@ exec rit config author
 stdout '^author: human:me@example.com$'
 grep '^author: human:me@example.com$' config.yaml
 
-exec rit skills install
+exec rit install skills
 stdout '^installed: \[ritari, ritari-daily, ritari-ingest, ritari-lint, ritari-notes, ritari-reflect, ritari-tasks\]$'
 exists .agents/skills/ritari/SKILL.md
-exec rit skills install
+exec rit install skills
 stdout '^installed: \[\]$'
-exec rit skills install --agent claude
+stdout '^retired: \[\]$'
+mkdir .agents/skills/ritari-old
+cp steps.md .agents/skills/ritari-old/SKILL.md
+exec rit install skills
+stdout '^retired: \[ritari-old\]$'
+stdout '^removed: \[\]$'
+exists .agents/skills/ritari-old/SKILL.md
+exec rit install skills -o text
+stdout 'warning: .* has skills this version no longer ships: ritari-old \(use --cleanup to remove them\)'
+exec rit install skills --cleanup
+stdout '^retired: \[\]$'
+stdout '^removed: \[ritari-old\]$'
+! exists .agents/skills/ritari-old
+exists .agents/skills/ritari/SKILL.md
+exec rit install skills --agent claude
 exists .claude/skills/ritari-lint/SKILL.md
-! exec rit skills install --agent claude --dir x
+! exec rit install skills --agent claude --dir x
 stderr '--agent and --dir are alternatives; pass one'
-! exec rit skills install --agent vim
+! exec rit install skills --agent vim
 stderr 'unknown agent "vim" \(known: agents, claude\); use --dir for anything else'
+exec rit skills install --agent claude
+stdout '^installed: \[\]$'
 
 exec rit project init work $WORK/kb --default
 stdin steps.md

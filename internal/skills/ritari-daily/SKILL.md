@@ -12,14 +12,17 @@ where this one left off.
 ## When starting
 
 ```
-rit daily                 # today's note (creates an empty one if missing)
-rit daily 2026-07-28      # a previous day
+rit brief                 # the latest two daily notes and open tasks (read-only)
+rit brief --days 5        # more days
+rit daily 2026-07-28      # one day's whole note
 rit ls daily              # which days exist
 rit recent --limit 10     # what else changed lately
 ```
 
-The machine output includes the whole note as `content`, so one call is enough.
-Look for open threads from recent days before starting new work.
+If your context already holds `rit brief` output (a session hook installed with
+`rit install hooks` runs it), you have this; don't run it again. Look for open
+threads from recent days before starting new work. Use `brief` rather than bare
+`rit daily` just to read: `rit daily` creates today's note if it is missing.
 
 ## Before finishing
 

@@ -33,8 +33,8 @@ rit note edit tasks/ship-v2 --op find_replace --find="- [ ] tag release" --conte
 ## Where to start
 
 ```
+rit brief             # latest daily notes and open tasks (a session hook may have run it)
 rit recent            # what changed lately
-rit daily             # today's note: what came up, open threads
 rit ls decisions      # concept IDs under a directory
 ```
 

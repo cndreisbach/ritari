@@ -2,7 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -305,6 +307,83 @@ func (cmd *TypesCmd) Run(c *Ctx) error {
 	for _, t := range b.Vocab.Types {
 		docs = append(docs, output.New().Set("name", t.Name).Set("dir", t.Dir).Set("summary", t.Summary))
 		c.Printf("%s  %s/  %s\n", t.Name, t.Dir, t.Summary)
+	}
+	return c.Emit(docs...)
+}
+
+// BriefCmd is `brief`.
+type BriefCmd struct {
+	Days int `default:"2" help:"How many of the latest daily notes to include."`
+}
+
+// Run executes `brief`.
+func (cmd *BriefCmd) Run(c *Ctx) error {
+	r, err := c.Registry()
+	if err != nil {
+		return err
+	}
+	p, err := r.Active(c.projectFlag, c.Getenv)
+	if err != nil {
+		return err
+	}
+	b, err := bundle.Open(p.Path)
+	if err != nil {
+		return err
+	}
+	var days []*bundle.Concept
+	for _, id := range b.Files {
+		if d, ok := b.Get(id); ok && d.IsDaily() && !d.Note.FM.Archived && bundle.ValidDate(path.Base(id)) == nil {
+			days = append(days, d)
+		}
+	}
+	sort.Slice(days, func(i, j int) bool { return path.Base(days[i].ID) > path.Base(days[j].ID) })
+	if cmd.Days >= 0 && len(days) > cmd.Days {
+		days = days[:cmd.Days]
+	}
+	tasks, err := search.Run(b, search.Options{Type: "task", Meta: []string{"state=open|blocked"}, Limit: 0})
+	if err != nil {
+		return err
+	}
+
+	docs := []*output.Doc{output.New().Set("success", true).Set("project", p.Name).Set("count", len(days)+len(tasks))}
+	c.Printf("Ritari knowledge base %q (%s). Search it before writing: rit search <terms>.\n", p.Name, p.Path)
+	if len(days) == 0 {
+		c.Printf("\nNo daily notes yet.\n")
+	}
+	for _, d := range days {
+		narrative := strings.TrimSpace(note.Narrative(d.Note.Body))
+		var obs output.List
+		for _, o := range note.Observations(d.Note.Body) {
+			obs = append(obs, o.Summary())
+		}
+		docs = append(docs, output.New().Set("kind", "daily").Set("id", d.ID).Set("date", path.Base(d.ID)).
+			Set("description", d.Note.FM.Description).Set("narrative", narrative).Set("observations", obs))
+		c.Printf("\nDaily note %s (%s)\n", path.Base(d.ID), d.ID)
+		if narrative != "" {
+			c.Printf("%s\n", narrative)
+		}
+		for _, o := range obs {
+			c.Printf("- %s\n", o)
+		}
+	}
+	if len(tasks) == 0 {
+		c.Printf("\nNo open tasks.\n")
+	} else {
+		c.Printf("\nOpen tasks:\n")
+	}
+	for _, h := range tasks {
+		fm := &h.Concept.Note.FM
+		state := ""
+		if v := fm.ExtraValue("state"); v != nil {
+			state = v.Value
+		}
+		docs = append(docs, output.New().Set("kind", "task").Set("id", h.Concept.ID).Set("title", h.Concept.Title()).
+			Set("state", state).Set("description", fm.Description))
+		line := fmt.Sprintf("- %s (%s) [%s]", h.Concept.Title(), h.Concept.ID, state)
+		if fm.Description != "" {
+			line += ": " + fm.Description
+		}
+		c.Printf("%s\n", line)
 	}
 	return c.Emit(docs...)
 }

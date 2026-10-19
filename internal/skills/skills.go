@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/cndreisbach/ritari/internal/bundle"
 )
@@ -57,4 +58,37 @@ func Install(dir string, force bool) ([]string, error) {
 		installed = append(installed, name)
 	}
 	return installed, nil
+}
+
+// Retired lists the skill directories in dir named ritari-* that are not
+// embedded in this build, sorted: skills an earlier version installed and
+// this one no longer ships.
+func Retired(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return []string{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+	shipped := map[string]bool{}
+	for _, name := range Names() {
+		shipped[name] = true
+	}
+	retired := []string{}
+	for _, e := range entries {
+		if e.IsDir() && strings.HasPrefix(e.Name(), "ritari-") && !shipped[e.Name()] {
+			retired = append(retired, e.Name())
+		}
+	}
+	return retired, nil
+}
+
+// Remove deletes the named skill directories from dir.
+func Remove(dir string, names []string) error {
+	for _, name := range names {
+		if err := os.RemoveAll(filepath.Join(dir, name)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

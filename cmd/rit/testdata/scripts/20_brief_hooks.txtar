@@ -1,0 +1,134 @@
+# Scenario 20: brief and install hooks.
+exec rit project init work $WORK/kb --default
+
+# brief is read-only: with nothing written it says so and creates nothing.
+exec rit -o text brief
+stdout '^Ritari knowledge base "work" \('
+stdout '^No daily notes yet\.$'
+stdout '^No open tasks\.$'
+! exists kb/daily
+
+exec rit daily 2026-07-27 --note 'Oldest day.'
+exec rit daily 2026-07-28 --note 'Started the parser.' --obs 'open-thread: Which grammar?'
+exec rit daily --note 'Finished the lexer.'
+exec rit note write --title 'Write parser' --type task --description 'Parse the grammar.' --meta state=open --obs 'state: open'
+exec rit note write --title 'Pick grammar' --type task --meta state=blocked --obs 'state: blocked'
+exec rit note write --title 'Write lexer' --type task --meta state=done --obs 'state: done'
+
+exec rit -o text brief
+stdout '^Daily note 2026-07-29 \(daily/2026-07-29\)$'
+stdout '^Finished the lexer\.$'
+stdout '^Daily note 2026-07-28 \(daily/2026-07-28\)$'
+stdout '^- \[open-thread\] Which grammar\?$'
+! stdout 'Oldest day'
+stdout '^Open tasks:$'
+stdout '^- Write parser \(tasks/write-parser\) \[open\]: Parse the grammar\.$'
+stdout '^- Pick grammar \(tasks/pick-grammar\) \[blocked\]$'
+! stdout 'Write lexer'
+
+exec rit brief --days 1
+stdout '^project: work$'
+stdout '^count: 3$'
+stdout '^kind: daily$'
+stdout '^narrative: Finished the lexer\.$'
+stdout '^kind: task$'
+stdout '^state: blocked$'
+! stdout '2026-07-28'
+
+# install hooks writes only into the project directory it is given.
+mkdir repo
+! exec rit install hooks --agent vim --dir repo
+stderr 'unknown agent "vim" \(known: claude, pi\)'
+! exec rit install hooks --agent pi --local --dir repo
+stderr '--local applies only to --agent claude'
+! exec rit install hooks --agent claude --dir nowhere
+stderr 'nowhere is not a directory'
+
+exec rit install hooks --agent claude,pi --dir repo
+stdout '^command: rit --project work --output text brief$'
+stdout '^count: 2$'
+stdout '^status: created$'
+cmp repo/.claude/settings.json want/settings.json
+grep '^const RIT_ARGS = \["--project", "work", "--output", "text", "brief"\];$' repo/.pi/extensions/ritari.ts
+! exists .claude
+! exists .pi
+
+exec rit install hooks --agent claude --agent pi --dir repo
+! stdout 'status: (created|updated)'
+stdout '^status: unchanged$'
+
+exec rit install hooks --agent claude --local --dir repo
+stdout '^path: .*settings\.local\.json$'
+cmp repo/.claude/settings.local.json want/settings.json
+
+# An existing settings file keeps its keys, in order, and its other hooks.
+exec rit -p work -o text install hooks --agent claude --dir other
+stdout '^claude: updated .*settings\.json$'
+stdout '^At session start, each runs: rit --project work --output text brief$'
+cmp other/.claude/settings.json want/other-settings.json
+
+cp mine.ts repo/.pi/extensions/ritari.ts
+! exec rit install hooks --agent pi --dir repo
+stderr 'ritari.ts exists and was not written by rit \(pass --force to replace it\)'
+cmp repo/.pi/extensions/ritari.ts mine.ts
+exec rit install hooks --agent pi --force --dir repo
+stdout '^status: updated$'
+
+okflint kb
+
+-- mine.ts --
+// my own extension
+-- want/settings.json --
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rit --project work --output text brief"
+          }
+        ]
+      }
+    ]
+  }
+}
+-- other/.claude/settings.json --
+{
+  "model": "opus",
+  "hooks": {
+    "Stop": [{"hooks": [{"type": "command", "command": "make lint"}]}]
+  },
+  "permissions": {"allow": ["Bash(ls:*)"]}
+}
+-- want/other-settings.json --
+{
+  "model": "opus",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "make lint"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rit --project work --output text brief"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)"
+    ]
+  }
+}

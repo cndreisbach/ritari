@@ -942,10 +942,12 @@ nothing nests.
 | `types` | list the vocabulary (or emit it as config) |
 | `project list/init/add/remove/default` | manage the project registry |
 | `config author` | get/set the configured actor identity |
-| `skills install` | install the agent skills |
+| `brief` | latest daily notes and open tasks, for the start of a session |
+| `install skills` | install the agent skills |
+| `install hooks` | install project-scoped session-start hooks |
 | `version` | print the version |
 
-All commands except `project`, `config`, `skills`, and `version` operate on the
+All commands except `project`, `config`, `install`, and `version` operate on the
 **active project's bundle**: resolved as `--project`, else `RITARI_PROJECT`, else the
 registry default (an empty `RITARI_PROJECT` counts as unset). If none can be
 determined: `no project specified and no default set (try: rit project init <name>
@@ -1317,25 +1319,95 @@ is to start from the current set and edit it.
 prefix (`human:<id>`, `process:<id>`) is stored as written. The reported `author`
 is the stored value.
 
-### 9.20 `skills install`
+### 9.20 `install skills`
 
 ```
-rit skills install [--agent agents|claude] [--dir PATH] [--force]
+rit install skills [--agent agents|claude] [--dir PATH] [--force] [--cleanup]
 ```
+
+`rit skills install`, the original spelling, is accepted as a hidden alias with the same
+flags and output.
 
 Writes each embedded skill (§11) to `<dir>/<skill-name>/SKILL.md`. Default target is
 `~/.agents/skills` (agent `agents`); agent `claude` is `~/.claude/skills`. `--agent` and
 `--dir` are mutually exclusive (`--agent and --dir are alternatives; pass one`); an unknown
 agent is `unknown agent "<x>" (known: agents, claude); use --dir for anything else`. Existing
-`SKILL.md` files are left alone unless `--force`. Result: `success`, `dir`, `count`,
-`installed` (sorted skill names; explicit `[]` if none). Text: `Installed skills to <dir>:
-a, b` or `All skills already present in <dir> (use --force to overwrite).`
+`SKILL.md` files are left alone unless `--force`.
+
+A **retired** skill is a directory in `<dir>` whose name starts with `ritari-` and that
+this build does not ship, such as one an earlier version installed. Retired skills are
+reported and left in place; `--cleanup` removes each one's whole directory. Other
+directories in `<dir>` are never touched.
+
+Result: `success`, `dir`, `count`, `installed` (sorted skill names), `retired` (sorted
+names still present), `removed` (sorted names `--cleanup` deleted); each list is an
+explicit `[]` when empty. Text: `Installed skills to <dir>: a, b` or `All skills already
+present in <dir> (use --force to overwrite).`, then `Removed retired skills: a, b` when
+any were removed, then `warning: <dir> has skills this version no longer ships: a, b (use
+--cleanup to remove them)` when any remain.
 
 ### 9.21 `version`
 
 Prints `<tool> <version>` (text) / `success`, `version` (machine). The version string is
 whatever the build identified itself as (a release version, or a short VCS revision with a
 `-dirty` suffix when built from a modified tree, or `dev`).
+
+### 9.22 `install hooks`
+
+```
+rit install hooks --agent claude|pi[,...] [--dir PATH] [--local] [--force]
+```
+
+Installs a hook that runs `brief` (§9.23) when an agent starts a session, so the agent
+begins with the latest daily notes and open tasks without being asked to look. Hooks are
+**project-scoped**: they are written only under `--dir` (default: the current directory),
+never into an agent's user-level settings, so they fire only for sessions in that project.
+`--agent` is required and repeatable (or comma-separated); an unknown agent is
+`unknown agent "<x>" (known: claude, pi)`. `--dir` must be an existing directory
+(`<dir> is not a directory`).
+
+The hook names the knowledge base it reads: the active project (§9.3) at install time is
+written into it, so it does not depend on `RITARI_PROJECT` when it runs. The command is
+`rit --project <name> --output text brief`, with `<name>` single-quoted for the shell when it
+contains anything but letters, digits, and `._/:=-`. `rit` must be on the agent's `PATH`.
+
+- **`claude`** (Claude Code): adds a `SessionStart` hook with no matcher (so it also runs on
+  resume, clear, and compaction) to `<dir>/.claude/settings.json`, or to
+  `settings.local.json` with `--local` (`--local` without `claude` is `--local applies only to
+  --agent claude`). The file's other keys, their order, and its other hooks are kept. A hook
+  whose command starts with `rit` and ends with `brief` is this hook from an earlier install
+  and is updated in place, not duplicated. A file that is not a JSON object, or whose `hooks`
+  is not an object or `hooks.SessionStart` not a list, is an error naming the file and is left
+  untouched. Output is two-space-indented JSON.
+- **`pi`**: writes `<dir>/.pi/extensions/ritari.ts`, an extension that adds `brief`'s output
+  to the context once, before the first agent turn of a session and again after a
+  compaction, and does nothing if `rit` fails. The file begins with a line naming
+  `rit install hooks`; an existing file without it is `<path> exists and was not written by
+  rit (pass --force to replace it)` unless `--force`.
+
+Result: a header `success`, `project`, `dir`, `command`, `count`, then per agent `agent`,
+`path`, `status` (`created`|`updated`|`unchanged`; an unchanged file is not rewritten).
+Text: `<agent>: <status> <path>` per agent, then `At session start, each runs: <command>`.
+
+### 9.23 `brief`
+
+```
+rit brief [--days N]
+```
+
+Read-only: prints what an agent needs at the start of a session. It never creates a note
+(`daily` without flags creates today's). Contents: the latest `N` daily notes (default 2;
+newest first; archived ones and files not named by a valid date are skipped; a negative `N`
+means all), each with its narrative (§7) and observations, then every note of type `task`
+whose `state` is `open` or `blocked` (§9.11 order for filters alone).
+
+Result: a header `success`, `project`, `count`; then per daily note `kind: daily`, `id`,
+`date`, `description`, `narrative`, `observations` (`[category] content`); then per task
+`kind: task`, `id`, `title`, `state`, `description`. Text: `Ritari knowledge base "<name>"
+(<path>). Search it before writing: rit search <terms>.`; per daily note a blank line,
+`Daily note <date> (<id>)`, its narrative, and `- [category] content` per observation (or
+`No daily notes yet.`); then `Open tasks:` and `- <title> (<id>) [<state>]: <description>`
+per task (or `No open tasks.`).
 
 ---
 
@@ -1405,7 +1477,7 @@ Files are written with `\n` line endings on every platform; `\r\n` is accepted o
 ## 11. Agent skills
 
 The tool carries, inside the executable, a fixed set of **agent skills**: markdown
-documents that teach an agent to drive the tool, installed by `skills install` (§9.20).
+documents that teach an agent to drive the tool, installed by `install skills` (§9.20).
 Each skill document begins with YAML frontmatter containing `name` (the skill name, which is
 also its install directory name) and `description` (one line stating what it is for and when
 to use it), followed by guidance. The skills are part of the product: **any behavior change
@@ -1419,7 +1491,7 @@ teach; wording is the implementer's.
 1. **`ritari`** (core). The bundle model (markdown files, no database). The output contract
    (§9.1) including that `note view`/`read` return raw bytes and that `--output text` gives
    human output. The leading-`-` rule: values starting with `-` need `--flag=value`
-   (with examples for `--content` and `--find`). Where to start (`recent`, `daily`, `ls`).
+   (with examples for `--content` and `--find`). Where to start (`brief`, `recent`, `ls`).
    **Search before you write**, with the full set of search filters and the note that
    matching is by whole word or prefix with no stemming. Writing (including that writing to an
    existing title *adds*). Reading and traversal (`note read`, `note view`, `context`; the three
@@ -1441,7 +1513,9 @@ teach; wording is the implementer's.
    but `--description`/`--resource` replace and `--meta` replaces per key**, with a warning about
    batch loops that would clobber existing descriptions; a before-you-write checklist (search,
    add to existing, link).
-3. **`ritari-daily`** (session continuity). Read today's note and recent ones when starting; write the
+3. **`ritari-daily`** (session continuity). Read recent notes when starting with `brief`, which
+   does not create today's note as bare `daily` does, and which a session hook (§9.22) may
+   already have run; write the
    narrative and open threads before finishing; `--note` is repeatable (one paragraph each) and
    repeat calls append; sections the agent adds under its own heading are left alone while prose
    above the first heading *is* the narrative; never write `# Touched` (generated; refresh with

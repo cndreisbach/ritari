@@ -18,7 +18,7 @@ into observations on typed notes, where search will find it.
 
 1. **Gather**
    - `rit recent --limit 30`
-   - `rit daily` and the last few days (`rit daily 2026-07-28`, `rit ls daily`)
+   - the last few days (`rit brief --days 7`, then `rit daily 2026-07-28` for a whole note, `rit ls daily`)
    - open threads: `rit search --category open-thread --include-daily`
    - active tasks: `rit search --type task --meta 'state=open|blocked'`
 2. **Evaluate** each candidate: *will this still be true next month?* Durability,

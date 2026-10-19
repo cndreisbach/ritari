@@ -28,6 +28,7 @@ type CLI struct {
 	Search  SearchCmd  `cmd:"" help:"Search notes by text and structured filters."`
 	Context ContextCmd `cmd:"" help:"Follow links outward from a note."`
 	Daily   DailyCmd   `cmd:"" help:"Open or write a day's note."`
+	Brief   BriefCmd   `cmd:"" help:"Print the latest daily notes and open tasks, for the start of a session."`
 	Recent  RecentCmd  `cmd:"" help:"List recently modified notes."`
 	Ls      LsCmd      `cmd:"" help:"List concept IDs."`
 	Index   IndexCmd   `cmd:"" help:"Regenerate or check index.md files."`
@@ -35,7 +36,8 @@ type CLI struct {
 	Types   TypesCmd   `cmd:"" help:"List the type vocabulary."`
 	Project ProjectCmd `cmd:"" help:"Manage the project registry."`
 	Config  ConfigCmd  `cmd:"" help:"Get or set configuration."`
-	Skills  SkillsCmd  `cmd:"" help:"Install the agent skills."`
+	Install InstallCmd `cmd:"" help:"Install agent integrations."`
+	Skills  SkillsCmd  `cmd:"" hidden:"" help:"Old spelling of install skills."`
 	Version VersionCmd `cmd:"" help:"Print the version."`
 }
 

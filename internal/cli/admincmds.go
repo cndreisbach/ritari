@@ -6,10 +6,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/cndreisbach/ritari/internal/actor"
 	"github.com/cndreisbach/ritari/internal/bundle"
+	"github.com/cndreisbach/ritari/internal/hooks"
 	"github.com/cndreisbach/ritari/internal/output"
 	"github.com/cndreisbach/ritari/internal/registry"
 	"github.com/cndreisbach/ritari/internal/skills"
@@ -228,19 +230,96 @@ func (cmd *ConfigAuthorCmd) Run(c *Ctx) error {
 	return c.Emit(output.New().Set("success", true).Set("status", "set").Set("author", r.Author))
 }
 
-// SkillsCmd groups skill subcommands.
+// InstallCmd groups the commands that install agent integrations.
+type InstallCmd struct {
+	Skills SkillsInstallCmd `cmd:"" help:"Install the agent skills."`
+	Hooks  HooksInstallCmd  `cmd:"" help:"Install session-start hooks into a project."`
+}
+
+// HooksInstallCmd is `install hooks`.
+type HooksInstallCmd struct {
+	Agent []string `required:"" placeholder:"claude|pi" help:"Agent to install for: claude or pi (repeatable, or comma-separated)."`
+	Dir   string   `help:"Project directory to install into (default: the current directory)."`
+	Local bool     `help:"Claude Code: write .claude/settings.local.json instead of settings.json."`
+	Force bool     `help:"Pi: replace a .pi/extensions/ritari.ts that rit did not write."`
+}
+
+// Run executes `install hooks`.
+func (cmd *HooksInstallCmd) Run(c *Ctx) error {
+	agents := map[string]bool{}
+	for _, a := range cmd.Agent {
+		if !slices.Contains(hooks.Agents, a) {
+			return fmt.Errorf("unknown agent %q (known: %s)", a, strings.Join(hooks.Agents, ", "))
+		}
+		agents[a] = true
+	}
+	if cmd.Local && !agents["claude"] {
+		return errors.New("--local applies only to --agent claude")
+	}
+	dir := cmd.Dir
+	if dir == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		dir = wd
+	}
+	dir, err := registry.ExpandPath(dir)
+	if err != nil {
+		return err
+	}
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		return fmt.Errorf("%s is not a directory", dir)
+	}
+	r, err := c.Registry()
+	if err != nil {
+		return err
+	}
+	p, err := r.Active(c.projectFlag, c.Getenv)
+	if err != nil {
+		return err
+	}
+
+	var results []hooks.Result
+	for _, a := range hooks.Agents {
+		if !agents[a] {
+			continue
+		}
+		var res hooks.Result
+		if a == "claude" {
+			res, err = hooks.Claude(dir, p.Name, cmd.Local)
+		} else {
+			res, err = hooks.Pi(dir, p.Name, cmd.Force)
+		}
+		if err != nil {
+			return err
+		}
+		results = append(results, res)
+	}
+	docs := []*output.Doc{output.New().Set("success", true).Set("project", p.Name).Set("dir", dir).
+		Set("command", hooks.Command(p.Name)).Set("count", len(results))}
+	for _, res := range results {
+		docs = append(docs, output.New().Set("agent", res.Agent).Set("path", res.Path).Set("status", res.Status))
+		c.Printf("%s: %s %s\n", res.Agent, res.Status, res.Path)
+	}
+	c.Printf("At session start, each runs: %s\n", hooks.Command(p.Name))
+	return c.Emit(docs...)
+}
+
+// SkillsCmd keeps the old `skills install` spelling working.
 type SkillsCmd struct {
 	Install SkillsInstallCmd `cmd:"" help:"Install the agent skills."`
 }
 
-// SkillsInstallCmd is `skills install`.
+// SkillsInstallCmd is `install skills` (also `skills install`).
 type SkillsInstallCmd struct {
-	Agent string `help:"Target agent: agents (~/.agents/skills) or claude (~/.claude/skills)."`
-	Dir   string `help:"Install into this directory instead."`
-	Force bool   `help:"Overwrite existing SKILL.md files."`
+	Agent   string `help:"Target agent: agents (~/.agents/skills) or claude (~/.claude/skills)."`
+	Dir     string `help:"Install into this directory instead."`
+	Force   bool   `help:"Overwrite existing SKILL.md files."`
+	Cleanup bool   `help:"Remove installed ritari-* skills this version no longer ships."`
 }
 
-// Run executes `skills install`.
+// Run executes `install skills`.
 func (cmd *SkillsInstallCmd) Run(c *Ctx) error {
 	if cmd.Agent != "" && cmd.Dir != "" {
 		return errors.New("--agent and --dir are alternatives; pass one")
@@ -268,11 +347,30 @@ func (cmd *SkillsInstallCmd) Run(c *Ctx) error {
 	if err != nil {
 		return err
 	}
+	retired, err := skills.Retired(dir)
+	if err != nil {
+		return err
+	}
+	removed := []string{}
+	if cmd.Cleanup {
+		if err := skills.Remove(dir, retired); err != nil {
+			return err
+		}
+		removed, retired = retired, []string{}
+	}
 	if len(installed) == 0 {
 		c.Printf("All skills already present in %s (use --force to overwrite).\n", dir)
 	} else {
 		c.Printf("Installed skills to %s: %s\n", dir, strings.Join(installed, ", "))
 	}
+	if len(removed) > 0 {
+		c.Printf("Removed retired skills: %s\n", strings.Join(removed, ", "))
+	}
+	if len(retired) > 0 {
+		c.Printf("warning: %s has skills this version no longer ships: %s (use --cleanup to remove them)\n",
+			dir, strings.Join(retired, ", "))
+	}
 	return c.Emit(output.New().Set("success", true).Set("dir", dir).Set("count", len(installed)).
-		Set("installed", output.ExplicitList(installed)))
+		Set("installed", output.ExplicitList(installed)).Set("retired", output.ExplicitList(retired)).
+		Set("removed", output.ExplicitList(removed)))
 }
