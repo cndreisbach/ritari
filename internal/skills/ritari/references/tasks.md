@@ -1,9 +1,6 @@
----
-name: ritari-tasks
-description: Track multi-step work in Ritari task notes so it survives context loss — create, find, update, and complete tasks. Use when work will span several steps, sessions, or a context compaction.
----
-
 # Tasks: work that survives context loss
+
+Read this before you create or update a task note.
 
 A task is a note of type `task`. It holds the steps, the current state, and —
 most importantly — the context someone (you, after a compaction) needs to pick

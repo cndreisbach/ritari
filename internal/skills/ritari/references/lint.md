@@ -1,9 +1,7 @@
----
-name: ritari-lint
-description: Turn `rit lint` findings into decisions — fix the mechanical ones, and ask the user about the rest with concrete options. Use when asked to check or clean up a knowledge base, or periodically during reflection.
----
-
 # Lint: findings into decisions
+
+Read this before you run `rit lint`, or when asked to check or clean up a
+knowledge base.
 
 `rit lint` finds problems; judgment about most of them belongs to the user.
 Errors are OKF conformance failures (the bundle is broken for other tools);

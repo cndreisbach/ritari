@@ -1,12 +1,14 @@
 ---
 name: ritari-reflect
-description: Consolidate Ritari daily notes into durable memory — review recent days, promote lasting facts onto typed notes, resolve open threads. Use at the end of a session, on a schedule, or after a context compaction.
+description: Consolidate Ritari daily notes into durable memory — review recent days, promote lasting facts onto typed notes, and resolve open threads. Use when asked to reflect on, consolidate, or review recent work or memory, and when a scheduled reflection runs.
 ---
 
 # Reflection: from daily notes to durable memory
 
 Daily notes accumulate the raw record. Reflection turns what will still matter
-into observations on typed notes, where search will find it.
+into observations on typed notes, where search will find it. This builds on
+the `ritari` skill; its references are in `../ritari/references/` from this
+file.
 
 ## When to run
 
@@ -50,4 +52,5 @@ out — promote by *adding* to typed notes and leave the day as it was.
 - Flag uncertainty: "(inferred)", "(unconfirmed)".
 - Archive what is superseded (`rit note archive`) instead of leaving
   contradictions in search.
-- Run `rit lint` occasionally and handle findings (see `ritari-lint`).
+- Run `rit lint` occasionally and handle findings (read the `ritari` skill's
+  `references/lint.md` first).

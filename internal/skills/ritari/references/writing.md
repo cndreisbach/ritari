@@ -1,9 +1,6 @@
----
-name: ritari-notes
-description: How to write good Ritari notes — choosing a type, descriptions, observations, relations, sources, and trust signals. Use whenever you are about to create or add to a note with `rit note write`.
----
-
 # Writing good notes
+
+Read this before your first `rit note write` or `rit note edit` in a session.
 
 ## The format
 
@@ -44,7 +41,7 @@ Topic belongs in `tags`. Prefer a specific type over `note`.
 | Type | Use for |
 | --- | --- |
 | `decision` | A choice that was made, with its rationale. |
-| `task` | Multi-step work in progress, with state (see `ritari-tasks`). |
+| `task` | Multi-step work in progress, with state (see `tasks.md`). |
 | `person` | A human: role, preferences, what you know about them. |
 | `project` | An ongoing effort and its context. |
 | `meeting` | A meeting and what came out of it. |

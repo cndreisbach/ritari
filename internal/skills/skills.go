@@ -2,6 +2,7 @@
 package skills
 
 import (
+	"bytes"
 	"embed"
 	"errors"
 	"io/fs"
@@ -14,7 +15,7 @@ import (
 	"github.com/cndreisbach/ritari/internal/bundle"
 )
 
-//go:embed */SKILL.md
+//go:embed */SKILL.md */references/*.md
 var files embed.FS
 
 // Names lists the embedded skills, sorted.
@@ -35,29 +36,61 @@ func Content(name string) ([]byte, error) {
 	return files.ReadFile(path.Join(name, "SKILL.md"))
 }
 
-// Install writes each skill to <dir>/<name>/SKILL.md, leaving existing files
-// alone unless force. It returns the names it wrote, sorted.
-func Install(dir string, force bool) ([]string, error) {
-	installed := []string{}
+// Files lists a skill's files relative to its directory ('/'-delimited),
+// sorted: SKILL.md and anything under references/.
+func Files(name string) ([]string, error) {
+	var out []string
+	err := fs.WalkDir(files, name, func(p string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			out = append(out, strings.TrimPrefix(p, name+"/"))
+		}
+		return err
+	})
+	sort.Strings(out)
+	return out, err
+}
+
+// Install writes each skill's files under <dir>/<name>/. Missing files are
+// always written; a file that differs from this build's is overwritten only
+// with force. It returns, sorted, the skills it wrote any file of, and the
+// skills it left with a file that differs (empty when force).
+func Install(dir string, force bool) (installed, outdated []string, err error) {
+	installed, outdated = []string{}, []string{}
 	for _, name := range Names() {
-		dest := filepath.Join(dir, name, "SKILL.md")
-		if !force {
-			if _, err := os.Stat(dest); err == nil {
-				continue
-			} else if !errors.Is(err, fs.ErrNotExist) {
-				return nil, err
-			}
-		}
-		data, err := Content(name)
+		rels, err := Files(name)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		if err := bundle.WriteFileAtomic(dest, data); err != nil {
-			return nil, err
+		wrote, differs := false, false
+		for _, rel := range rels {
+			want, err := files.ReadFile(path.Join(name, rel))
+			if err != nil {
+				return nil, nil, err
+			}
+			dest := filepath.Join(dir, name, filepath.FromSlash(rel))
+			have, err := os.ReadFile(dest)
+			switch {
+			case err == nil && bytes.Equal(have, want):
+				continue
+			case err == nil && !force:
+				differs = true
+				continue
+			case err != nil && !errors.Is(err, fs.ErrNotExist):
+				return nil, nil, err
+			}
+			if err := bundle.WriteFileAtomic(dest, want); err != nil {
+				return nil, nil, err
+			}
+			wrote = true
 		}
-		installed = append(installed, name)
+		if wrote {
+			installed = append(installed, name)
+		}
+		if differs {
+			outdated = append(outdated, name)
+		}
 	}
-	return installed, nil
+	return installed, outdated, nil
 }
 
 // Retired lists the skill directories in dir named ritari-* that are not

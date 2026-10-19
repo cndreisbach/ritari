@@ -26,7 +26,7 @@ to read and update it as you work; the installed `ritari*` skills explain how.
 | --- | --- | --- |
 | Roadmap | `projects/roadmap` | A `project` note that links to every idea with `includes` relations. |
 | Ideas | `ideas/` | `--type idea`, `--meta state=proposed` (then `accepted`, `rejected`, or `done`), `--meta priority=high` (or `medium`, `low`), `--rel "part_of: Roadmap"`. Add new ones to the roadmap with `mise exec -- rit note write --title Roadmap --rel "includes: <Idea>"`. |
-| Tasks | `tasks/` | `--type task` with `state` in frontmatter and observations (see the `ritari-tasks` skill). An accepted idea becomes one or more tasks linked to it with `implements`. |
+| Tasks | `tasks/` | `--type task` with `state` in frontmatter and observations (see `references/tasks.md` in the `ritari` skill). An accepted idea becomes one or more tasks linked to it with `implements`. |
 | Decisions | `decisions/` | `--type decision` for design choices, linking to the spec section or idea they affect. |
 | Session log | `daily/` | `mise exec -- rit brief` at the start of a session to pick up open threads, and `mise exec -- rit daily --note …` / `--obs "open-thread: …"` before finishing. |
 

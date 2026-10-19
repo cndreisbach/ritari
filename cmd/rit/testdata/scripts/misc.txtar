@@ -10,8 +10,10 @@ stdout '^author: human:me@example.com$'
 grep '^author: human:me@example.com$' config.yaml
 
 exec rit install skills
-stdout '^installed: \[ritari, ritari-daily, ritari-ingest, ritari-lint, ritari-notes, ritari-reflect, ritari-tasks\]$'
+stdout '^installed: \[ritari, ritari-ingest, ritari-reflect\]$'
+stdout '^outdated: \[\]$'
 exists .agents/skills/ritari/SKILL.md
+exists .agents/skills/ritari/references/writing.md
 exec rit install skills
 stdout '^installed: \[\]$'
 stdout '^retired: \[\]$'
@@ -28,8 +30,27 @@ stdout '^retired: \[\]$'
 stdout '^removed: \[ritari-old\]$'
 ! exists .agents/skills/ritari-old
 exists .agents/skills/ritari/SKILL.md
+
+# Upgrading from a version that shipped more skills: an edited core skill is
+# reported as outdated, the dropped skills as retired.
+mkdir .agents/skills/ritari-notes
+cp steps.md .agents/skills/ritari-notes/SKILL.md
+cp steps.md .agents/skills/ritari/SKILL.md
+exec rit install skills
+stdout '^installed: \[\]$'
+stdout '^outdated: \[ritari\]$'
+stdout '^retired: \[ritari-notes\]$'
+exec rit install skills -o text
+stdout 'warning: .* has skills that differ from this version: ritari \(use --force to update them\)'
+exec rit install skills --force --cleanup
+stdout '^installed: \[ritari\]$'
+stdout '^outdated: \[\]$'
+stdout '^removed: \[ritari-notes\]$'
+! grep '^- \[ \] a$' .agents/skills/ritari/SKILL.md
+grep '^name: ritari$' .agents/skills/ritari/SKILL.md
+
 exec rit install skills --agent claude
-exists .claude/skills/ritari-lint/SKILL.md
+exists .claude/skills/ritari/references/lint.md
 ! exec rit install skills --agent claude --dir x
 stderr '--agent and --dir are alternatives; pass one'
 ! exec rit install skills --agent vim

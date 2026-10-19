@@ -1,9 +1,12 @@
 ---
 name: ritari-ingest
-description: Turn external material (documents, meeting transcripts, emails, chat threads, web pages) into Ritari notes with provenance. Use when the user hands you material to remember or asks you to capture what a source says.
+description: Turn external material (documents, meeting transcripts, emails, chat threads, web pages) into Ritari notes with provenance. Use when the user hands you material to remember, or asks you to capture or record what a source says.
 ---
 
 # Ingesting external material
+
+This builds on the `ritari` skill. Before writing, read its
+`references/writing.md` (`../ritari/references/writing.md` from this file).
 
 ## The tool never fetches
 
@@ -55,7 +58,8 @@ rit note write --title "Ana Ruiz" --type person \
 
 ## Details
 
-- **Action items become tasks** (see `ritari-tasks`), linked to the meeting.
+- **Action items become tasks** (see the `ritari` skill's `references/tasks.md`),
+  linked to the meeting.
 - A source with no URL is a plain-text descriptor:
   `--source "Email from Ana Ruiz, 2026-07-29, subject: H1 commitments"`.
 - Raw material is not kept by default — a source with a URL already lives
