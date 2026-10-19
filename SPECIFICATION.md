@@ -1320,16 +1320,26 @@ is the stored value.
 ### 9.20 `skills install`
 
 ```
-rit skills install [--agent agents|claude] [--dir PATH] [--force]
+rit skills install [--agent agents|claude] [--dir PATH] [--force] [--cleanup]
 ```
 
 Writes each embedded skill (§11) to `<dir>/<skill-name>/SKILL.md`. Default target is
 `~/.agents/skills` (agent `agents`); agent `claude` is `~/.claude/skills`. `--agent` and
 `--dir` are mutually exclusive (`--agent and --dir are alternatives; pass one`); an unknown
 agent is `unknown agent "<x>" (known: agents, claude); use --dir for anything else`. Existing
-`SKILL.md` files are left alone unless `--force`. Result: `success`, `dir`, `count`,
-`installed` (sorted skill names; explicit `[]` if none). Text: `Installed skills to <dir>:
-a, b` or `All skills already present in <dir> (use --force to overwrite).`
+`SKILL.md` files are left alone unless `--force`.
+
+A **retired** skill is a directory in `<dir>` whose name starts with `ritari-` and that
+this build does not ship, such as one an earlier version installed. Retired skills are
+reported and left in place; `--cleanup` removes each one's whole directory. Other
+directories in `<dir>` are never touched.
+
+Result: `success`, `dir`, `count`, `installed` (sorted skill names), `retired` (sorted
+names still present), `removed` (sorted names `--cleanup` deleted); each list is an
+explicit `[]` when empty. Text: `Installed skills to <dir>: a, b` or `All skills already
+present in <dir> (use --force to overwrite).`, then `Removed retired skills: a, b` when
+any were removed, then `warning: <dir> has skills this version no longer ships: a, b (use
+--cleanup to remove them)` when any remain.
 
 ### 9.21 `version`
 

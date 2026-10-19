@@ -41,3 +41,28 @@ func TestInstall(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, got, 7)
 }
+
+func TestRetired(t *testing.T) {
+	dir := t.TempDir()
+	got, err := Retired(filepath.Join(dir, "missing"))
+	require.NoError(t, err)
+	assert.Empty(t, got)
+
+	_, err = Install(dir, false)
+	require.NoError(t, err)
+	for _, name := range []string{"ritari-old", "ritari-gone", "other-skill"} {
+		require.NoError(t, os.MkdirAll(filepath.Join(dir, name, "references"), 0o755))
+	}
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "ritari-file"), []byte("not a skill"), 0o644))
+	got, err = Retired(dir)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"ritari-gone", "ritari-old"}, got)
+
+	require.NoError(t, Remove(dir, got))
+	assert.NoDirExists(t, filepath.Join(dir, "ritari-old"))
+	assert.DirExists(t, filepath.Join(dir, "other-skill"))
+	assert.DirExists(t, filepath.Join(dir, "ritari-notes"))
+	got, err = Retired(dir)
+	require.NoError(t, err)
+	assert.Empty(t, got)
+}

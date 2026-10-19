@@ -14,6 +14,20 @@ stdout '^installed: \[ritari, ritari-daily, ritari-ingest, ritari-lint, ritari-n
 exists .agents/skills/ritari/SKILL.md
 exec rit skills install
 stdout '^installed: \[\]$'
+stdout '^retired: \[\]$'
+mkdir .agents/skills/ritari-old
+cp steps.md .agents/skills/ritari-old/SKILL.md
+exec rit skills install
+stdout '^retired: \[ritari-old\]$'
+stdout '^removed: \[\]$'
+exists .agents/skills/ritari-old/SKILL.md
+exec rit skills install -o text
+stdout 'warning: .* has skills this version no longer ships: ritari-old \(use --cleanup to remove them\)'
+exec rit skills install --cleanup
+stdout '^retired: \[\]$'
+stdout '^removed: \[ritari-old\]$'
+! exists .agents/skills/ritari-old
+exists .agents/skills/ritari/SKILL.md
 exec rit skills install --agent claude
 exists .claude/skills/ritari-lint/SKILL.md
 ! exec rit skills install --agent claude --dir x

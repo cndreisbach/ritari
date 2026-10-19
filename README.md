@@ -91,6 +91,10 @@ rit skills install                 # ~/.agents/skills
 rit skills install --agent claude  # ~/.claude/skills
 ```
 
+Run it again after upgrading. If an earlier version installed a `ritari-*`
+skill that this one no longer ships, `rit skills install` warns about it, and
+`rit skills install --cleanup` removes it.
+
 When `rit` runs without a terminal, as it does under an agent, it prints flat
 YAML that is easy to parse. In a terminal it prints readable text. Use
 `--output text` or `--output yaml` to choose. Writes are stamped with who made
