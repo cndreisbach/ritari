@@ -6,7 +6,7 @@ tags: [skills, routing, agents]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-19
-generated: {by: claude-code, at: 2026-10-19T02:48:56Z}
+generated: {by: claude-code, at: 2026-10-19T03:06:22Z}
 ---
 
 # Observations
@@ -18,6 +18,9 @@ generated: {by: claude-code, at: 2026-10-19T02:48:56Z}
 - [constraint] go:embed */SKILL.md and the single-file Install must grow to ship references/ directories [^1]
 - [constraint] Spec §11 requires seven skills, so the change rewrites §11 [^1]
 - [next-step] Run mise run skill-usage over local Pi and Claude Code transcripts before rewriting the skills [^1]
+- [outcome] rit skills install reports retired ritari-* skills and removes them with --cleanup (spec §9.20) [^1]
+- [decision] Session hooks are project-scoped (a repo's .claude/settings.json or .pi/extensions/), never installed into user-level settings that fire in every project [^1]
+- [context] In Pi, the agent wrote the daily note seven times but never read it, despite AGENTS.md asking it to at session start [^1]
 
 # Relations
 - affects [Skill routing](/ideas/skill-routing.md)
