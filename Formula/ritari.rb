@@ -1,8 +1,8 @@
 class Ritari < Formula
   desc "Long-term memory for AI agents, kept as OKF markdown files"
   homepage "https://github.com/cndreisbach/ritari"
-  url "https://github.com/cndreisbach/ritari/archive/refs/tags/v1.3.0.tar.gz"
-  sha256 "46426819c6b1ec659e2cf2852b718d5116b0e9e9a1ab9a3af7c3a823f5a468cb"
+  url "https://github.com/cndreisbach/ritari/archive/refs/tags/v2.0.0.tar.gz"
+  sha256 "6c88f7bae7bd3416e6a41b3dc85c65057cc0f3474a1665cb0e3abafe51c59700"
   license "MIT"
 
   depends_on "go" => :build
