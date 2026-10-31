@@ -7,6 +7,7 @@ sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
 generated: {by: claude-code, at: 2026-10-31T02:25:04Z}
+archived: true
 priority: high
 state: done
 ---

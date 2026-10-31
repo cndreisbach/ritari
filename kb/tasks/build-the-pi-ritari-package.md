@@ -7,6 +7,7 @@ sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
 generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:33:13Z}
+archived: true
 state: done
 ---
 

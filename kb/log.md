@@ -14,6 +14,8 @@
 * **Update**: [JSON output](/decisions/json-output.md)
 * **Create**: [2026-10-30](/daily/2026-10-30.md)
 * **Update**: [2026-10-30](/daily/2026-10-30.md)
+* **Archive**: [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md)
+* **Archive**: [Store whole documents in Ritari](/tasks/store-whole-documents-in-ritari.md)
 
 ## 2026-10-31
 
