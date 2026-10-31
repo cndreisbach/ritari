@@ -112,6 +112,17 @@ agent's `PATH`. Hooks are written only into the project directory (the current
 one, or `--dir`), never into your user-level agent settings, so they fire only
 for sessions in that project.
 
+On Pi, install the package instead — it registers typed tools as well as the
+session-start brief:
+
+```bash
+pi install npm:pi-ritari
+```
+
+`pi-ritari` calls `rit` for every read and write, so there are no direct file
+tools and no second copy of the bundle format. See
+[pi-ritari/README.md](pi-ritari/README.md).
+
 When `rit` runs without a terminal, as it does under an agent, it prints flat
 YAML that is easy to parse. In a terminal it prints readable text. Use
 `--output text`, `--output yaml`, or `--output json` to choose; JSON is

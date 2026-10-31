@@ -1746,3 +1746,31 @@ machine mode.)
     for the bundle, and it reports an error for a bundle with a malformed file.
 18. **Tags.** `--obs "bug: Fixed #42 and color #ff00aa #auth"` yields the tag `auth` only; `#42`
     and `#ff00aa` stay in the content.
+
+## 13. Pi package (`pi-ritari`)
+
+`pi-ritari/` in this repository is the Pi integration, published to npm as `pi-ritari`.
+`rit install hooks` no longer writes a Pi extension (§9.22). The package requires `rit` on
+the agent's `PATH` and consumes `rit --output json` (§9.1), so it carries no YAML parser and
+no second copy of the bundle format.
+
+- **Version.** The package version is the release tag's version (`pi-ritari` 3.1.0 ships with
+  `rit` 3.1.0). A release publishes it only when `pi-ritari/` changed since the previous tag.
+- **Tools.** `ritari_search`, `ritari_read`, `ritari_write`, and `ritari_edit`, grouped under
+  the `ritari` namespace. Each call passes `--project <name> --output json`, and every result
+  names the project it used.
+- **Project resolution.** `RITARI_PROJECT`, else the nearest `ritari.yaml` at or above the
+  working directory matched to a registered project by path, else the registry default. A
+  `ritari.yaml` the registry does not know is an error naming the directory; it never falls
+  back to a different knowledge base.
+- **Writes.** Only through `rit note write` and `rit note edit`; there are no direct file
+  tools. A title that already exists is an error unless the caller passes its `id`, which
+  must match that note's title. Replacing a body requires `--expect-hash` from an earlier
+  read.
+- **Brief.** Before the first turn of a session and again after a compaction, adds
+  `rit --project <name> --output text brief` to the run, once, and does nothing when `rit`
+  fails or the project cannot be resolved.
+- **Package shape.** `package.json` carries the `pi-package` keyword and a `pi` manifest
+  pointing at `extensions/ritari.ts`. The host packages `@earendil-works/pi-coding-agent` and
+  `typebox` are `peerDependencies` with a `*` range and are not bundled. The package's own
+  tests are `vitest` suites under `pi-ritari/test/`; they run in CI beside the Go tests.
