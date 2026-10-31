@@ -1,6 +1,6 @@
 {
   "name": "pi-ritari",
-  "version": "3.0.0",
+  "version": "0.0.0-placeholder",
   "description": "Ritari long-term memory for Pi: typed search, read, write, and edit over the rit CLI, plus a session-start brief.",
   "type": "module",
   "license": "MIT",
