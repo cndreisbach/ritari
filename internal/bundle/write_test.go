@@ -93,7 +93,7 @@ func TestWriteAdditiveErrorsAndForce(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = Write(root, testEnv(), WriteOpts{Title: "Auth uses JWT", Content: "x"})
-	assert.ErrorContains(t, err, `note "decisions/auth-uses-jwt" already exists; --content replaces the body, so use --force`)
+	assert.ErrorContains(t, err, `note "decisions/auth-uses-jwt" already exists; replace its body with rit note edit decisions/auth-uses-jwt --op replace_body`)
 	_, err = Write(root, testEnv(), WriteOpts{Title: "Auth uses JWT"})
 	assert.ErrorContains(t, err, "already exists and nothing to add")
 

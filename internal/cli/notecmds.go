@@ -30,7 +30,7 @@ type NoteWriteCmd struct {
 	Tags        string   `help:"Comma-separated tags (merged with existing)."`
 	Resource    string   `help:"Canonical URI of what the note is about."`
 	Meta        []string `sep:"none" placeholder:"KEY=VALUE" help:"Extra frontmatter field (repeatable)."`
-	Content     string   `help:"Body markdown, or - for stdin (new notes, or with --force)."`
+	Content     string   `help:"Body markdown, or - for stdin (new notes; to revise an existing body use note edit --op replace_body)."`
 	Obs         []string `sep:"none" placeholder:"CATEGORY: TEXT" help:"Observation to add (repeatable)."`
 	Rel         []string `sep:"none" placeholder:"TYPE: TARGET" help:"Relation to add (repeatable)."`
 	Source      []string `sep:"none" help:"Source for this write's observations (repeatable)."`
@@ -91,7 +91,8 @@ func (cmd *NoteWriteCmd) Run(c *Ctx) error {
 
 // ViewCmd prints a note's raw bytes (`note view` and `read`).
 type ViewCmd struct {
-	Ref string `arg:"" help:"Note ID, path, or title."`
+	Ref  string `arg:"" help:"Note ID, path, or title."`
+	Body bool   `help:"Print only the document: no frontmatter, Observations, Relations, or source footnotes."`
 }
 
 // Run executes `note view`.
@@ -102,6 +103,10 @@ func (cmd *ViewCmd) Run(c *Ctx) error {
 	}
 	cn, err := b.Resolve(cmd.Ref)
 	if err != nil {
+		return err
+	}
+	if cmd.Body {
+		_, err = c.Stdout.Write([]byte(cn.Note.Document()))
 		return err
 	}
 	data, err := os.ReadFile(b.Abs(cn.Path))
@@ -176,7 +181,7 @@ func (cmd *NoteReadCmd) Run(c *Ctx) error {
 // NoteEditCmd is `note edit`.
 type NoteEditCmd struct {
 	Ref         string   `arg:"" help:"Note ID, path, or title."`
-	Op          string   `enum:"append,prepend,find_replace,replace_section,insert_before_section,insert_after_section," default:"" help:"Body operation: append, prepend, find_replace, replace_section, insert_before_section, insert_after_section."`
+	Op          string   `enum:"append,prepend,find_replace,replace_section,insert_before_section,insert_after_section,replace_body," default:"" help:"Body operation: append, prepend, find_replace, replace_section, insert_before_section, insert_after_section, replace_body (replace the document, keeping metadata, observations, and relations)."`
 	Content     string   `help:"Content for the operation, or - for stdin."`
 	Section     string   `help:"Section heading for section operations."`
 	Find        string   `help:"Text to find (find_replace)."`
@@ -218,8 +223,12 @@ func (cmd *NoteEditCmd) Run(c *Ctx) error {
 	if err != nil {
 		return err
 	}
+	if res.Warning != "" {
+		c.Printf("warning: %s\n", res.Warning)
+	}
 	c.Printf("Edited %s\n", res.Path)
-	return c.Emit(output.New().Set("success", true).Set("status", res.Status).Set("id", res.ID).Set("path", res.Path).Set("op", cmd.Op))
+	return c.Emit(output.New().Set("success", true).Set("status", res.Status).Set("id", res.ID).Set("path", res.Path).Set("op", cmd.Op).
+		Set("warning", res.Warning))
 }
 
 // NoteVerifyCmd is `note verify`.

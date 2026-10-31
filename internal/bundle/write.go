@@ -166,7 +166,7 @@ func (b *Bundle) write(env Env, o WriteOpts) (WriteResult, []Event, error) {
 
 func (b *Bundle) writeAdditive(env Env, c *Concept, o WriteOpts, add note.Additions) (WriteResult, []Event, error) {
 	if strings.TrimSpace(o.Content) != "" {
-		return WriteResult{}, nil, fmt.Errorf("note %q already exists; --content replaces the body, so use --force (only --obs/--rel/--source are added by default)", c.ID)
+		return WriteResult{}, nil, fmt.Errorf("note %q already exists; replace its body with rit note edit %s --op replace_body --content - (--force replaces the whole note, dropping its metadata, observations, and relations; by default only --obs/--rel/--source are added)", c.ID, c.ID)
 	}
 	if len(o.Obs)+len(o.Rels)+len(add.Sources)+len(o.Meta)+len(o.Tags) == 0 && o.Description == "" && o.Resource == "" {
 		return WriteResult{}, nil, fmt.Errorf("note %q already exists and nothing to add (provide --obs/--rel/--source/--description/--tags/--meta, or --force to replace)", c.ID)

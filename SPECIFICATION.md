@@ -673,11 +673,50 @@ to retire something and `delete` is for mistakes.
 | `replace_section` | keep the heading line, replace the section's contents with a blank line, `content`, a blank line |
 | `insert_before_section` | insert `content` and a blank line immediately before the heading |
 | `insert_after_section` | insert `content` and a blank line immediately after the section ends |
+| `replace_body` | replace the note's **document** with `content`, keeping everything structured (below) |
 
 Section ops require a section name (heading text, leading `#`s and spaces
 ignored, matched case-insensitively at any level); a missing name is an error
 (`<op> requires a section heading`) and an unmatched one is
 `section not found: "<name>"`. An unknown op is `unknown edit op: "<op>"`.
+
+**The document** is the body without its Observations and Relations sections
+(each a section, §3.3, headed `Observations` or `Relations` at any level,
+case-insensitively, with its subsections) and without the footnote definitions
+derived from `sources` (§3.7). It is what an author writes: a plan, a report,
+a brief. `note view --body` prints it.
+
+`replace_body` is the way to revise a whole document without discarding the
+rest of the note. Frontmatter (including `sources`, `verified`, and every
+extra key) is untouched, and the Observations and Relations sections are kept
+verbatim. The new body is `content`, with leading and trailing blank lines
+trimmed and one newline added, then each kept section in its original order,
+each preceded by one blank line (trailing blank lines trimmed); the footnote
+definitions are re-appended as on every render. Replacing a document with
+itself (`note view --body` piped back in) changes nothing. Errors, in this
+order (the note is left unchanged):
+
+- blank content: `replace_body requires --content (the new document)`;
+- content that starts with a frontmatter block declaring a `type` or `title`:
+  `replace_body content starts with a frontmatter block; pass only the document
+  (rit note view --body prints it)`;
+- content with a heading named `Observations` or `Relations`: `replace_body
+  content has a "<heading>" section, but the note keeps its own; add
+  observations with rit note write --obs and relations with --rel`;
+- content defining a footnote whose label is a numbered source's `id`, other
+  than with exactly the derived definition (which is dropped and regenerated):
+  `replace_body content defines footnote [^<id>], but [^<id>] is this note's
+  source <id>; renumber the document's own footnotes, or cite the source with
+  [^<id>] and leave its definition out`;
+- a daily note: `replace_body does not apply to daily notes; add to the
+  narrative with rit daily --note`.
+
+Relation lines (§3.5) can sit outside the Relations section, and those go with
+the old document. When relations present before are missing afterwards
+(compared by type and destination), the edit still succeeds and its result
+carries a `warning`: `replace_body removed <n> relation(s) written outside the
+Relations section: <type> -> <target>, …; add back any you need with rit note
+write --rel`.
 
 ---
 
@@ -1042,8 +1081,10 @@ rit note write --title T [--type TYPE] [--description D] [--tags a,b]
 - **Existing note and no `--force` → additive mode.** Otherwise → fresh mode.
 
 **Additive mode.**
-- If `--content` is non-blank: error `note "<id>" already exists; --content replaces the
-  body, so use --force (only --obs/--rel/--source are added by default)`.
+- If `--content` is non-blank: error `note "<id>" already exists; replace its body with
+  rit note edit <id> --op replace_body --content - (--force replaces the whole note,
+  dropping its metadata, observations, and relations; by default only
+  --obs/--rel/--source are added)`.
 - If there are no observations/relations/sources and no description, resource, meta,
   or tags: error `note "<id>" already exists and nothing to add (provide
   --obs/--rel/--source/--description/--tags/--meta, or --force to replace)`.
@@ -1080,7 +1121,9 @@ with `rendered` (the whole file as a string). Text: `warning: <msg>` (if any) th
 
 ### 9.6 `note read`, `note view`, `read`
 
-`note view <ref>` and `read <ref>` print the file's exact bytes in both modes.
+`note view <ref>` and `read <ref>` print the file's exact bytes in both modes. With
+`--body`, they print only the note's document (§5.7): no frontmatter, no
+Observations or Relations sections, no derived footnote definitions.
 
 `note read <ref>` machine result (one document; empty values/lists omitted): `success`,
 `id`, `type`, `title`, `description`, `tags` (list), `trust`, `resource`, `path`,
@@ -1107,7 +1150,9 @@ rit note edit <ref> [--op OP] [--content C|-] [--section S] [--find F] [--count 
   be combined in one call/write.
 - `generated` is restamped only if the body actually changed.
 - Always recorded as an `Update`.
-- Result: `success`, `status: updated`, `id`, `path`, `op` (if given). Text: `Edited <path>`.
+- Result: `success`, `status: updated`, `id`, `path`, `op` (if given), `warning` (omitted
+  when empty; see `replace_body`, §5.7). Text: `warning: <msg>` (if any), then
+  `Edited <path>`.
 
 (The two commands are complementary by design: `note write` adds and merges, matched
 by title; `note edit` sets, addressed by ID — one cannot merge its way to renaming.)

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -35,9 +36,10 @@ type EditOpts struct {
 
 // Result is the common outcome of a single-note operation.
 type Result struct {
-	Status string
-	ID     string
-	Path   string // absolute
+	Status  string
+	ID      string
+	Path    string // absolute
+	Warning string
 }
 
 // Edit implements `note edit` (§9.7).
@@ -52,7 +54,20 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 			return nil, err
 		}
 		n := c.Note
-		if o.Op != "" {
+		var warning string
+		if o.Op == "replace_body" {
+			if c.IsDaily() {
+				return nil, fmt.Errorf("replace_body does not apply to daily notes; add to the narrative with rit daily --note")
+			}
+			before, rels := n.EditableBody(), note.Relations(n.Body, c.ID)
+			if err := n.ReplaceDocument(o.Content); err != nil {
+				return nil, err
+			}
+			if n.EditableBody() != before {
+				n.Restamp(env.Actor, env.Stamp())
+			}
+			warning = lostRelations(rels, note.Relations(n.Body, c.ID))
+		} else if o.Op != "" {
 			before := n.EditableBody()
 			body, err := note.EditBody(before, o.Op, o.Content, o.Section, o.Find, o.Count)
 			if err != nil {
@@ -82,10 +97,30 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 		if err := b.saveNote(c.Path, n); err != nil {
 			return nil, err
 		}
-		res = Result{Status: "updated", ID: c.ID, Path: b.Abs(c.Path)}
+		res = Result{Status: "updated", ID: c.ID, Path: b.Abs(c.Path), Warning: warning}
 		return []Event{{Action: ActUpdate, ID: c.ID, Title: titleOf(n, c.ID)}}, nil
 	})
 	return res, err
+}
+
+// lostRelations describes the relations in before that are missing from
+// after, or returns "" if none are.
+func lostRelations(before, after []note.Relation) string {
+	var lost []string
+	for _, r := range before {
+		if !slices.ContainsFunc(after, func(a note.Relation) bool { return a.Type == r.Type && a.Href == r.Href }) {
+			target := r.Target
+			if target == "" {
+				target = r.Href
+			}
+			lost = append(lost, r.Type+" -> "+target)
+		}
+	}
+	if len(lost) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("replace_body removed %d relation(s) written outside the Relations section: %s; add back any you need with rit note write --rel",
+		len(lost), strings.Join(lost, ", "))
 }
 
 // VerifyResult reports a verification.

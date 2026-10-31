@@ -111,3 +111,78 @@ func trimBlank(ls []string) []string {
 	}
 	return ls
 }
+
+// Document is the part of the body that `replace_body` replaces and
+// `note view --body` prints (§5.7): the body without its Observations and
+// Relations sections or the footnote definitions derived from sources.
+func (n *Note) Document() string {
+	ls := lines(n.EditableBody())
+	kept := sectionMask(ls, ObservationsSection, RelationsSection)
+	var doc []string
+	for i, l := range ls {
+		if !kept[i] {
+			doc = append(doc, l)
+		}
+	}
+	return join(trimBlankEdges(doc))
+}
+
+// ReplaceDocument is the `replace_body` edit (§5.7): content becomes the
+// note's document, followed by the note's existing Observations and Relations
+// sections in their original order.
+func (n *Note) ReplaceDocument(content string) error {
+	if strings.TrimSpace(content) == "" {
+		return fmt.Errorf("replace_body requires --content (the new document)")
+	}
+	if fm, _, ok := split(content); ok {
+		if parsed, err := parseFrontmatter(fm); err == nil && (parsed.Type != "" || parsed.Title != "") {
+			return fmt.Errorf("replace_body content starts with a frontmatter block; pass only the document (rit note view --body prints it)")
+		}
+	}
+	for _, h := range Headings(content) {
+		if strings.EqualFold(h.Text, ObservationsSection) || strings.EqualFold(h.Text, RelationsSection) {
+			return fmt.Errorf("replace_body content has a %q section, but the note keeps its own; add observations with rit note write --obs and relations with --rel", h.Text)
+		}
+	}
+	derived := map[string]string{}
+	for _, d := range derivedDefs(n.FM.Sources) {
+		label := footnoteDefRe.FindStringSubmatch(d)[1]
+		derived[label] = d
+	}
+	var doc []string
+	for _, l := range lines(content) {
+		if m := footnoteDefRe.FindStringSubmatch(l); m != nil {
+			if want, ok := derived[m[1]]; ok {
+				if strings.TrimSpace(l) != want {
+					return fmt.Errorf("replace_body content defines footnote [^%s], but [^%s] is this note's source %s; renumber the document's own footnotes, or cite the source with [^%s] and leave its definition out", m[1], m[1], m[1], m[1])
+				}
+				continue
+			}
+		}
+		doc = append(doc, l)
+	}
+	out := trimBlankEdges(doc)
+	ls := lines(n.EditableBody())
+	kept := sectionMask(ls, ObservationsSection, RelationsSection)
+	for i := 0; i < len(ls); {
+		if !kept[i] {
+			i++
+			continue
+		}
+		j := i
+		for j < len(ls) && kept[j] {
+			j++
+		}
+		out = append(append(out, ""), trimBlank(ls[i:j])...)
+		i = j
+	}
+	n.Body = join(out)
+	return nil
+}
+
+func trimBlankEdges(ls []string) []string {
+	for len(ls) > 0 && strings.TrimSpace(ls[0]) == "" {
+		ls = ls[1:]
+	}
+	return trimBlank(ls)
+}

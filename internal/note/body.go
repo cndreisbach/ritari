@@ -2,6 +2,7 @@ package note
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -203,7 +204,7 @@ func isTag(word string) bool {
 func Observations(body string) []Observation {
 	var out []Observation
 	ls := lines(body)
-	in := inObservations(ls)
+	in := sectionMask(ls, ObservationsSection)
 	for i, l := range ls {
 		if !in[i] {
 			continue
@@ -216,21 +217,21 @@ func Observations(body string) []Observation {
 	return out
 }
 
-// inObservations reports, for each line, whether it lies inside a section
-// headed `Observations` (any level, case-insensitively). Heading lines are
-// never inside.
-func inObservations(ls []string) []bool {
+// sectionMask reports, for each line, whether it lies in a section (heading
+// line included) whose heading is one of names, at any level and
+// case-insensitively. A matching heading nested inside another match is part
+// of the outer section.
+func sectionMask(ls []string, names ...string) []bool {
 	in := make([]bool, len(ls))
-	level := 0 // the open Observations section's heading level, or 0
+	level := 0 // the open section's heading level, or 0
 	for i, l := range ls {
 		if h, ok := parseHeading(l); ok {
 			if level > 0 && h.Level <= level {
 				level = 0
 			}
-			if level == 0 && strings.EqualFold(h.Text, ObservationsSection) {
+			if level == 0 && slices.ContainsFunc(names, func(n string) bool { return strings.EqualFold(h.Text, n) }) {
 				level = h.Level
 			}
-			continue
 		}
 		in[i] = level > 0
 	}

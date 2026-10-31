@@ -2,7 +2,7 @@
 exec rit project init work $WORK/kb --default
 exec rit note write --title 'Auth uses JWT' --type decision --obs 'decision: x'
 ! exec rit note write --title 'Auth uses JWT' --content x
-stderr 'already exists; --content replaces the body, so use --force'
+stderr 'already exists; replace its body with rit note edit decisions/auth-uses-jwt --op replace_body'
 ! exec rit note write --title 'Auth uses JWT'
 stderr 'already exists and nothing to add'
 exec rit note write --title 'Auth uses JWT' --content x --force

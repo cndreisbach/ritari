@@ -126,7 +126,7 @@ func dedupe(ls []string) []string {
 // what is already there (§5.3). It returns the new body and the counts added.
 func MergeBody(body string, obsLines, relLines []string) (string, int, int) {
 	ls := lines(body)
-	in := inObservations(ls)
+	in := sectionMask(ls, ObservationsSection)
 	var newObs []string
 	for _, l := range dedupe(obsLines) {
 		key := lineKey(l)
