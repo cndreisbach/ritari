@@ -1,6 +1,8 @@
 package bundle
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -20,6 +22,24 @@ func (b *Bundle) saveNote(rel string, n *note.Note) error {
 	return err
 }
 
+// Hash is the content hash of a note file: lowercase hex SHA-256 of its bytes.
+func Hash(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+// checkHash fails unless the concept's file on disk has the expected hash.
+func (b *Bundle) checkHash(c *Concept, want string) error {
+	data, err := os.ReadFile(b.Abs(c.Path))
+	if err != nil {
+		return err
+	}
+	if got := Hash(data); !strings.EqualFold(strings.TrimSpace(want), got) {
+		return fmt.Errorf("note %q changed since it was read (expected hash %s, found %s); read it again and reapply the change", c.ID, strings.TrimSpace(want), got)
+	}
+	return nil
+}
+
 // EditOpts are the inputs of `note edit`. Nil pointers mean "not given".
 type EditOpts struct {
 	Op          string
@@ -32,14 +52,18 @@ type EditOpts struct {
 	Resource    *string
 	Tags        *[]string
 	Meta        [][2]string
+	ExpectHash  string
+	DryRun      bool
 }
 
 // Result is the common outcome of a single-note operation.
 type Result struct {
-	Status  string
-	ID      string
-	Path    string // absolute
-	Warning string
+	Status   string
+	ID       string
+	Path     string // absolute
+	Warning  string
+	Hash     string // of the file as written; edit only
+	Rendered string // dry-run only
 }
 
 // Edit implements `note edit` (§9.7).
@@ -52,6 +76,11 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 		c, err := b.Resolve(ref)
 		if err != nil {
 			return nil, err
+		}
+		if o.ExpectHash != "" {
+			if err := b.checkHash(c, o.ExpectHash); err != nil {
+				return nil, err
+			}
 		}
 		n := c.Note
 		var warning string
@@ -94,10 +123,15 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 			n.FM.SetExtra(kv[0], kv[1])
 		}
 		n.FillGenerated(env.Actor, env.Stamp())
-		if err := b.saveNote(c.Path, n); err != nil {
+		data := note.Render(n)
+		if o.DryRun {
+			res = Result{Status: "dry-run", ID: c.ID, Warning: warning, Rendered: string(data)}
+			return nil, nil
+		}
+		if _, err := writeIfChanged(b.Abs(c.Path), data); err != nil {
 			return nil, err
 		}
-		res = Result{Status: "updated", ID: c.ID, Path: b.Abs(c.Path), Warning: warning}
+		res = Result{Status: "updated", ID: c.ID, Path: b.Abs(c.Path), Warning: warning, Hash: Hash(data)}
 		return []Event{{Action: ActUpdate, ID: c.ID, Title: titleOf(n, c.ID)}}, nil
 	})
 	return res, err

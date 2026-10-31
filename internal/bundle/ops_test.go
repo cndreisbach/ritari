@@ -3,6 +3,7 @@ package bundle
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +23,24 @@ func seed(t *testing.T) string {
 	return root
 }
 
+func TestEditExpectHashAndDryRun(t *testing.T) {
+	root := seed(t)
+	before := readFile(t, root, "decisions/auth-uses-jwt.md")
+	_, err := Edit(root, testEnv(), "decisions/auth-uses-jwt", EditOpts{Op: "append", Content: "x", ExpectHash: Hash([]byte("stale"))})
+	assert.ErrorContains(t, err, `note "decisions/auth-uses-jwt" changed since it was read (expected hash `)
+	assert.Equal(t, before, readFile(t, root, "decisions/auth-uses-jwt.md"))
+
+	res, err := Edit(root, testEnv(), "decisions/auth-uses-jwt", EditOpts{Op: "append", Content: "x", DryRun: true})
+	require.NoError(t, err)
+	assert.Equal(t, "dry-run", res.Status)
+	assert.Contains(t, res.Rendered, "\nx\n")
+	assert.Equal(t, before, readFile(t, root, "decisions/auth-uses-jwt.md"))
+
+	res, err = Edit(root, testEnv(), "decisions/auth-uses-jwt", EditOpts{Op: "append", Content: "x", ExpectHash: strings.ToUpper(Hash([]byte(before)))})
+	require.NoError(t, err)
+	assert.Equal(t, Hash([]byte(readFile(t, root, "decisions/auth-uses-jwt.md"))), res.Hash)
+}
+
 func TestEdit(t *testing.T) {
 	root := seed(t)
 	_, err := Edit(root, testEnv(), "decisions/auth-uses-jwt", EditOpts{})
@@ -31,8 +50,8 @@ func TestEdit(t *testing.T) {
 	later.Now = func() time.Time { return testNow.Add(time.Hour) }
 	res, err := Edit(root, later, "Auth uses JWT", EditOpts{Title: ptr("Renamed"), Tags: ptr([]string{"x"}), Meta: [][2]string{{"state", "done"}}})
 	require.NoError(t, err)
-	assert.Equal(t, Result{Status: "updated", ID: "decisions/auth-uses-jwt", Path: filepath.Join(root, "decisions", "auth-uses-jwt.md")}, res)
 	got := readFile(t, root, "decisions/auth-uses-jwt.md")
+	assert.Equal(t, Result{Status: "updated", ID: "decisions/auth-uses-jwt", Path: filepath.Join(root, "decisions", "auth-uses-jwt.md"), Hash: Hash([]byte(got))}, res)
 	assert.Contains(t, got, "title: Renamed\n")
 	assert.Contains(t, got, "tags: [x]\n")
 	assert.Contains(t, got, "at: 2026-07-29T12:00:00Z", "frontmatter-only edit keeps the stamp")

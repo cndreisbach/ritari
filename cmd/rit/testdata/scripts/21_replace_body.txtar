@@ -40,6 +40,22 @@ exec rit daily --note 'A day.'
 stderr 'replace_body does not apply to daily notes'
 cmp kb/tasks/ship-v2.md want/ship-v2.md
 
+# Hashes guard against a concurrent change; a dry run writes nothing.
+exec rit note read tasks/ship-v2
+stdout '^hash: 9561e9b7f880ba9c30000eef4e5582a7393fd59c837a434b4fb2bbfb67e24db8$'
+! exec rit note edit tasks/ship-v2 --op replace_body --content='New.' --expect-hash 0000
+stderr 'note "tasks/ship-v2" changed since it was read \(expected hash 0000, found 9561e9b7'
+exec rit note edit tasks/ship-v2 --op replace_body --content='New.' --dry-run
+stdout '^status: dry-run$'
+stdout '^rendered: \|$'
+! stdout '^path:'
+cmp kb/tasks/ship-v2.md want/ship-v2.md
+exec rit note edit tasks/ship-v2 --op replace_body --content='New.' --expect-hash 9561e9b7f880ba9c30000eef4e5582a7393fd59c837a434b4fb2bbfb67e24db8
+stdout '^hash: [0-9a-f]{64}$'
+exec rit note view --body tasks/ship-v2
+stdout '^New.$'
+grep '^state: open$' kb/tasks/ship-v2.md
+
 okflint kb
 
 -- report.md --

@@ -54,12 +54,30 @@ func TestWriteCreate(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, WriteResult{
 		Status: "created", ID: "decisions/auth-uses-jwt", Path: filepath.Join(root, "decisions", "auth-uses-jwt.md"),
-		AddedObs: 1, AddedRels: 1, AddedSources: 1,
+		AddedObs: 1, AddedRels: 1, AddedSources: 1, Hash: Hash([]byte(jwtFile)),
 	}, res)
 	assert.Equal(t, jwtFile, readFile(t, root, "decisions/auth-uses-jwt.md"))
 	assert.Equal(t, "# Update Log\n\n## 2026-07-29\n\n* **Create**: [Auth uses JWT](/decisions/auth-uses-jwt.md)\n", readFile(t, root, "log.md"))
 	assert.Equal(t, "# Decisions\n\n* [Auth uses JWT](/decisions/auth-uses-jwt.md) - Stateless auth.\n", readFile(t, root, "decisions/index.md"))
 	assert.Contains(t, readFile(t, root, "index.md"), "* [Decisions](/decisions/index.md) (`decision`) - A choice made, with its rationale.\n")
+}
+
+func TestWriteExpectHash(t *testing.T) {
+	root := t.TempDir()
+	o := jwtOpts()
+	o.ExpectHash = "abc"
+	_, err := Write(root, testEnv(), o)
+	assert.EqualError(t, err, `--expect-hash given, but note "decisions/auth-uses-jwt" does not exist`)
+
+	o.ExpectHash = ""
+	res, err := Write(root, testEnv(), o)
+	require.NoError(t, err)
+	add := WriteOpts{Title: "Auth uses JWT", Obs: []string{"fact: more"}, ExpectHash: "abc"}
+	_, err = Write(root, testEnv(), add)
+	assert.ErrorContains(t, err, "changed since it was read")
+	add.ExpectHash = res.Hash
+	_, err = Write(root, testEnv(), add)
+	require.NoError(t, err)
 }
 
 func TestWriteConverges(t *testing.T) {

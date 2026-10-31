@@ -1068,7 +1068,7 @@ The actor string stamped into `generated.by` and `verified[].by`:
 rit note write --title T [--type TYPE] [--description D] [--tags a,b]
     [--resource URI] [--meta k=v]... [--content BODY|-]
     [--obs "category: text #tag (ctx)"]... [--rel "type: Target"]...
-    [--source "source"]... [--force] [--dry-run] [--allow-empty]
+    [--source "source"]... [--force] [--dry-run] [--allow-empty] [--expect-hash H]
 ```
 
 - `--title` is required. `--type` defaults to `note`. `--tags` is comma-separated.
@@ -1078,6 +1078,9 @@ rit note write --title T [--type TYPE] [--description D] [--tags a,b]
   error `note requires a title that slugifies to something`.
 - **Existing-note detection:** look up that ID (§5.1); if not found, look up the title
   (so re-capturing under a different type still finds it instead of forking).
+- **`--expect-hash H`:** guards against a concurrent change (§9.7). With no existing note:
+  error `--expect-hash given, but note "<id>" does not exist`; otherwise the existing
+  file must have hash `H`, checked under the writer lock.
 - **Existing note and no `--force` → additive mode.** Otherwise → fresh mode.
 
 **Additive mode.**
@@ -1113,9 +1116,10 @@ rit note write --title T [--type TYPE] [--description D] [--tags a,b]
 `dry-run` with the full rendered file.
 
 Results (machine): `success`, `status` (`created`|`updated`|`replaced`|`dry-run`), `id`,
-`path` (absolute; omitted on dry-run), `added_observations`, `added_relations`,
-`added_sources`, `warning` (omitted when empty); a dry run replaces `path`/`warning`
-with `rendered` (the whole file as a string). Text: `warning: <msg>` (if any) then
+`path` (absolute; omitted on dry-run), `hash` (§9.7; omitted on dry-run),
+`added_observations`, `added_relations`, `added_sources`, `warning` (omitted when
+empty); a dry run replaces `path`/`hash`/`warning` with `rendered` (the whole file as a
+string). Text: `warning: <msg>` (if any) then
 `Wrote <path>` / `Updated <path> (+N obs, +M rel)` / `Replaced <path>`; dry run prints
 `--- dry-run (<id>) ---` then the rendered file.
 
@@ -1127,7 +1131,7 @@ Observations or Relations sections, no derived footnote definitions.
 
 `note read <ref>` machine result (one document; empty values/lists omitted): `success`,
 `id`, `type`, `title`, `description`, `tags` (list), `trust`, `resource`, `path`,
-`generated_by`, `generated_at` (only if `generated` exists), `observations` (list of
+`hash` (§9.7), `generated_by`, `generated_at` (only if `generated` exists), `observations` (list of
 canonical lines without the leading `- `, e.g. `[decision] Use JWT #security [^1]`),
 `relations` (list of `type -> target` where target is the resolved ID or, for external
 links, the raw href), `links` (distinct in-bundle target IDs), `sources` (list of
@@ -1140,6 +1144,7 @@ description, `trust: …`, then Observations / Relations / Sources blocks.
 ```
 rit note edit <ref> [--op OP] [--content C|-] [--section S] [--find F] [--count N]
     [--title T] [--description D] [--tags a,b] [--resource URI] [--meta k=v]...
+    [--expect-hash H] [--dry-run]
 ```
 
 - Error `nothing to do: pass --op for a body edit, or --title/--description/--tags/
@@ -1149,10 +1154,20 @@ rit note edit <ref> [--op OP] [--content C|-] [--section S] [--find F] [--count 
   move the file or change the ID (identity is the path). An op and frontmatter flags may
   be combined in one call/write.
 - `generated` is restamped only if the body actually changed.
-- Always recorded as an `Update`.
-- Result: `success`, `status: updated`, `id`, `path`, `op` (if given), `warning` (omitted
-  when empty; see `replace_body`, §5.7). Text: `warning: <msg>` (if any), then
-  `Edited <path>`.
+- **Content hash.** A note's hash is the lowercase hex SHA-256 of its file's bytes, as
+  `note read` reports and `note write`/`note edit` return for the file they wrote (the
+  same value `sha256sum` prints). `--expect-hash H` (compared case-insensitively) makes
+  the edit fail unless the file still has hash `H`, checked under the writer lock before
+  anything changes: `note "<id>" changed since it was read (expected hash H, found <hash>);
+  read it again and reapply the change`. Sessions that edit the same note pass the hash
+  they read, so neither silently overwrites the other.
+- **`--dry-run`:** performs everything except writing and recording, and reports status
+  `dry-run` with the full rendered file.
+- Always recorded as an `Update` (a dry run records nothing).
+- Result: `success`, `status: updated`, `id`, `path`, `hash`, `op` (if given), `warning`
+  (omitted when empty; see `replace_body`, §5.7). A dry run reports `status: dry-run` and
+  replaces `path`/`hash` with `rendered`. Text: `warning: <msg>` (if any), then
+  `Edited <path>`, or for a dry run `--- dry-run (<id>) ---` then the rendered file.
 
 (The two commands are complementary by design: `note write` adds and merges, matched
 by title; `note edit` sets, addressed by ID — one cannot merge its way to renaming.)
