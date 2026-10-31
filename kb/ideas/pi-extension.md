@@ -10,7 +10,7 @@ sources:
     resource: Clinton, development session 2026-10-31
   - id: "3"
     resource: Ritari suggestions email from Clinton's work agent (Pi user), 2026-10-31
-generated: {by: claude-code, at: 2026-10-31T02:34:50Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:02:26Z}
 state: proposed
 ---
 
@@ -35,6 +35,11 @@ state: proposed
 - [constraint] Updating a document must preserve its metadata and structured sections and reject a stale expected revision; note edit --op replace_body with --expect-hash now provides both [^3]
 - [constraint] Never silently write into an existing note whose title matches; keep a search or read step explicit so the agent picks the right existing note [^3]
 - [decision] Leave the document tools aside for now; they are better authored inside Pi than in this repo (Clinton) [^2]
+- [decision] skip the routing measurement — Clinton uses rit from Pi all day, so the typed tool surface is worth building now (Clinton) [^2]
+- [outcome] the typed tools shipped as the pi-ritari npm package in this repo: ritari_search, ritari_read, ritari_write, ritari_edit with TypeBox schemas over rit --output json [^2]
+- [outcome] the package also owns the session-start brief, so rit install hooks --agent pi was removed and .pi/extensions/ritari.ts is gone [^2]
+- [constraint] the package resolves the project itself and names it in every result; the registry default is a reported fallback, never silent [^2]
+- [open-thread] try the package in a real Pi session; the vitest suites and a real-CLI smoke test are the only coverage so far [^2]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)

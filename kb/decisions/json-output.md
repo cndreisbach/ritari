@@ -6,7 +6,7 @@ tags: [cli, output, json, pi]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T02:54:39Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:02:33Z}
 state: accepted
 ---
 
@@ -16,6 +16,8 @@ state: accepted
 - [rationale] the extension must not carry a YAML parser, and NDJSON keeps the document-stream contract while letting a single-document result parse directly [^1]
 - [constraint] raw-byte commands (note view, read, types --yaml) ignore the format in both modes, so json changes nothing there [^1]
 - [constraint] the unknown-format error and its spec text must list text, yaml and json [^1]
+- [outcome] --output json shipped — newline-delimited flat objects, the same documents, order and omission rules; unit tests, scenario 22, spec 9.1, README and the skill updated [^1]
+- [outcome] the pi-ritari client parses the stream line by line and turns a failure document into an error [^1]
 
 # Relations
 - affects [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md)

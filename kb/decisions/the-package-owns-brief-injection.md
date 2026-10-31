@@ -6,7 +6,7 @@ tags: [pi, extension, hooks]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T02:54:41Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:02:29Z}
 state: accepted
 ---
 
@@ -16,6 +16,10 @@ state: accepted
 - [constraint] both paths refuse to duplicate the brief if they are somehow loaded together; the package should detect the generated hook or brief only once per session [^1]
 - [constraint] the hook bakes the project name at install time, but a globally installed package cannot, so the package resolves the project at runtime and refuses rather than falling back to the personal knowledge base [^1]
 - [open-thread] how the package detects the generated hook — a shared custom message type, a settings check, or a note in the install output [^1]
+- [outcome] the package injects rit brief before the first turn and after a compaction, and names the project it resolved [^1]
+- [outcome] the generated hook was removed from rit install hooks, so there is no second writer and no duplicate-brief detection to build [^1]
+- [constraint] the brief stays silent when rit fails or the project cannot be resolved, so a broken brief never blocks a session [^1]
+- [outcome] closing the earlier open thread — no hook detection is needed because the package is the only path [^1]
 
 # Relations
 - affects [Pi extension](/ideas/pi-extension.md)

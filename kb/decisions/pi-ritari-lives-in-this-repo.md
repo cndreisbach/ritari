@@ -6,7 +6,7 @@ tags: [pi, extension, npm, packaging]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T02:54:39Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:02:29Z}
 state: accepted
 ---
 
@@ -17,6 +17,9 @@ state: accepted
 - [rationale] no path filtering is possible in svu, so independent npm versioning would bump on every Go-only commit [^1]
 - [constraint] Pi packages are ordinary npm packages, so the manifest needs the pi-package keyword, a pi manifest, and host packages in peerDependencies with a * range [^1]
 - [risk] node tooling enters CI and the release workflow; a spec section and tests are the price of keeping policy from drifting [^1]
+- [outcome] pi-ritari/ is built — package.json with the pi-package keyword and pi manifest, extensions/ritari.ts, src/ (rit client, project resolution, tools, brief), and four vitest suites [^1]
+- [outcome] CI runs npm ci, tsc --noEmit and vitest; the release workflow publishes pi-ritari@<tag> with provenance only when pi-ritari/ changed since the previous tag [^1]
+- [next-step] add the NPM_TOKEN secret before the first release that touches pi-ritari [^1]
 
 # Relations
 - affects [Pi extension](/ideas/pi-extension.md)

@@ -7,6 +7,13 @@
 * **Create**: [JSON output](/decisions/json-output.md)
 * **Create**: [The package owns brief injection](/decisions/the-package-owns-brief-injection.md)
 * **Update**: [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md)
+* **Update**: [Session-start hooks](/decisions/session-start-hooks.md)
+* **Update**: [Pi extension](/ideas/pi-extension.md)
+* **Update**: [The package owns brief injection](/decisions/the-package-owns-brief-injection.md)
+* **Update**: [pi-ritari lives in this repo](/decisions/pi-ritari-lives-in-this-repo.md)
+* **Update**: [JSON output](/decisions/json-output.md)
+* **Create**: [2026-10-30](/daily/2026-10-30.md)
+* **Update**: [2026-10-30](/daily/2026-10-30.md)
 
 ## 2026-10-31
 
