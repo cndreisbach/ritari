@@ -72,7 +72,8 @@ Workflow:
 | `internal/yamlx` | YAML scalar quoting that round-trips exactly |
 | `internal/cli` | kong command tree; text and machine output |
 | `internal/skills` | Embedded agent skills, installed by `rit install skills` |
-| `internal/hooks` | Project-scoped session hooks for Claude Code and Pi, installed by `rit install hooks` |
+| `internal/hooks` | Project-scoped Claude Code session hooks, installed by `rit install hooks` |
+| `pi-ritari` | The Pi package (npm `pi-ritari`): typed tools over the CLI plus the session brief; versioned with the CLI |
 
 ## Tooling
 
@@ -90,6 +91,7 @@ mise install                          # install the pinned tools
 mise run setup                        # build rit and register kb/ as the ritari project
 mise run build                        # go build -o bin/rit ./cmd/rit (bin/ is git-ignored)
 mise run test                         # go test ./...
+mise run test:pi                      # typecheck and test pi-ritari
 mise run tidy                         # go mod tidy
 mise run archive-tasks                # archive task notes whose state is done (--dry-run to preview)
 mise exec -- golangci-lint run ./...

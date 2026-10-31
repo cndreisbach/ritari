@@ -1,0 +1,30 @@
+# Scenario 22: json output.
+exec rit project init work $WORK/kb --default
+
+# One flat JSON object per line, in key order, with empty fields omitted.
+exec rit -o json note write --title 'Auth uses JWT' --type decision --description 'Stateless auth.' --obs 'decision: Use JWT'
+stdout '^\{"success":true,"status":"created","id":"decisions/auth-uses-jwt","path":".*/kb/decisions/auth-uses-jwt\.md","hash":"[0-9a-f]+","added_observations":1,"added_relations":0,"added_sources":0\}$'
+
+exec rit -o json note read 'auth uses jwt'
+stdout '^\{"success":true,"id":"decisions/auth-uses-jwt","type":"decision".*\}$'
+
+# A record set is still a stream: a header document, then one per record.
+exec rit -o json search JWT
+stdout '^\{"success":true,"count":1\}$'
+stdout '^\{"id":"decisions/auth-uses-jwt".*\}$'
+
+# Failures are one document too.
+! exec rit -o json note read nope
+stdout '^\{"success":false,"error":"note not found: nope"\}$'
+stderr '^rit: note not found: nope$'
+
+# The environment selects it, case-insensitively.
+env RITARI_OUTPUT=JSON
+exec rit ls
+stdout '^\{"success":true,"count":1,"ids":\["decisions/auth-uses-jwt"\]\}$'
+
+# Raw-byte commands are unchanged in every machine format.
+exec rit -o json note view decisions/auth-uses-jwt
+stdout '^type: decision$'
+
+okflint kb

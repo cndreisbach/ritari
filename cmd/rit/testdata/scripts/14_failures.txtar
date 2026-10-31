@@ -13,8 +13,8 @@ stderr '^rit: note not found: nope$'
 ! exec rit -p ghost ls
 stdout 'project "ghost" not found'
 
-! exec rit -o json ls
-stderr '^rit: unknown output format "json" \(want text or yaml\)$'
+! exec rit -o toml ls
+stderr '^rit: unknown output format "toml" \(want text, yaml, or json\)$'
 
 ! exec rit nonsense
 stderr 'rit: '

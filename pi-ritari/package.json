@@ -1,0 +1,45 @@
+{
+  "name": "pi-ritari",
+  "version": "0.0.0-placeholder",
+  "description": "Ritari long-term memory for Pi: typed search, read, write, and edit over the rit CLI, plus a session-start brief.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "ritari",
+    "memory",
+    "knowledge-base",
+    "okf"
+  ],
+  "homepage": "https://github.com/cndreisbach/ritari",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cndreisbach/ritari.git",
+    "directory": "pi-ritari"
+  },
+  "files": [
+    "extensions",
+    "src",
+    "README.md"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/ritari.ts"
+    ]
+  },
+  "scripts": {
+    "test": "vitest --run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/node": "^26.6.6",
+    "typebox": "^1.4.3",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.5"
+  }
+}

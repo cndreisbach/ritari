@@ -4,7 +4,6 @@
 package hooks
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -17,7 +16,7 @@ import (
 )
 
 // Agents lists the agents hooks can be installed for.
-var Agents = []string{"claude", "pi"}
+var Agents = []string{"claude"}
 
 // Result reports one agent's install.
 type Result struct {
@@ -140,71 +139,4 @@ func childObject(parent *object, key string) (*object, error) {
 		return nil, fmt.Errorf("%s is not an object", key)
 	}
 	return child, nil
-}
-
-// piHeader begins every extension rit writes; a file without it is someone
-// else's and is replaced only with force.
-const piHeader = "// Written by `rit install hooks`; run it again to update this file.\n"
-
-const piBody = `// At the start of a session and after a compaction, adds rit brief's output
-// (the latest daily notes and open tasks) to the agent's context.
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-
-const RIT_ARGS = %s;
-
-export default function (pi: ExtensionAPI) {
-  let pending = true;
-  pi.on("session_start", async () => {
-    pending = true;
-  });
-  pi.on("session_compact", async () => {
-    pending = true;
-  });
-  pi.on("before_agent_start", async () => {
-    if (!pending) return;
-    pending = false;
-    try {
-      const result = await pi.exec("rit", RIT_ARGS, { timeout: 10000 });
-      if (result.code !== 0 || !result.stdout.trim()) return;
-      return {
-        message: { customType: "ritari-brief", content: result.stdout, display: false },
-      };
-    } catch {
-      return;
-    }
-  });
-}
-`
-
-// PiExtension is the extension source for project.
-func PiExtension(project string) []byte {
-	var args []string
-	for _, a := range Args(project) {
-		q, _ := json.Marshal(a)
-		args = append(args, string(q))
-	}
-	return []byte(piHeader + fmt.Sprintf(piBody, "["+strings.Join(args, ", ")+"]"))
-}
-
-// Pi writes the extension to root/.pi/extensions/ritari.ts. An existing file
-// rit did not write is left alone unless force.
-func Pi(root, project string, force bool) (Result, error) {
-	p := filepath.Join(root, ".pi", "extensions", "ritari.ts")
-	res := Result{Agent: "pi", Path: p}
-	want := PiExtension(project)
-	data, err := os.ReadFile(p)
-	switch {
-	case errors.Is(err, fs.ErrNotExist):
-		res.Status = "created"
-	case err != nil:
-		return res, err
-	case string(data) == string(want):
-		res.Status = "unchanged"
-		return res, nil
-	case !strings.HasPrefix(string(data), piHeader) && !force:
-		return res, fmt.Errorf("%s exists and was not written by rit (pass --force to replace it)", p)
-	default:
-		res.Status = "updated"
-	}
-	return res, bundle.WriteFileAtomic(p, want)
 }

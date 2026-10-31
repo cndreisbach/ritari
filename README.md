@@ -103,7 +103,7 @@ open tasks, install a session hook into a project:
 
 ```bash
 cd ~/src/my-app
-rit -p work install hooks --agent claude,pi   # .claude/settings.json, .pi/extensions/ritari.ts
+rit -p work install hooks --agent claude      # .claude/settings.json
 rit -p work install hooks --agent claude --local   # .claude/settings.local.json instead
 ```
 
@@ -112,9 +112,22 @@ agent's `PATH`. Hooks are written only into the project directory (the current
 one, or `--dir`), never into your user-level agent settings, so they fire only
 for sessions in that project.
 
+On Pi, install the package instead — it registers typed tools as well as the
+session-start brief:
+
+```bash
+pi install npm:pi-ritari
+```
+
+`pi-ritari` calls `rit` for every read and write, so there are no direct file
+tools and no second copy of the bundle format. See
+[pi-ritari/README.md](pi-ritari/README.md).
+
 When `rit` runs without a terminal, as it does under an agent, it prints flat
 YAML that is easy to parse. In a terminal it prints readable text. Use
-`--output text` or `--output yaml` to choose. Writes are stamped with who made
+`--output text`, `--output yaml`, or `--output json` to choose; JSON is
+newline-delimited flat objects, the same documents as the YAML stream. Writes are
+stamped with who made
 them: `rit` recognizes Claude Code, Codex, Cursor, Rovo Dev, and Pi, and otherwise
 uses your configured author (`rit config author human:you@example.com`) or your
 git email. An agent that names its model is stamped as `<agent>/<model>` — Pi's

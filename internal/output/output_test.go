@@ -1,6 +1,7 @@
 package output
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -44,4 +45,26 @@ func TestScalarQuoting(t *testing.T) {
 	require.NoError(t, yaml.Unmarshal([]byte(b.String()), &m))
 	assert.Equal(t, `note "x" already exists: use --force`, m["error"])
 	assert.Equal(t, "true", m["v"])
+}
+
+func TestWriteJSON(t *testing.T) {
+	var b strings.Builder
+	require.NoError(t, WriteJSON(&b,
+		New().Set("success", true).Set("count", 2),
+		New().Set("id", "decisions/a").Set("empty", "").Set("tags", List{"a", "b,c"}).Set("none", List{}).Set("ids", ExplicitList{}).Set("score", 0),
+		New().Set("content", "a <b> & c\nsecond"),
+	))
+	assert.Equal(t,
+		"{\"success\":true,\"count\":2}\n"+
+			"{\"id\":\"decisions/a\",\"tags\":[\"a\",\"b,c\"],\"ids\":[],\"score\":0}\n"+
+			"{\"content\":\"a <b> & c\\nsecond\"}\n", b.String())
+}
+
+func TestWriteJSONRoundTrip(t *testing.T) {
+	var b strings.Builder
+	require.NoError(t, WriteJSON(&b, New().Set("content", "line\nwith \"quotes\"\tand tabs").Set("after", "x")))
+	var m map[string]any
+	require.NoError(t, json.Unmarshal([]byte(strings.TrimSuffix(b.String(), "\n")), &m))
+	assert.Equal(t, "line\nwith \"quotes\"\tand tabs", m["content"])
+	assert.Equal(t, "x", m["after"])
 }

@@ -929,13 +929,13 @@ the allowed-category list. Counts in the result reflect filtering. The command f
 ### 9.1 Global behavior
 
 ```
-rit [--output text|yaml] [--project NAME] <command> ...
+rit [--output text|yaml|json] [--project NAME] <command> ...
 ```
 
-- `--output`/`-o`: `text` or `yaml`. If unset, the `RITARI_OUTPUT` environment variable
-  is consulted; if still unset, **auto**: machine (YAML) mode unless standard output
-  is a terminal. An unrecognized value prints `<tool>: unknown output format "<x>"
-  (want text or yaml)` to stderr and exits with status 2.
+- `--output`/`-o`: `text`, `yaml`, or `json`. If unset, the `RITARI_OUTPUT` environment
+  variable is consulted; if still unset, **auto**: machine (YAML) mode unless standard
+  output is a terminal. An unrecognized value prints `<tool>: unknown output format
+  "<x>" (want text, yaml, or json)` to stderr and exits with status 2.
 - `--project`/`-p`: project name; overrides the default and `RITARI_PROJECT`.
 - A string flag value that begins with `-` MUST be given in the `--flag=value` form;
   the space-separated form is a usage error (this is the standard behavior of the
@@ -953,6 +953,11 @@ nothing nests.
   document carrying `success: true` and `count`, then one document per record.
 - A field whose value is an empty string is **omitted**; an empty list is omitted
   unless the spec below says it is emitted as an explicit `[]` ("none" as an answer).
+- With `--output json` the same documents are written as **newline-delimited JSON**:
+  one flat JSON object per line, with the same fields, the same key order, and the
+  same omission rules. A record set is still a stream, so the header is the first line
+  and each record follows on its own line. JSON values are typed, and `<`, `>`, and
+  `&` are not escaped.
 - Key order is as listed in this specification.
 - On failure: a document `success: false` + `error: <message>` on standard output
   (machine mode only), the message on standard error as `<tool>: <message>`, and exit
@@ -1427,7 +1432,7 @@ whatever the build identified itself as (a release version, or a short VCS revis
 ### 9.22 `install hooks`
 
 ```
-rit install hooks --agent claude|pi[,...] [--dir PATH] [--local] [--force]
+rit install hooks --agent claude[,...] [--dir PATH] [--local]
 ```
 
 Installs a hook that runs `brief` (§9.23) when an agent starts a session, so the agent
@@ -1435,8 +1440,10 @@ begins with the latest daily notes and open tasks without being asked to look. H
 **project-scoped**: they are written only under `--dir` (default: the current directory),
 never into an agent's user-level settings, so they fire only for sessions in that project.
 `--agent` is required and repeatable (or comma-separated); an unknown agent is
-`unknown agent "<x>" (known: claude, pi)`. `--dir` must be an existing directory
-(`<dir> is not a directory`).
+`unknown agent "<x>" (known: claude)`. `--agent pi` is
+`the Pi integration is the pi-ritari package; delete .pi/extensions/ritari.ts if an earlier
+rit wrote it` — the Pi integration is the npm package (§13), not a generated file. `--dir` must
+be an existing directory (`<dir> is not a directory`).
 
 The hook names the knowledge base it reads: the active project (§9.3) at install time is
 written into it, so it does not depend on `RITARI_PROJECT` when it runs. The command is
@@ -1451,11 +1458,6 @@ contains anything but letters, digits, and `._/:=-`. `rit` must be on the agent'
   and is updated in place, not duplicated. A file that is not a JSON object, or whose `hooks`
   is not an object or `hooks.SessionStart` not a list, is an error naming the file and is left
   untouched. Output is two-space-indented JSON.
-- **`pi`**: writes `<dir>/.pi/extensions/ritari.ts`, an extension that adds `brief`'s output
-  to the context once, before the first agent turn of a session and again after a
-  compaction, and does nothing if `rit` fails. The file begins with a line naming
-  `rit install hooks`; an existing file without it is `<path> exists and was not written by
-  rit (pass --force to replace it)` unless `--force`.
 
 Result: a header `success`, `project`, `dir`, `command`, `count`, then per agent `agent`,
 `path`, `status` (`created`|`updated`|`unchanged`; an unchanged file is not rewritten).
@@ -1744,3 +1746,31 @@ machine mode.)
     for the bundle, and it reports an error for a bundle with a malformed file.
 18. **Tags.** `--obs "bug: Fixed #42 and color #ff00aa #auth"` yields the tag `auth` only; `#42`
     and `#ff00aa` stay in the content.
+
+## 13. Pi package (`pi-ritari`)
+
+`pi-ritari/` in this repository is the Pi integration, published to npm as `pi-ritari`.
+`rit install hooks` no longer writes a Pi extension (§9.22). The package requires `rit` on
+the agent's `PATH` and consumes `rit --output json` (§9.1), so it carries no YAML parser and
+no second copy of the bundle format.
+
+- **Version.** The package version is the release tag's version (`pi-ritari` 3.1.0 ships with
+  `rit` 3.1.0). A release publishes it only when `pi-ritari/` changed since the previous tag.
+- **Tools.** `ritari_search`, `ritari_read`, `ritari_write`, and `ritari_edit`, grouped under
+  the `ritari` namespace. Each call passes `--project <name> --output json`, and every result
+  names the project it used.
+- **Project resolution.** `RITARI_PROJECT`, else the nearest `ritari.yaml` at or above the
+  working directory matched to a registered project by path, else the registry default. A
+  `ritari.yaml` the registry does not know is an error naming the directory; it never falls
+  back to a different knowledge base.
+- **Writes.** Only through `rit note write` and `rit note edit`; there are no direct file
+  tools. A title that already exists is an error unless the caller passes its `id`, which
+  must match that note's title. Replacing a body requires `--expect-hash` from an earlier
+  read.
+- **Brief.** Before the first turn of a session and again after a compaction, adds
+  `rit --project <name> --output text brief` to the run, once, and does nothing when `rit`
+  fails or the project cannot be resolved.
+- **Package shape.** `package.json` carries the `pi-package` keyword and a `pi` manifest
+  pointing at `extensions/ritari.ts`. The host packages `@earendil-works/pi-coding-agent` and
+  `typebox` are `peerDependencies` with a `*` range and are not bundled. The package's own
+  tests are `vitest` suites under `pi-ritari/test/`; they run in CI beside the Go tests.

@@ -3,6 +3,8 @@
 package output
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -31,6 +33,66 @@ func (d *Doc) Set(key string, v any) *Doc {
 	d.keys = append(d.keys, key)
 	d.vals = append(d.vals, v)
 	return d
+}
+
+// WriteJSON renders docs as newline-delimited JSON: one flat object per line,
+// with keys in insertion order and the same omission rules as Write (§9.1).
+func WriteJSON(w io.Writer, docs ...*Doc) error {
+	var b strings.Builder
+	for _, d := range docs {
+		d.renderJSON(&b)
+		b.WriteByte('\n')
+	}
+	_, err := io.WriteString(w, b.String())
+	return err
+}
+
+func (d *Doc) renderJSON(b *strings.Builder) {
+	b.WriteByte('{')
+	n := 0
+	for i, k := range d.keys {
+		var v any
+		switch val := d.vals[i].(type) {
+		case string:
+			if val == "" {
+				continue
+			}
+			v = val
+		case int, bool:
+			v = val
+		case List:
+			if len(val) == 0 {
+				continue
+			}
+			v = []string(val)
+		case ExplicitList:
+			if val == nil {
+				v = []string{}
+			} else {
+				v = []string(val)
+			}
+		default:
+			panic(fmt.Sprintf("output: unsupported value %T for %q", val, k))
+		}
+		if n > 0 {
+			b.WriteByte(',')
+		}
+		n++
+		key, _ := json.Marshal(k)
+		b.Write(key)
+		b.WriteByte(':')
+		b.Write(jsonValue(v))
+	}
+	b.WriteByte('}')
+}
+
+// jsonValue encodes one value without HTML escaping, so bodies keep `<` and `&`.
+func jsonValue(v any) []byte {
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(v)
+	return bytes.TrimRight(b.Bytes(), "\n")
 }
 
 // Write renders documents separated by `---`.

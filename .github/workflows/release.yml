@@ -19,6 +19,9 @@ jobs:
   release:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      previous: ${{ steps.version.outputs.previous }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -73,3 +76,37 @@ jobs:
           git add Formula/ritari.rb
           git commit -m "chore(release): update Homebrew formula to $TAG"
           git push origin main
+
+  npm:
+    needs: release
+    if: needs.release.outputs.tag != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+          registry-url: "https://registry.npmjs.org"
+
+      # Authenticates through npm trusted publishing (OIDC); no token secret.
+      # Configure it on npmjs.com for cndreisbach/ritari, release.yml.
+      - name: Publish pi-ritari when it changed
+        env:
+          TAG: ${{ needs.release.outputs.tag }}
+          PREVIOUS: ${{ needs.release.outputs.previous }}
+        run: |
+          if [ -n "$PREVIOUS" ] && git diff --quiet "$PREVIOUS" "$TAG" -- pi-ritari; then
+            echo "pi-ritari is unchanged since $PREVIOUS; nothing to publish."
+            exit 0
+          fi
+          cd pi-ritari
+          npm ci
+          npm test
+          npm version "${TAG#v}" --no-git-tag-version --allow-same-version >/dev/null
+          npm publish --provenance --access public

@@ -43,8 +43,9 @@ consolidating recent daily notes into durable ones.
 Run without a terminal (as agents do), `rit` prints **flat YAML**: a single
 document, or a stream of documents separated by `---` (a header with `success`
 and `count`, then one document per record). Failures print `success: false` and
-`error: …` and exit non-zero. Add `--output text` (or `-o text`) for human prose.
-`rit note view` and `rit read` always print the note's raw markdown bytes.
+`error: …` and exit non-zero. Add `--output text` (or `-o text`) for human prose,
+and `--output json` for the same documents as newline-delimited JSON objects, one
+per line. `rit note view` and `rit read` always print the note's raw markdown bytes.
 
 ## Values that start with `-`
 
