@@ -94,11 +94,12 @@ jobs:
           node-version: "26"
           registry-url: "https://registry.npmjs.org"
 
+      # Authenticates through npm trusted publishing (OIDC); no token secret.
+      # Configure it on npmjs.com for cndreisbach/ritari, release.yml.
       - name: Publish pi-ritari when it changed
         env:
           TAG: ${{ needs.release.outputs.tag }}
           PREVIOUS: ${{ needs.release.outputs.previous }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ -n "$PREVIOUS" ] && git diff --quiet "$PREVIOUS" "$TAG" -- pi-ritari; then
             echo "pi-ritari is unchanged since $PREVIOUS; nothing to publish."
