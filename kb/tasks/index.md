@@ -1,5 +1,6 @@
 # Tasks
 
+* [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md) - Ship the Pi extension as an in-repo npm package with typed tools, brief injection, and JSON CLI output.
 * [Store whole documents in Ritari](/tasks/store-whole-documents-in-ritari.md) - Make it easy for agents to keep plans, reports, and handoffs in Ritari in full: replace_body, hashes, and skill guidance.
 
 # Archived

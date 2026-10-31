@@ -1,5 +1,12 @@
 # Update Log
 
+## 2026-10-30
+
+* **Create**: [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md)
+* **Create**: [pi-ritari lives in this repo](/decisions/pi-ritari-lives-in-this-repo.md)
+* **Create**: [JSON output](/decisions/json-output.md)
+* **Create**: [The package owns brief injection](/decisions/the-package-owns-brief-injection.md)
+
 ## 2026-10-31
 
 * **Create**: [Observations only under the Observations section](/ideas/observations-only-under-the-observations-section.md)
