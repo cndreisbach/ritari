@@ -1,5 +1,16 @@
 # Update Log
 
+## 2026-10-31
+
+* **Create**: [Observations only under the Observations section](/ideas/observations-only-under-the-observations-section.md)
+* **Update**: [Roadmap](/projects/roadmap.md)
+* **Update**: [Observations only under the Observations section](/ideas/observations-only-under-the-observations-section.md)
+* **Create**: [replace_body keeps structured sections](/decisions/replace-body-keeps-structured-sections.md)
+* **Create**: [Store whole documents in Ritari](/tasks/store-whole-documents-in-ritari.md)
+* **Create**: [2026-10-31](/daily/2026-10-31.md)
+* **Update**: [replace_body keeps structured sections](/decisions/replace-body-keeps-structured-sections.md)
+* **Update**: [2026-10-31](/daily/2026-10-31.md)
+
 ## 2026-10-19
 
 * **Create**: [Skill set after routing review](/decisions/skill-set-after-routing-review.md)

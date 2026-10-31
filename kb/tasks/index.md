@@ -1,5 +1,7 @@
 # Tasks
 
+* [Store whole documents in Ritari](/tasks/store-whole-documents-in-ritari.md) - Make it easy for agents to keep plans, reports, and handoffs in Ritari in full: replace_body, hashes, and skill guidance.
+
 # Archived
 
 * [Check links to non-markdown files by existence](/tasks/check-links-to-non-markdown-files-by-existence.md) - rit lint reports links to existing images and other files as dangling, and never checks links into sources/.

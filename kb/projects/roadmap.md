@@ -6,7 +6,7 @@ tags: [roadmap]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-18
-generated: {by: human:cndreisbach, at: 2026-10-18T19:18:37Z}
+generated: {by: claude-code, at: 2026-10-31T02:14:43Z}
 ---
 
 The roadmap is a list of [idea](/ideas/index.md) notes linked from here. Ideas are possibilities, not commitments; an idea that gets committed to becomes a task.
@@ -28,5 +28,6 @@ The roadmap is a list of [idea](/ideas/index.md) notes linked from here. Ideas a
 - includes [Allow nested type directories](/ideas/allow-nested-type-directories.md)
 - includes [Rank notes that match every search term higher](/ideas/rank-notes-that-match-every-search-term-higher.md)
 - includes [Skill routing](/ideas/skill-routing.md)
+- includes [Observations only under the Observations section](/ideas/observations-only-under-the-observations-section.md)
 
 [^1]: Clinton, development session 2026-10-18

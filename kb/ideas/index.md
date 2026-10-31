@@ -3,6 +3,7 @@
 * [Allow nested type directories](/ideas/allow-nested-type-directories.md) - type-directory-mismatch should accept a note in a subdirectory of its type's directory, as OKF bundles nest them.
 * [MCP server](/ideas/mcp-server.md) - Expose rit's operations as Model Context Protocol tools so agents can use a knowledge base without shelling out.
 * [Note merge and delete with redirect](/ideas/note-merge-and-delete-with-redirect.md) - Merge two notes into one, and let delete point inbound links at a replacement.
+* [Observations only under the Observations section](/ideas/observations-only-under-the-observations-section.md) - Parse observation lines only inside # Observations, so prose bullets like - [WIP] stay prose.
 * [Obsidian extension](/ideas/obsidian-extension.md) - An Obsidian plugin that makes a Ritari knowledge base more useful to browse and edit in Obsidian.
 * [OKF structure lint rules](/ideas/okf-structure-lint-rules.md) - Lint the structure OKF defines for documents and reserved files, following OpenKnowledge's OKF plugin rules.
 * [Pi extension](/ideas/pi-extension.md) - An extension that integrates Ritari into Pi.
