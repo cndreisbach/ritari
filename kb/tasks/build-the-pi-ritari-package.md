@@ -6,7 +6,7 @@ tags: [pi, extension, npm]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:09:30Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:14:31Z}
 state: open
 ---
 
@@ -31,6 +31,8 @@ state: open
 - [next-step] after the release, pi-ritari and rit share the tag version, so this mismatch cannot happen from npm installs [^1]
 - [outcome] all four tools ran in a real Pi session once this repo's bin/ was first on PATH — search, read, a guarded write, and an edit dry-run [^1]
 - [outcome] the write guard held from the model's side too: a call with no observations was refused by rit rather than writing nothing silently [^1]
+- [outcome] the package version is 0.0.0-placeholder until the release stamps the tag; the release workflow now uses trusted publishing instead of NPM_TOKEN [^1]
+- [next-step] manual first publish to claim pi-ritari on npm, then trusted publisher setup, then merge [^1]
 
 # Relations
 - implements [Pi extension](/ideas/pi-extension.md)

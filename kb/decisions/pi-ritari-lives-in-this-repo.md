@@ -6,7 +6,7 @@ tags: [pi, extension, npm, packaging]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:02:29Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:14:31Z}
 state: accepted
 ---
 
@@ -20,6 +20,10 @@ state: accepted
 - [outcome] pi-ritari/ is built — package.json with the pi-package keyword and pi manifest, extensions/ritari.ts, src/ (rit client, project resolution, tools, brief), and four vitest suites [^1]
 - [outcome] CI runs npm ci, tsc --noEmit and vitest; the release workflow publishes pi-ritari@<tag> with provenance only when pi-ritari/ changed since the previous tag [^1]
 - [next-step] add the NPM_TOKEN secret before the first release that touches pi-ritari [^1]
+- [decision] publish through npm trusted publishing (OIDC) rather than an NPM_TOKEN secret; the release job already has id-token: write [^1]
+- [constraint] trusted publishing needs the package to exist on npm first, so the name is claimed with a manual 0.0.0-placeholder published under the next dist-tag [^1]
+- [constraint] 0.0.0-placeholder is deliberately below every release and outside latest, so nobody installs a package that needs the unreleased --output json [^1]
+- [next-step] after the manual publish, configure the trusted publisher on npmjs.com for cndreisbach/ritari and release.yml [^1]
 
 # Relations
 - affects [Pi extension](/ideas/pi-extension.md)
