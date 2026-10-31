@@ -6,7 +6,7 @@ tags: [pi, extension, npm, packaging]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:21:37Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:33:13Z}
 state: accepted
 ---
 
@@ -29,6 +29,9 @@ state: accepted
 - [outcome] both placeholder versions are deprecated, so an accidental install warns even though it cannot fail at runtime [^1]
 - [outcome] the trusted publisher is configured for cndreisbach/ritari and release.yml, so no NPM_TOKEN secret exists [^1]
 - [context] svu computes v4.0.0 next (the hook removal is breaking) and pi-ritari/ changed since v3.0.0, so the release job will publish pi-ritari@4.0.0 as latest [^1]
+- [outcome] v4.0.0 released — GitHub release, formula regenerated, and pi-ritari@4.0.0 published as npm latest with SLSA provenance [^1]
+- [outcome] the published tarball carries the pi manifest, the peer dependencies with *, and no deprecation; the placeholder is now only the next tag [^1]
+- [outcome] 0.0.0-stage is gone from the version list; latest points at the real release, so the stub cleanup is complete [^1]
 
 # Relations
 - affects [Pi extension](/ideas/pi-extension.md)
