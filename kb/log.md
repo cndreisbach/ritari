@@ -6,6 +6,7 @@
 * **Create**: [pi-ritari lives in this repo](/decisions/pi-ritari-lives-in-this-repo.md)
 * **Create**: [JSON output](/decisions/json-output.md)
 * **Create**: [The package owns brief injection](/decisions/the-package-owns-brief-injection.md)
+* **Update**: [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md)
 
 ## 2026-10-31
 
