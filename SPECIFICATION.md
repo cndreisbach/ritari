@@ -1432,7 +1432,7 @@ whatever the build identified itself as (a release version, or a short VCS revis
 ### 9.22 `install hooks`
 
 ```
-rit install hooks --agent claude|pi[,...] [--dir PATH] [--local] [--force]
+rit install hooks --agent claude[,...] [--dir PATH] [--local]
 ```
 
 Installs a hook that runs `brief` (§9.23) when an agent starts a session, so the agent
@@ -1440,8 +1440,10 @@ begins with the latest daily notes and open tasks without being asked to look. H
 **project-scoped**: they are written only under `--dir` (default: the current directory),
 never into an agent's user-level settings, so they fire only for sessions in that project.
 `--agent` is required and repeatable (or comma-separated); an unknown agent is
-`unknown agent "<x>" (known: claude, pi)`. `--dir` must be an existing directory
-(`<dir> is not a directory`).
+`unknown agent "<x>" (known: claude)`. `--agent pi` is
+`the Pi integration is the pi-ritari package; delete .pi/extensions/ritari.ts if an earlier
+rit wrote it` — the Pi integration is the npm package (§13), not a generated file. `--dir` must
+be an existing directory (`<dir> is not a directory`).
 
 The hook names the knowledge base it reads: the active project (§9.3) at install time is
 written into it, so it does not depend on `RITARI_PROJECT` when it runs. The command is
@@ -1456,11 +1458,6 @@ contains anything but letters, digits, and `._/:=-`. `rit` must be on the agent'
   and is updated in place, not duplicated. A file that is not a JSON object, or whose `hooks`
   is not an object or `hooks.SessionStart` not a list, is an error naming the file and is left
   untouched. Output is two-space-indented JSON.
-- **`pi`**: writes `<dir>/.pi/extensions/ritari.ts`, an extension that adds `brief`'s output
-  to the context once, before the first agent turn of a session and again after a
-  compaction, and does nothing if `rit` fails. The file begins with a line naming
-  `rit install hooks`; an existing file without it is `<path> exists and was not written by
-  rit (pass --force to replace it)` unless `--force`.
 
 Result: a header `success`, `project`, `dir`, `command`, `count`, then per agent `agent`,
 `path`, `status` (`created`|`updated`|`unchanged`; an unchanged file is not rewritten).

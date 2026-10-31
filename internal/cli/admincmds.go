@@ -238,16 +238,18 @@ type InstallCmd struct {
 
 // HooksInstallCmd is `install hooks`.
 type HooksInstallCmd struct {
-	Agent []string `required:"" placeholder:"claude|pi" help:"Agent to install for: claude or pi (repeatable, or comma-separated)."`
+	Agent []string `required:"" placeholder:"claude" help:"Agent to install for: claude (repeatable, or comma-separated)."`
 	Dir   string   `help:"Project directory to install into (default: the current directory)."`
 	Local bool     `help:"Claude Code: write .claude/settings.local.json instead of settings.json."`
-	Force bool     `help:"Pi: replace a .pi/extensions/ritari.ts that rit did not write."`
 }
 
 // Run executes `install hooks`.
 func (cmd *HooksInstallCmd) Run(c *Ctx) error {
 	agents := map[string]bool{}
 	for _, a := range cmd.Agent {
+		if a == "pi" {
+			return errors.New("the Pi integration is the pi-ritari package; delete .pi/extensions/ritari.ts if an earlier rit wrote it")
+		}
 		if !slices.Contains(hooks.Agents, a) {
 			return fmt.Errorf("unknown agent %q (known: %s)", a, strings.Join(hooks.Agents, ", "))
 		}
@@ -285,12 +287,7 @@ func (cmd *HooksInstallCmd) Run(c *Ctx) error {
 		if !agents[a] {
 			continue
 		}
-		var res hooks.Result
-		if a == "claude" {
-			res, err = hooks.Claude(dir, p.Name, cmd.Local)
-		} else {
-			res, err = hooks.Pi(dir, p.Name, cmd.Force)
-		}
+		res, err := hooks.Claude(dir, p.Name, cmd.Local)
 		if err != nil {
 			return err
 		}

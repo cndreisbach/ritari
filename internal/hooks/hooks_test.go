@@ -131,31 +131,3 @@ func TestClaudeRejectsMalformedSettings(t *testing.T) {
 		})
 	}
 }
-
-func TestPi(t *testing.T) {
-	root := t.TempDir()
-	res, err := Pi(root, "work", false)
-	require.NoError(t, err)
-	assert.Equal(t, "created", res.Status)
-	assert.Equal(t, filepath.Join(root, ".pi", "extensions", "ritari.ts"), res.Path)
-	data, _ := os.ReadFile(res.Path)
-	assert.Contains(t, string(data), `const RIT_ARGS = ["--project", "work", "--output", "text", "brief"];`)
-
-	res, err = Pi(root, "work", false)
-	require.NoError(t, err)
-	assert.Equal(t, "unchanged", res.Status)
-	res, err = Pi(root, `we"ird`, false)
-	require.NoError(t, err)
-	assert.Equal(t, "updated", res.Status)
-	data, _ = os.ReadFile(res.Path)
-	assert.Contains(t, string(data), `"we\"ird"`)
-
-	require.NoError(t, os.WriteFile(res.Path, []byte("// mine\n"), 0o644))
-	_, err = Pi(root, "work", false)
-	assert.EqualError(t, err, res.Path+" exists and was not written by rit (pass --force to replace it)")
-	data, _ = os.ReadFile(res.Path)
-	assert.Equal(t, "// mine\n", string(data))
-	res, err = Pi(root, "work", true)
-	require.NoError(t, err)
-	assert.Equal(t, "updated", res.Status)
-}

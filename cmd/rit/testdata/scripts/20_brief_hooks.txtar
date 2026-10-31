@@ -38,22 +38,22 @@ stdout '^state: blocked$'
 # install hooks writes only into the project directory it is given.
 mkdir repo
 ! exec rit install hooks --agent vim --dir repo
-stderr 'unknown agent "vim" \(known: claude, pi\)'
-! exec rit install hooks --agent pi --local --dir repo
-stderr '--local applies only to --agent claude'
+stderr 'unknown agent "vim" \(known: claude\)'
+! exec rit install hooks --agent pi --dir repo
+stderr 'the Pi integration is the pi-ritari package; delete .pi/extensions/ritari.ts if an earlier rit wrote it'
+! exists repo/.pi
 ! exec rit install hooks --agent claude --dir nowhere
 stderr 'nowhere is not a directory'
 
-exec rit install hooks --agent claude,pi --dir repo
+exec rit install hooks --agent claude --dir repo
 stdout '^command: rit --project work --output text brief$'
-stdout '^count: 2$'
+stdout '^count: 1$'
 stdout '^status: created$'
 cmp repo/.claude/settings.json want/settings.json
-grep '^const RIT_ARGS = \["--project", "work", "--output", "text", "brief"\];$' repo/.pi/extensions/ritari.ts
 ! exists .claude
 ! exists .pi
 
-exec rit install hooks --agent claude --agent pi --dir repo
+exec rit install hooks --agent claude --dir repo
 ! stdout 'status: (created|updated)'
 stdout '^status: unchanged$'
 
@@ -67,17 +67,7 @@ stdout '^claude: updated .*settings\.json$'
 stdout '^At session start, each runs: rit --project work --output text brief$'
 cmp other/.claude/settings.json want/other-settings.json
 
-cp mine.ts repo/.pi/extensions/ritari.ts
-! exec rit install hooks --agent pi --dir repo
-stderr 'ritari.ts exists and was not written by rit \(pass --force to replace it\)'
-cmp repo/.pi/extensions/ritari.ts mine.ts
-exec rit install hooks --agent pi --force --dir repo
-stdout '^status: updated$'
-
 okflint kb
-
--- mine.ts --
-// my own extension
 -- want/settings.json --
 {
   "hooks": {

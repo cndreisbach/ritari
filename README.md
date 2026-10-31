@@ -103,7 +103,7 @@ open tasks, install a session hook into a project:
 
 ```bash
 cd ~/src/my-app
-rit -p work install hooks --agent claude,pi   # .claude/settings.json, .pi/extensions/ritari.ts
+rit -p work install hooks --agent claude      # .claude/settings.json
 rit -p work install hooks --agent claude --local   # .claude/settings.local.json instead
 ```
 

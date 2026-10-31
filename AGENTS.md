@@ -72,7 +72,7 @@ Workflow:
 | `internal/yamlx` | YAML scalar quoting that round-trips exactly |
 | `internal/cli` | kong command tree; text and machine output |
 | `internal/skills` | Embedded agent skills, installed by `rit install skills` |
-| `internal/hooks` | Project-scoped session hooks for Claude Code and Pi, installed by `rit install hooks` |
+| `internal/hooks` | Project-scoped Claude Code session hooks, installed by `rit install hooks` |
 
 ## Tooling
 
