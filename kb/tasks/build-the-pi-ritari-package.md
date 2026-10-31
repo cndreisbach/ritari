@@ -6,7 +6,7 @@ tags: [pi, extension, npm]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:14:31Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:21:37Z}
 state: open
 ---
 
@@ -33,6 +33,10 @@ state: open
 - [outcome] the write guard held from the model's side too: a call with no observations was refused by rit rather than writing nothing silently [^1]
 - [outcome] the package version is 0.0.0-placeholder until the release stamps the tag; the release workflow now uses trusted publishing instead of NPM_TOKEN [^1]
 - [next-step] manual first publish to claim pi-ritari on npm, then trusted publisher setup, then merge [^1]
+- [outcome] the name is reserved on npm and the trusted publisher is configured; the earlier NPM_TOKEN next-step is resolved and no secret is needed [^1]
+- [outcome] the next release is v4.0.0, which will publish pi-ritari@4.0.0 and move the latest dist-tag off the stub [^1]
+- [next-step] push feat/pi-ritari, open the PR, merge, and watch the release publish both the CLI and the package [^1]
+- [next-step] after the release, upgrade the local rit, unpublish 0.0.0-stage, and re-run pi install npm:pi-ritari to test the published package [^1]
 
 # Relations
 - implements [Pi extension](/ideas/pi-extension.md)

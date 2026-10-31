@@ -6,7 +6,7 @@ tags: [pi, extension, npm, packaging]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:14:31Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:21:37Z}
 state: accepted
 ---
 
@@ -24,6 +24,11 @@ state: accepted
 - [constraint] trusted publishing needs the package to exist on npm first, so the name is claimed with a manual 0.0.0-placeholder published under the next dist-tag [^1]
 - [constraint] 0.0.0-placeholder is deliberately below every release and outside latest, so nobody installs a package that needs the unreleased --output json [^1]
 - [next-step] after the manual publish, configure the trusted publisher on npmjs.com for cndreisbach/ritari and release.yml [^1]
+- [outcome] pi-ritari is claimed on npm by cndreisbach; 0.0.0-placeholder holds the full tarball under the next tag and 0.0.0-stage is a no-op stub under latest [^1]
+- [constraint] npm refuses to delete the latest dist-tag (DELETE returns 400 even after web auth), so latest was moved to the stub instead; the first release moves it to the real version [^1]
+- [outcome] both placeholder versions are deprecated, so an accidental install warns even though it cannot fail at runtime [^1]
+- [outcome] the trusted publisher is configured for cndreisbach/ritari and release.yml, so no NPM_TOKEN secret exists [^1]
+- [context] svu computes v4.0.0 next (the hook removal is breaking) and pi-ritari/ changed since v3.0.0, so the release job will publish pi-ritari@4.0.0 as latest [^1]
 
 # Relations
 - affects [Pi extension](/ideas/pi-extension.md)
