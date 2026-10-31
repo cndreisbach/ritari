@@ -101,9 +101,21 @@ rit note write --title "Auth uses JWT" --type decision \
 
 The type decides the directory (`decisions/auth-uses-jwt`). Writing the same
 title again **adds** observations, relations, and sources without duplicating
-anything already there. `--content` sets the body of a new note; replacing an
-existing body needs `--force`. Read `references/writing.md` before your first
-write of the session.
+anything already there. Read `references/writing.md` before your first write of
+the session.
+
+Ritari holds whole documents, too: plans, briefs, research, drafts, handoffs.
+Keep the full text in the note's body, not a summary that links to a copy in
+the workspace. Search for an existing note first, and use a declared type
+(`note` is fine when nothing more specific fits).
+
+- `--content -` reads the body of a **new** note from standard input.
+- Revise an existing body with `note edit`: `--op replace_body` for the whole
+  document, or a section or find/replace op for part of it.
+- `note write --force` replaces the **whole note**, dropping its description,
+  metadata, observations, and relations unless you pass them again. It is not
+  a way to save a body.
+- Never edit note files with generic file tools; go through `rit`.
 
 ## Reading and traversal
 
@@ -131,7 +143,11 @@ rit note edit decisions/auth-uses-jwt --description "Updated summary."
 ```
 
 Body ops: `append`, `prepend`, `find_replace` (`--find`, optional `--count`),
-`replace_section`, `insert_before_section`, `insert_after_section` (`--section`).
+`replace_section`, `insert_before_section`, `insert_after_section` (`--section`),
+and `replace_body`, which replaces the document but keeps the frontmatter and
+the Observations and Relations sections. `rit note view --body` prints the
+document; `--dry-run` previews an edit; `--expect-hash` (the `hash` from
+`note read`) refuses the edit if the note changed since you read it.
 
 **`rit note move <ref> <dest>` is the only correct way to relocate a note.** It
 rewrites every link that pointed at the old path. Never rename files by hand.

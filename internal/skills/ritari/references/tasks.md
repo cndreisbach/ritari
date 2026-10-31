@@ -85,6 +85,24 @@ Archive it later if it no longer needs to show up in searches.
 - Write as if the reader has never seen this conversation — because after a
   compaction, they haven't.
 
+## Tasks and documents
+
+The task owns the current state, approvals, blockers, and the next step.
+
+- A short plan can live in the task's body (a `# Plan` or `# Steps` section).
+- A substantial report, brief, or proposal that is useful on its own gets its
+  own note, linked from the task:
+  `rit note write --title "Migrate sessions to JWT" --rel "documented_by: JWT migration proposal"`.
+  See "Long documents" in `writing.md`.
+- Don't create a task just to hold prose, and don't append every version of a
+  proposal to a task that is already long.
+- Keep versions distinguishable. Revise a draft in place with `replace_body`.
+  Once a version has been reviewed or approved, keep it as it is and write the
+  next one as a new note that `supersedes` it. Point the task at the current
+  one, record the approval as an observation
+  (`--obs "decision: Approved JWT migration proposal v2 (Ana, 2026-07-29)"`),
+  and archive versions nobody needs to find any more.
+
 ## Guidelines
 
 - One task per unit of work.

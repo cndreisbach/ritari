@@ -128,7 +128,7 @@ is stored as `human:you@example.com`, so a person is never mistaken for an agent
 | --- | --- |
 | `rit note write` | Create a note, or add observations, relations, and sources to one |
 | `rit note read` / `rit note view` | Show a note parsed, or as raw markdown |
-| `rit note edit` | Edit the body (append, find/replace, replace a section…) or set frontmatter |
+| `rit note edit` | Edit the body (append, find/replace, replace a section or the whole document…) or set frontmatter |
 | `rit note move` | Move a note, rewriting every link to it |
 | `rit note archive` / `unarchive` | Retire a note while keeping it linkable |
 | `rit note verify` | Record that someone checked a note |

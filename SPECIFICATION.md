@@ -1581,33 +1581,48 @@ implementer's.
    examples for `--content` and `--find`). Where to look (`brief`, `recent`, `ls`). **Search
    before you write**, with the full set of search filters and the note that matching is by
    whole word or prefix with no stemming. Writing (including that writing to an existing title
-   *adds*). Reading and traversal (`note read`, `note view`, `context`; the three equivalent
+   *adds*); that whole documents (plans, briefs, research, drafts, handoffs) belong in the body
+   in full rather than as a summary linking to a workspace copy, after searching for an existing
+   note and choosing a declared type (`note` when nothing fits); that `--content -` reads a new
+   note's body from stdin, revisions go through `note edit` (`replace_body` for the whole
+   document), `note write --force` replaces the whole note and is not a body save, and note
+   files are never edited with generic file tools. Reading and traversal (`note read`, `note view`, `context`; the three equivalent
    ways to address a note). Editing and moving, and that **`move` is the only correct way to
    relocate a note**; the difference between `note edit`'s *set* semantics and `note write`'s
-   *merge* semantics for frontmatter flags; archive rather than delete. Projects and their
+   *merge* semantics for frontmatter flags; the body ops, including `replace_body`,
+   `note view --body`, `--dry-run`, and `--expect-hash`; archive rather than delete. Projects and their
    resolution order. Housekeeping (`index`, `index --check`; never hand-edit generated files).
    Principles: files are the source of truth; search before writing; one fact per
    observation; link generously.
    - **`references/writing.md`** (read before the session's first `note write` or `note
      edit`). The note format and an annotated example; identity is the path; how to pick a
-     type (a table of the default types and when to use each, preferring a specific type over
-     `note`); that a bundle may declare its own vocabulary and how to discover it (the root
+     type (a table of the default types and when to use each, preferring a specific type when
+     one fits, with `note` right for anything else and length never a reason for a new type); that a bundle may declare its own vocabulary and how to discover it (the root
      index names the type beside each directory; `types`; the write-time warning); always
      write a description; observations (one fact per line, reusable categories, tags,
-     context, checkboxes are not observations); relations as links (single-token types with
+     context, only lines under `# Observations` count and checkboxes never do); relations as links (single-token types with
      underscores, title or ID targets, forward references are fine, prose links are edges
      too); recording sources (`--source`, `--resource`); trust signals (`generated` is
      automatic, `verified` is deliberate and not to be called reflexively); archiving; writing
      again adds; **`--tags` merges but `--description`/`--resource` replace and `--meta`
      replaces per key**, with a warning about batch loops that would clobber existing
-     descriptions; a before-you-write checklist (search, add to existing, link).
+     descriptions; that `--force` replaces the whole note, losing its metadata, observations,
+     and relations; **long documents**: prose stays in the body rather than becoming
+     observations, a recipe for creating one from stdin, a heredoc, or a staged file, linking it
+     to its project or task, revising it with `note view --body` and `replace_body`
+     `--expect-hash`, and keeping one authoritative copy (what stays with its source; exports
+     record the note ID and hash and are refreshed from Ritari, never edited as a second copy);
+     a before-you-write checklist (search, add to existing, link).
    - **`references/tasks.md`** (read before creating or updating a task). A task is a note of
      type `task`; when to create one; creating with steps, queryable state in **both**
      frontmatter (`state`, never `status`, which is OKF lifecycle) and an observation, and
      resumption context; finding open tasks; updating progress (tick steps with a section
      replace, record learnings with sources, move a pointer); completing with an outcome;
      writing for resumability (context beats steps; reusable categories such as `state`,
-     `context`, `decision`, `blocked`, `outcome`, `next-step`); guidelines (one task per unit
+     `context`, `decision`, `blocked`, `outcome`, `next-step`); tasks and documents (the task
+     owns state, approvals, blockers, and the next step; a short plan can live in the task, a
+     substantial standalone document gets its own linked note; no tasks just to hold prose;
+     reviewed versions are kept and superseded rather than overwritten); guidelines (one task per unit
      of work, concrete steps, externalize early, link the work, close finished tasks, state
      lives in the task).
    - **`references/daily.md`** (read before writing to the daily note). Read recent notes
