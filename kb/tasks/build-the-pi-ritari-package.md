@@ -6,7 +6,7 @@ tags: [pi, extension, npm]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:21:37Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:23:51Z}
 state: open
 ---
 
@@ -37,6 +37,8 @@ state: open
 - [outcome] the next release is v4.0.0, which will publish pi-ritari@4.0.0 and move the latest dist-tag off the stub [^1]
 - [next-step] push feat/pi-ritari, open the PR, merge, and watch the release publish both the CLI and the package [^1]
 - [next-step] after the release, upgrade the local rit, unpublish 0.0.0-stage, and re-run pi install npm:pi-ritari to test the published package [^1]
+- [outcome] push and CI done — PR #8 (feat/pi-ritari) passes the Go tests, golangci-lint, govulncheck, npm ci, tsc, and vitest [^1]
+- [next-step] merge PR #8 with a merge commit; the release job then publishes rit v4.0.0 and pi-ritari@4.0.0 [^1]
 
 # Relations
 - implements [Pi extension](/ideas/pi-extension.md)
