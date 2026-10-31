@@ -86,6 +86,7 @@ type WriteOpts struct {
 	Force       bool
 	DryRun      bool
 	AllowEmpty  bool
+	ExpectHash  string
 }
 
 // WriteResult reports what `note write` did.
@@ -97,6 +98,7 @@ type WriteResult struct {
 	AddedRels    int
 	AddedSources int
 	Warning      string
+	Hash         string // of the file as written; omitted on dry-run
 	Rendered     string
 }
 
@@ -158,6 +160,14 @@ func (b *Bundle) write(env Env, o WriteOpts) (WriteResult, []Event, error) {
 	if err != nil {
 		return WriteResult{}, nil, err
 	}
+	if o.ExpectHash != "" {
+		if existing == nil {
+			return WriteResult{}, nil, fmt.Errorf("--expect-hash given, but note %q does not exist", id)
+		}
+		if err := b.checkHash(existing, o.ExpectHash); err != nil {
+			return WriteResult{}, nil, err
+		}
+	}
 	if existing != nil && !o.Force {
 		return b.writeAdditive(env, existing, o, add)
 	}
@@ -166,7 +176,7 @@ func (b *Bundle) write(env Env, o WriteOpts) (WriteResult, []Event, error) {
 
 func (b *Bundle) writeAdditive(env Env, c *Concept, o WriteOpts, add note.Additions) (WriteResult, []Event, error) {
 	if strings.TrimSpace(o.Content) != "" {
-		return WriteResult{}, nil, fmt.Errorf("note %q already exists; --content replaces the body, so use --force (only --obs/--rel/--source are added by default)", c.ID)
+		return WriteResult{}, nil, fmt.Errorf("note %q already exists; replace its body with rit note edit %s --op replace_body --content - (--force replaces the whole note, dropping its metadata, observations, and relations; by default only --obs/--rel/--source are added)", c.ID, c.ID)
 	}
 	if len(o.Obs)+len(o.Rels)+len(add.Sources)+len(o.Meta)+len(o.Tags) == 0 && o.Description == "" && o.Resource == "" {
 		return WriteResult{}, nil, fmt.Errorf("note %q already exists and nothing to add (provide --obs/--rel/--source/--description/--tags/--meta, or --force to replace)", c.ID)
@@ -237,6 +247,7 @@ func (b *Bundle) finish(env Env, res WriteResult, rel string, n *note.Note, dryR
 	if _, err := writeIfChanged(b.Abs(rel), data); err != nil {
 		return WriteResult{}, nil, err
 	}
+	res.Hash = Hash(data)
 	ev.Title = titleOf(n, ev.ID)
 	return res, []Event{ev}, nil
 }

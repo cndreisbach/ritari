@@ -51,7 +51,7 @@ func TestCleanBundle(t *testing.T) {
 
 func TestRules(t *testing.T) {
 	b := open(t, map[string]string{
-		"decisions/a.md":      "---\ntype: decision\ntitle: A\ndescription: d\n---\n\n[b](/notes/b.md) [gone](/notes/gone.md)\n- [weird] x\n- [fact] y\n",
+		"decisions/a.md":      "---\ntype: decision\ntitle: A\ndescription: d\n---\n\n[b](/notes/b.md) [gone](/notes/gone.md)\n\n# Observations\n- [weird] x\n- [fact] y\n",
 		"notes/b.md":          "---\ntype: note\ntitle: B\ndescription: d\n---\n",
 		"notes/dup.md":        "---\ntype: note\ntitle: a\ndescription: d\n---\n\n[b](/notes/b.md)\n",
 		"notes/untyped.md":    "---\ntitle: U\ndescription: d\n---\n\n[b](/notes/b.md)\n",

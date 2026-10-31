@@ -1,12 +1,15 @@
 package bundle
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -17,6 +20,24 @@ import (
 func (b *Bundle) saveNote(rel string, n *note.Note) error {
 	_, err := writeIfChanged(b.Abs(rel), note.Render(n))
 	return err
+}
+
+// Hash is the content hash of a note file: lowercase hex SHA-256 of its bytes.
+func Hash(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+// checkHash fails unless the concept's file on disk has the expected hash.
+func (b *Bundle) checkHash(c *Concept, want string) error {
+	data, err := os.ReadFile(b.Abs(c.Path))
+	if err != nil {
+		return err
+	}
+	if got := Hash(data); !strings.EqualFold(strings.TrimSpace(want), got) {
+		return fmt.Errorf("note %q changed since it was read (expected hash %s, found %s); read it again and reapply the change", c.ID, strings.TrimSpace(want), got)
+	}
+	return nil
 }
 
 // EditOpts are the inputs of `note edit`. Nil pointers mean "not given".
@@ -31,13 +52,18 @@ type EditOpts struct {
 	Resource    *string
 	Tags        *[]string
 	Meta        [][2]string
+	ExpectHash  string
+	DryRun      bool
 }
 
 // Result is the common outcome of a single-note operation.
 type Result struct {
-	Status string
-	ID     string
-	Path   string // absolute
+	Status   string
+	ID       string
+	Path     string // absolute
+	Warning  string
+	Hash     string // of the file as written; edit only
+	Rendered string // dry-run only
 }
 
 // Edit implements `note edit` (§9.7).
@@ -51,8 +77,26 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 		if err != nil {
 			return nil, err
 		}
+		if o.ExpectHash != "" {
+			if err := b.checkHash(c, o.ExpectHash); err != nil {
+				return nil, err
+			}
+		}
 		n := c.Note
-		if o.Op != "" {
+		var warning string
+		if o.Op == "replace_body" {
+			if c.IsDaily() {
+				return nil, fmt.Errorf("replace_body does not apply to daily notes; add to the narrative with rit daily --note")
+			}
+			before, rels := n.EditableBody(), note.Relations(n.Body, c.ID)
+			if err := n.ReplaceDocument(o.Content); err != nil {
+				return nil, err
+			}
+			if n.EditableBody() != before {
+				n.Restamp(env.Actor, env.Stamp())
+			}
+			warning = lostRelations(rels, note.Relations(n.Body, c.ID))
+		} else if o.Op != "" {
 			before := n.EditableBody()
 			body, err := note.EditBody(before, o.Op, o.Content, o.Section, o.Find, o.Count)
 			if err != nil {
@@ -79,13 +123,38 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 			n.FM.SetExtra(kv[0], kv[1])
 		}
 		n.FillGenerated(env.Actor, env.Stamp())
-		if err := b.saveNote(c.Path, n); err != nil {
+		data := note.Render(n)
+		if o.DryRun {
+			res = Result{Status: "dry-run", ID: c.ID, Warning: warning, Rendered: string(data)}
+			return nil, nil
+		}
+		if _, err := writeIfChanged(b.Abs(c.Path), data); err != nil {
 			return nil, err
 		}
-		res = Result{Status: "updated", ID: c.ID, Path: b.Abs(c.Path)}
+		res = Result{Status: "updated", ID: c.ID, Path: b.Abs(c.Path), Warning: warning, Hash: Hash(data)}
 		return []Event{{Action: ActUpdate, ID: c.ID, Title: titleOf(n, c.ID)}}, nil
 	})
 	return res, err
+}
+
+// lostRelations describes the relations in before that are missing from
+// after, or returns "" if none are.
+func lostRelations(before, after []note.Relation) string {
+	var lost []string
+	for _, r := range before {
+		if !slices.ContainsFunc(after, func(a note.Relation) bool { return a.Type == r.Type && a.Href == r.Href }) {
+			target := r.Target
+			if target == "" {
+				target = r.Href
+			}
+			lost = append(lost, r.Type+" -> "+target)
+		}
+	}
+	if len(lost) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("replace_body removed %d relation(s) written outside the Relations section: %s; add back any you need with rit note write --rel",
+		len(lost), strings.Join(lost, ", "))
 }
 
 // VerifyResult reports a verification.

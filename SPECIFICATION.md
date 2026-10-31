@@ -256,9 +256,14 @@ headings.)
 - [category] content #tag #tag (context) [^1] [^2]
 ```
 
-Recognized anywhere in the body, not only under `# Observations`, on any line
-matching: optional leading whitespace, a `-` or `*` bullet, `[category]`, at
-least one whitespace, then the rest.
+Recognized only inside an **Observations section**: a section (§3.3) whose
+heading is `Observations`, at any level, matched case-insensitively, including
+any subsections under it. There, an observation is any line matching: optional
+leading whitespace, a `-` or `*` bullet, `[category]`, at least one whitespace,
+then the rest. The same shape anywhere else in the body (`- [WIP] Draft the
+intro` in a plan, say) is ordinary prose, so a whole document can live in a
+note without its bullets turning into facts. Heading lines are never
+observations.
 
 Parsing the rest:
 
@@ -590,11 +595,12 @@ together came from the same source).
 - Work on the body without its derived footnote definitions (§3.7).
 - Allocate sources against the note's existing ones (§3.7); the refs apply to every
   observation in this write.
-- For each new observation line: if an existing body line has the same text
-  ignoring trailing source references, **do not add a line**; instead union the refs
-  into that existing line (rewrite it only if the ref set grew, preserving
-  indentation). Otherwise, if the exact line (trimmed) is not already present, add
-  it. Duplicates within one write are added once.
+- For each new observation line: if a line in an Observations section (§3.4) has
+  the same text ignoring trailing source references, **do not add a line**; instead
+  union the refs into that existing line (rewrite it only if the ref set grew,
+  preserving indentation). Otherwise add it. Lines outside Observations sections
+  are prose and never count as a match. Duplicates within one write are added
+  once.
 - For each new relation line: add it unless the identical line (trimmed) already
   exists.
 - Append new observation lines at the end of the existing `Observations` section
@@ -667,11 +673,50 @@ to retire something and `delete` is for mistakes.
 | `replace_section` | keep the heading line, replace the section's contents with a blank line, `content`, a blank line |
 | `insert_before_section` | insert `content` and a blank line immediately before the heading |
 | `insert_after_section` | insert `content` and a blank line immediately after the section ends |
+| `replace_body` | replace the note's **document** with `content`, keeping everything structured (below) |
 
 Section ops require a section name (heading text, leading `#`s and spaces
 ignored, matched case-insensitively at any level); a missing name is an error
 (`<op> requires a section heading`) and an unmatched one is
 `section not found: "<name>"`. An unknown op is `unknown edit op: "<op>"`.
+
+**The document** is the body without its Observations and Relations sections
+(each a section, §3.3, headed `Observations` or `Relations` at any level,
+case-insensitively, with its subsections) and without the footnote definitions
+derived from `sources` (§3.7). It is what an author writes: a plan, a report,
+a brief. `note view --body` prints it.
+
+`replace_body` is the way to revise a whole document without discarding the
+rest of the note. Frontmatter (including `sources`, `verified`, and every
+extra key) is untouched, and the Observations and Relations sections are kept
+verbatim. The new body is `content`, with leading and trailing blank lines
+trimmed and one newline added, then each kept section in its original order,
+each preceded by one blank line (trailing blank lines trimmed); the footnote
+definitions are re-appended as on every render. Replacing a document with
+itself (`note view --body` piped back in) changes nothing. Errors, in this
+order (the note is left unchanged):
+
+- blank content: `replace_body requires --content (the new document)`;
+- content that starts with a frontmatter block declaring a `type` or `title`:
+  `replace_body content starts with a frontmatter block; pass only the document
+  (rit note view --body prints it)`;
+- content with a heading named `Observations` or `Relations`: `replace_body
+  content has a "<heading>" section, but the note keeps its own; add
+  observations with rit note write --obs and relations with --rel`;
+- content defining a footnote whose label is a numbered source's `id`, other
+  than with exactly the derived definition (which is dropped and regenerated):
+  `replace_body content defines footnote [^<id>], but [^<id>] is this note's
+  source <id>; renumber the document's own footnotes, or cite the source with
+  [^<id>] and leave its definition out`;
+- a daily note: `replace_body does not apply to daily notes; add to the
+  narrative with rit daily --note`.
+
+Relation lines (§3.5) can sit outside the Relations section, and those go with
+the old document. When relations present before are missing afterwards
+(compared by type and destination), the edit still succeeds and its result
+carries a `warning`: `replace_body removed <n> relation(s) written outside the
+Relations section: <type> -> <target>, …; add back any you need with rit note
+write --rel`.
 
 ---
 
@@ -1023,7 +1068,7 @@ The actor string stamped into `generated.by` and `verified[].by`:
 rit note write --title T [--type TYPE] [--description D] [--tags a,b]
     [--resource URI] [--meta k=v]... [--content BODY|-]
     [--obs "category: text #tag (ctx)"]... [--rel "type: Target"]...
-    [--source "source"]... [--force] [--dry-run] [--allow-empty]
+    [--source "source"]... [--force] [--dry-run] [--allow-empty] [--expect-hash H]
 ```
 
 - `--title` is required. `--type` defaults to `note`. `--tags` is comma-separated.
@@ -1033,11 +1078,16 @@ rit note write --title T [--type TYPE] [--description D] [--tags a,b]
   error `note requires a title that slugifies to something`.
 - **Existing-note detection:** look up that ID (§5.1); if not found, look up the title
   (so re-capturing under a different type still finds it instead of forking).
+- **`--expect-hash H`:** guards against a concurrent change (§9.7). With no existing note:
+  error `--expect-hash given, but note "<id>" does not exist`; otherwise the existing
+  file must have hash `H`, checked under the writer lock.
 - **Existing note and no `--force` → additive mode.** Otherwise → fresh mode.
 
 **Additive mode.**
-- If `--content` is non-blank: error `note "<id>" already exists; --content replaces the
-  body, so use --force (only --obs/--rel/--source are added by default)`.
+- If `--content` is non-blank: error `note "<id>" already exists; replace its body with
+  rit note edit <id> --op replace_body --content - (--force replaces the whole note,
+  dropping its metadata, observations, and relations; by default only
+  --obs/--rel/--source are added)`.
 - If there are no observations/relations/sources and no description, resource, meta,
   or tags: error `note "<id>" already exists and nothing to add (provide
   --obs/--rel/--source/--description/--tags/--meta, or --force to replace)`.
@@ -1066,19 +1116,22 @@ rit note write --title T [--type TYPE] [--description D] [--tags a,b]
 `dry-run` with the full rendered file.
 
 Results (machine): `success`, `status` (`created`|`updated`|`replaced`|`dry-run`), `id`,
-`path` (absolute; omitted on dry-run), `added_observations`, `added_relations`,
-`added_sources`, `warning` (omitted when empty); a dry run replaces `path`/`warning`
-with `rendered` (the whole file as a string). Text: `warning: <msg>` (if any) then
+`path` (absolute; omitted on dry-run), `hash` (§9.7; omitted on dry-run),
+`added_observations`, `added_relations`, `added_sources`, `warning` (omitted when
+empty); a dry run replaces `path`/`hash`/`warning` with `rendered` (the whole file as a
+string). Text: `warning: <msg>` (if any) then
 `Wrote <path>` / `Updated <path> (+N obs, +M rel)` / `Replaced <path>`; dry run prints
 `--- dry-run (<id>) ---` then the rendered file.
 
 ### 9.6 `note read`, `note view`, `read`
 
-`note view <ref>` and `read <ref>` print the file's exact bytes in both modes.
+`note view <ref>` and `read <ref>` print the file's exact bytes in both modes. With
+`--body`, they print only the note's document (§5.7): no frontmatter, no
+Observations or Relations sections, no derived footnote definitions.
 
 `note read <ref>` machine result (one document; empty values/lists omitted): `success`,
 `id`, `type`, `title`, `description`, `tags` (list), `trust`, `resource`, `path`,
-`generated_by`, `generated_at` (only if `generated` exists), `observations` (list of
+`hash` (§9.7), `generated_by`, `generated_at` (only if `generated` exists), `observations` (list of
 canonical lines without the leading `- `, e.g. `[decision] Use JWT #security [^1]`),
 `relations` (list of `type -> target` where target is the resolved ID or, for external
 links, the raw href), `links` (distinct in-bundle target IDs), `sources` (list of
@@ -1091,6 +1144,7 @@ description, `trust: …`, then Observations / Relations / Sources blocks.
 ```
 rit note edit <ref> [--op OP] [--content C|-] [--section S] [--find F] [--count N]
     [--title T] [--description D] [--tags a,b] [--resource URI] [--meta k=v]...
+    [--expect-hash H] [--dry-run]
 ```
 
 - Error `nothing to do: pass --op for a body edit, or --title/--description/--tags/
@@ -1100,8 +1154,20 @@ rit note edit <ref> [--op OP] [--content C|-] [--section S] [--find F] [--count 
   move the file or change the ID (identity is the path). An op and frontmatter flags may
   be combined in one call/write.
 - `generated` is restamped only if the body actually changed.
-- Always recorded as an `Update`.
-- Result: `success`, `status: updated`, `id`, `path`, `op` (if given). Text: `Edited <path>`.
+- **Content hash.** A note's hash is the lowercase hex SHA-256 of its file's bytes, as
+  `note read` reports and `note write`/`note edit` return for the file they wrote (the
+  same value `sha256sum` prints). `--expect-hash H` (compared case-insensitively) makes
+  the edit fail unless the file still has hash `H`, checked under the writer lock before
+  anything changes: `note "<id>" changed since it was read (expected hash H, found <hash>);
+  read it again and reapply the change`. Sessions that edit the same note pass the hash
+  they read, so neither silently overwrites the other.
+- **`--dry-run`:** performs everything except writing and recording, and reports status
+  `dry-run` with the full rendered file.
+- Always recorded as an `Update` (a dry run records nothing).
+- Result: `success`, `status: updated`, `id`, `path`, `hash`, `op` (if given), `warning`
+  (omitted when empty; see `replace_body`, §5.7). A dry run reports `status: dry-run` and
+  replaces `path`/`hash` with `rendered`. Text: `warning: <msg>` (if any), then
+  `Edited <path>`, or for a dry run `--- dry-run (<id>) ---` then the rendered file.
 
 (The two commands are complementary by design: `note write` adds and merges, matched
 by title; `note edit` sets, addressed by ID — one cannot merge its way to renaming.)
@@ -1515,33 +1581,48 @@ implementer's.
    examples for `--content` and `--find`). Where to look (`brief`, `recent`, `ls`). **Search
    before you write**, with the full set of search filters and the note that matching is by
    whole word or prefix with no stemming. Writing (including that writing to an existing title
-   *adds*). Reading and traversal (`note read`, `note view`, `context`; the three equivalent
+   *adds*); that whole documents (plans, briefs, research, drafts, handoffs) belong in the body
+   in full rather than as a summary linking to a workspace copy, after searching for an existing
+   note and choosing a declared type (`note` when nothing fits); that `--content -` reads a new
+   note's body from stdin, revisions go through `note edit` (`replace_body` for the whole
+   document), `note write --force` replaces the whole note and is not a body save, and note
+   files are never edited with generic file tools. Reading and traversal (`note read`, `note view`, `context`; the three equivalent
    ways to address a note). Editing and moving, and that **`move` is the only correct way to
    relocate a note**; the difference between `note edit`'s *set* semantics and `note write`'s
-   *merge* semantics for frontmatter flags; archive rather than delete. Projects and their
+   *merge* semantics for frontmatter flags; the body ops, including `replace_body`,
+   `note view --body`, `--dry-run`, and `--expect-hash`; archive rather than delete. Projects and their
    resolution order. Housekeeping (`index`, `index --check`; never hand-edit generated files).
    Principles: files are the source of truth; search before writing; one fact per
    observation; link generously.
    - **`references/writing.md`** (read before the session's first `note write` or `note
      edit`). The note format and an annotated example; identity is the path; how to pick a
-     type (a table of the default types and when to use each, preferring a specific type over
-     `note`); that a bundle may declare its own vocabulary and how to discover it (the root
+     type (a table of the default types and when to use each, preferring a specific type when
+     one fits, with `note` right for anything else and length never a reason for a new type); that a bundle may declare its own vocabulary and how to discover it (the root
      index names the type beside each directory; `types`; the write-time warning); always
      write a description; observations (one fact per line, reusable categories, tags,
-     context, checkboxes are not observations); relations as links (single-token types with
+     context, only lines under `# Observations` count and checkboxes never do); relations as links (single-token types with
      underscores, title or ID targets, forward references are fine, prose links are edges
      too); recording sources (`--source`, `--resource`); trust signals (`generated` is
      automatic, `verified` is deliberate and not to be called reflexively); archiving; writing
      again adds; **`--tags` merges but `--description`/`--resource` replace and `--meta`
      replaces per key**, with a warning about batch loops that would clobber existing
-     descriptions; a before-you-write checklist (search, add to existing, link).
+     descriptions; that `--force` replaces the whole note, losing its metadata, observations,
+     and relations; **long documents**: prose stays in the body rather than becoming
+     observations, a recipe for creating one from stdin, a heredoc, or a staged file, linking it
+     to its project or task, revising it with `note view --body` and `replace_body`
+     `--expect-hash`, and keeping one authoritative copy (what stays with its source; exports
+     record the note ID and hash and are refreshed from Ritari, never edited as a second copy);
+     a before-you-write checklist (search, add to existing, link).
    - **`references/tasks.md`** (read before creating or updating a task). A task is a note of
      type `task`; when to create one; creating with steps, queryable state in **both**
      frontmatter (`state`, never `status`, which is OKF lifecycle) and an observation, and
      resumption context; finding open tasks; updating progress (tick steps with a section
      replace, record learnings with sources, move a pointer); completing with an outcome;
      writing for resumability (context beats steps; reusable categories such as `state`,
-     `context`, `decision`, `blocked`, `outcome`, `next-step`); guidelines (one task per unit
+     `context`, `decision`, `blocked`, `outcome`, `next-step`); tasks and documents (the task
+     owns state, approvals, blockers, and the next step; a short plan can live in the task, a
+     substantial standalone document gets its own linked note; no tasks just to hold prose;
+     reviewed versions are kept and superseded rather than overwritten); guidelines (one task per unit
      of work, concrete steps, externalize early, link the work, close finished tasks, state
      lives in the task).
    - **`references/daily.md`** (read before writing to the daily note). Read recent notes

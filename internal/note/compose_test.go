@@ -1,6 +1,7 @@
 package note
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -196,4 +197,85 @@ func TestSetSection(t *testing.T) {
 	assert.Equal(t, "p\n\n# Touched\n- b\n\n# After\nx\n", SetSection("p\n\n# Touched\n- a\n\n# After\nx\n", "Touched", []string{"- b"}))
 	assert.Equal(t, "p\n\n# After\nx\n", SetSection("p\n\n# Touched\n- a\n# After\nx\n", "Touched", nil))
 	assert.Equal(t, "", SetSection("", "Touched", nil))
+}
+
+const reportNote = `---
+type: task
+title: Ship v2
+description: Ship it.
+sources:
+  - id: "1"
+    resource: https://example.com/pr/1
+generated: {by: x, at: 2026-01-01T00:00:00Z}
+state: open
+---
+
+Old plan [^1].
+
+# Steps
+- [ ] old
+
+# Observations
+- [state] open [^1]
+
+# Relations
+- part_of [API v2](/projects/api-v2.md)
+
+[^1]: [https://example.com/pr/1](https://example.com/pr/1)
+`
+
+const reportDoc = "# Report\n\n| a | b |\n| - | - |\n| 1 | 2 |\n\n```sh\n# not a section\n- [fact] not an observation\n```\n\n- [WIP] prose bullet\n\nCites the PR [^1] and a note [^a].\n\n[^a]: My own footnote.\n"
+
+func TestReplaceDocument(t *testing.T) {
+	n, err := Parse([]byte(reportNote))
+	require.NoError(t, err)
+	require.NoError(t, n.ReplaceDocument("\n\n"+reportDoc+"\n\n"))
+	assert.Equal(t, reportDoc, n.Document())
+	assert.Equal(t, reportDoc+"\n# Observations\n- [state] open [^1]\n\n# Relations\n- part_of [API v2](/projects/api-v2.md)\n", n.Body)
+	out := string(Render(n))
+	assert.Contains(t, out, "description: Ship it.\n")
+	assert.Contains(t, out, "state: open\n")
+	assert.True(t, strings.HasSuffix(out, "\n\n[^1]: [https://example.com/pr/1](https://example.com/pr/1)\n"), out)
+	assert.Equal(t, []string{"[state] open"}, summaries(Observations(n.Body)))
+
+	// Round trip: replacing with the current document changes nothing.
+	before := n.Body
+	require.NoError(t, n.ReplaceDocument(n.Document()))
+	assert.Equal(t, before, n.Body)
+}
+
+func TestReplaceDocumentAcceptsDerivedDefs(t *testing.T) {
+	n, err := Parse([]byte(reportNote))
+	require.NoError(t, err)
+	require.NoError(t, n.ReplaceDocument("New [^1].\n\n[^1]: [https://example.com/pr/1](https://example.com/pr/1)\n"))
+	assert.Equal(t, "New [^1].\n", n.Document())
+}
+
+func TestReplaceDocumentRefuses(t *testing.T) {
+	n, err := Parse([]byte(reportNote))
+	require.NoError(t, err)
+	for content, msg := range map[string]string{
+		"  \n":                             "replace_body requires --content",
+		"Text\n\n## observations\n- [a] b": `replace_body content has a "observations" section`,
+		"Text\n\n# Relations\n":            `replace_body content has a "Relations" section`,
+		"Text [^1]\n\n[^1]: Mine.\n":       "defines footnote [^1], but [^1] is this note's source 1",
+		"---\ntype: task\ntitle: Ship v2\n---\n\nBody\n": "starts with a frontmatter block",
+	} {
+		assert.ErrorContains(t, n.ReplaceDocument(content), msg, content)
+	}
+	assert.Equal(t, "Old plan [^1].\n\n# Steps\n- [ ] old\n", n.Document())
+}
+
+func TestReplaceDocumentWithoutSections(t *testing.T) {
+	n := &Note{Body: "old\n"}
+	require.NoError(t, n.ReplaceDocument("new"))
+	assert.Equal(t, "new\n", n.Body)
+}
+
+func summaries(obs []Observation) []string {
+	var out []string
+	for _, o := range obs {
+		out = append(out, o.Summary())
+	}
+	return out
 }

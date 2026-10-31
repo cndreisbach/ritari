@@ -1,0 +1,136 @@
+# Scenario 21: replace a note's document, keeping everything structured.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Ship v2' --type task --description 'Ship the v2 API.' --tags api --meta state=open --obs 'state: open' --rel 'part_of: API v2' --source 'PR 1 https://example.com/pr/1' --content='Old plan.'
+stdin related.md
+exec rit note edit 'Ship v2' --op prepend --content -
+
+# The document goes in from stdin, byte for byte; the rest of the note stays.
+stdin report.md
+exec rit note edit tasks/ship-v2 --op replace_body --content -
+stdout '^status: updated$'
+stdout '^op: replace_body$'
+stdout '^warning: "replace_body removed 1 relation\(s\) written outside the Relations section: related -> notes/old-link; add back any you need with rit note write --rel"$'
+cmp kb/tasks/ship-v2.md want/ship-v2.md
+exec rit note view --body tasks/ship-v2
+cmp stdout report.md
+exec rit note read tasks/ship-v2
+stdout '^observations: \["\[state\] open \[\^1\]"\]$'
+stdout '^relations: \[part_of -> notes/api-v2\]$'
+
+# Replacing with the same document changes nothing and keeps the stamp.
+stdin report.md
+exec rit note edit tasks/ship-v2 --op replace_body --content -
+! stdout warning
+cmp kb/tasks/ship-v2.md want/ship-v2.md
+
+# Refusals leave the note alone.
+stdin with-observations.md
+! exec rit note edit tasks/ship-v2 --op replace_body --content -
+stderr 'replace_body content has a "Observations" section, but the note keeps its own'
+stdin own-footnote.md
+! exec rit note edit tasks/ship-v2 --op replace_body --content -
+stderr 'defines footnote \[\^1\], but \[\^1\] is this note''s source 1'
+stdin full.md
+! exec rit note edit tasks/ship-v2 --op replace_body --content -
+stderr 'starts with a frontmatter block'
+! exec rit note edit tasks/ship-v2 --op replace_body
+stderr 'replace_body requires --content'
+exec rit daily --note 'A day.'
+! exec rit note edit daily/2026-07-29 --op replace_body --content='x'
+stderr 'replace_body does not apply to daily notes'
+cmp kb/tasks/ship-v2.md want/ship-v2.md
+
+# Hashes guard against a concurrent change; a dry run writes nothing.
+exec rit note read tasks/ship-v2
+stdout '^hash: 9561e9b7f880ba9c30000eef4e5582a7393fd59c837a434b4fb2bbfb67e24db8$'
+! exec rit note edit tasks/ship-v2 --op replace_body --content='New.' --expect-hash 0000
+stderr 'note "tasks/ship-v2" changed since it was read \(expected hash 0000, found 9561e9b7'
+exec rit note edit tasks/ship-v2 --op replace_body --content='New.' --dry-run
+stdout '^status: dry-run$'
+stdout '^rendered: \|$'
+! stdout '^path:'
+cmp kb/tasks/ship-v2.md want/ship-v2.md
+exec rit note edit tasks/ship-v2 --op replace_body --content='New.' --expect-hash 9561e9b7f880ba9c30000eef4e5582a7393fd59c837a434b4fb2bbfb67e24db8
+stdout '^hash: [0-9a-f]{64}$'
+exec rit note view --body tasks/ship-v2
+stdout '^New.$'
+grep '^state: open$' kb/tasks/ship-v2.md
+
+okflint kb
+
+-- report.md --
+# Findings
+
+| Option | Cost |
+| --- | --- |
+| A | low |
+
+```sh
+# a comment, not a section
+- [fact] not an observation
+```
+
+- [WIP] Draft the rollout section
+* [Optional] Add a canary step
+
+Cites the PR [^1] and a note [^a].
+
+[^a]: The document's own footnote.
+-- related.md --
+- related [Old link](/notes/old-link.md)
+
+-- with-observations.md --
+Text
+
+# Observations
+- [fact] x
+-- own-footnote.md --
+Mine [^1].
+
+[^1]: My footnote.
+-- full.md --
+---
+type: task
+title: Ship v2
+---
+
+Body.
+-- want/ship-v2.md --
+---
+type: task
+title: Ship v2
+description: Ship the v2 API.
+tags: [api]
+sources:
+  - id: "1"
+    resource: https://example.com/pr/1
+    title: PR 1
+generated: {by: claude-code, at: 2026-07-29T12:00:00Z}
+state: open
+---
+
+# Findings
+
+| Option | Cost |
+| --- | --- |
+| A | low |
+
+```sh
+# a comment, not a section
+- [fact] not an observation
+```
+
+- [WIP] Draft the rollout section
+* [Optional] Add a canary step
+
+Cites the PR [^1] and a note [^a].
+
+[^a]: The document's own footnote.
+
+# Observations
+- [state] open [^1]
+
+# Relations
+- part_of [API v2](/notes/api-v2.md)
+
+[^1]: [PR 1](https://example.com/pr/1)

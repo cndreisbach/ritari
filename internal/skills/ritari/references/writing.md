@@ -36,7 +36,9 @@ so choose both deliberately.
 ## Pick a type
 
 Type is the most stable property of a note — it decides where the note lives.
-Topic belongs in `tags`. Prefer a specific type over `note`.
+Topic belongs in `tags`. Prefer a specific type when one fits; `note` is right
+for anything else, including a long document. Length is never a reason to
+invent a type.
 
 | Type | Use for |
 | --- | --- |
@@ -70,7 +72,9 @@ without one appears bare and is hard to choose from a list.
 - `#tags` inside an observation are searchable; `#42` and `#ff00aa` are kept as
   text (issue numbers, colors), not tags.
 - A trailing `(context)` records where or why.
-- Markdown checkboxes (`- [ ] todo`, `- [x] done`) are **not** observations.
+- Only lines under an `# Observations` heading are observations. The same shape
+  elsewhere (`- [WIP] Draft the intro` in a plan) is ordinary prose, and
+  Markdown checkboxes (`- [ ] todo`, `- [x] done`) never are.
 
 ## Relations are links
 
@@ -117,6 +121,59 @@ sources without duplicating. Frontmatter flags differ:
 Beware batch loops: running `note write --description "…"` over many existing
 notes clobbers every description you had. Leave `--description` off when you
 only mean to add facts.
+
+`--content` on an existing note is refused. `--force` gets past that by
+replacing the **whole note**: the description, tags, `--meta` fields such as a
+task's `state`, observations, and relations are all gone unless you pass them
+again. To change the body, use `note edit` (next section).
+
+## Long documents
+
+Plans, briefs, research reports, drafts, and handoffs belong in Ritari in full.
+The prose goes in the body as written: a report does not need to become dozens
+of observations, and it does not need a new type. Add observations only for the
+few facts worth finding with `search --category`.
+
+Create one from standard input, a heredoc, or a staged file, so no shell
+quoting is needed however long it is:
+
+```
+rit search "rollout plan"                 # is there already a note for this?
+rit note write --type note --title "Rollout plan for v2" \
+  --description "How v2 ships: phases, owners, and rollback." \
+  --rel "part_of: API v2" --content - < /tmp/rollout-plan.md
+
+rit note write --type note --title "Rollout plan for v2" \
+  --description "How v2 ships: phases, owners, and rollback." --content - <<'EOF'
+# Phases
+...
+EOF
+```
+
+Link it to the project or task it serves (`--rel "part_of: …"`, or
+`rit note write --title "<Task>" --rel "documented_by: Rollout plan for v2"`).
+
+To revise it:
+
+1. `rit note read <ref>` for its `hash`, and `rit note view --body <ref>` for
+   the document (the body without frontmatter, Observations, Relations, or
+   source footnotes).
+2. Edit that text, then replace it:
+   `rit note edit <ref> --op replace_body --expect-hash <hash> --content - < draft.md`.
+   Everything else in the note is kept. Add `--dry-run` to check first. If the
+   hash no longer matches, someone changed the note: read it again and reapply
+   your change. For a small change, `find_replace` or `replace_section` is
+   enough.
+
+Keep one authoritative copy:
+
+- Retained prose lives in Ritari. Code, patches, fixtures, diagrams, build
+  output, and a project's own README, API, or install docs stay with their
+  source. A one-shot prompt or tool input can stay a temporary file.
+- If a worker or review tool needs a file, export one
+  (`rit note view --body <ref> > /tmp/plan.md`) and record the note's ID and
+  the export's hash. Apply revisions through Ritari, then export again; never
+  keep editing the export as a second copy.
 
 ## Before you write
 

@@ -101,10 +101,10 @@ func ComposeBody(prose string, obsLines, relLines []string) string {
 		parts = append(parts, p)
 	}
 	if len(obsLines) > 0 {
-		parts = append(parts, "# Observations\n"+strings.Join(dedupe(obsLines), "\n"))
+		parts = append(parts, "# "+ObservationsSection+"\n"+strings.Join(dedupe(obsLines), "\n"))
 	}
 	if len(relLines) > 0 {
-		parts = append(parts, "# Relations\n"+strings.Join(dedupe(relLines), "\n"))
+		parts = append(parts, "# "+RelationsSection+"\n"+strings.Join(dedupe(relLines), "\n"))
 	}
 	if len(parts) == 0 {
 		return ""
@@ -126,13 +126,14 @@ func dedupe(ls []string) []string {
 // what is already there (§5.3). It returns the new body and the counts added.
 func MergeBody(body string, obsLines, relLines []string) (string, int, int) {
 	ls := lines(body)
+	in := sectionMask(ls, ObservationsSection)
 	var newObs []string
 	for _, l := range dedupe(obsLines) {
 		key := lineKey(l)
 		_, refs := stripRefs(l)
 		found := false
 		for i, existing := range ls {
-			if lineKey(existing) != key {
+			if !in[i] || lineKey(existing) != key {
 				continue
 			}
 			found = true
@@ -147,11 +148,11 @@ func MergeBody(body string, obsLines, relLines []string) (string, int, int) {
 			}
 			break
 		}
-		if !found && !containsTrimmed(ls, l) && !slices.Contains(newObs, l) {
+		if !found && !slices.Contains(newObs, l) {
 			newObs = append(newObs, l)
 		}
 	}
-	ls = appendToSection(ls, "Observations", newObs)
+	ls = appendToSection(ls, ObservationsSection, newObs)
 
 	var newRels []string
 	for _, l := range dedupe(relLines) {
@@ -159,7 +160,7 @@ func MergeBody(body string, obsLines, relLines []string) (string, int, int) {
 			newRels = append(newRels, l)
 		}
 	}
-	ls = appendToSection(ls, "Relations", newRels)
+	ls = appendToSection(ls, RelationsSection, newRels)
 	return join(ls), len(newObs), len(newRels)
 }
 

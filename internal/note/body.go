@@ -2,11 +2,18 @@ package note
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
 
 var headingRe = regexp.MustCompile(`^(#+)[ \t]+(.*)$`)
+
+// The tool's conventional section names (§3.3).
+const (
+	ObservationsSection = "Observations"
+	RelationsSection    = "Relations"
+)
 
 // Heading is an ATX heading line in a body.
 type Heading struct {
@@ -192,16 +199,43 @@ func isTag(word string) bool {
 	return !allHex || !hasDigit
 }
 
-// Observations lists every observation line in a body.
+// Observations lists the observation lines in a body's Observations sections
+// (§3.4). Observation-shaped lines anywhere else are ordinary prose.
 func Observations(body string) []Observation {
 	var out []Observation
-	for i, l := range lines(body) {
+	ls := lines(body)
+	in := sectionMask(ls, ObservationsSection)
+	for i, l := range ls {
+		if !in[i] {
+			continue
+		}
 		if o, ok := ParseObservation(l); ok {
 			o.Index = i
 			out = append(out, o)
 		}
 	}
 	return out
+}
+
+// sectionMask reports, for each line, whether it lies in a section (heading
+// line included) whose heading is one of names, at any level and
+// case-insensitively. A matching heading nested inside another match is part
+// of the outer section.
+func sectionMask(ls []string, names ...string) []bool {
+	in := make([]bool, len(ls))
+	level := 0 // the open section's heading level, or 0
+	for i, l := range ls {
+		if h, ok := parseHeading(l); ok {
+			if level > 0 && h.Level <= level {
+				level = 0
+			}
+			if level == 0 && slices.ContainsFunc(names, func(n string) bool { return strings.EqualFold(h.Text, n) }) {
+				level = h.Level
+			}
+		}
+		in[i] = level > 0
+	}
+	return in
 }
 
 // lineKey is a line's text ignoring indentation and trailing source refs.

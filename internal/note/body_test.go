@@ -37,6 +37,23 @@ func TestParseObservationRejects(t *testing.T) {
 	}
 }
 
+func TestObservationsOnlyInObservationsSection(t *testing.T) {
+	body := "- [WIP] Draft the intro\n\n# Plan\n* [Optional] Add a step\n\n## observations\n- [fact] one\n### Risks\n- [risk] two\n## Next\n- [Q3] not one\n# Observations\n- [fact] three\n"
+	var got []string
+	for _, o := range Observations(body) {
+		got = append(got, o.Summary())
+	}
+	assert.Equal(t, []string{"[fact] one", "[risk] two", "[fact] three"}, got)
+}
+
+func TestMergeIgnoresProseBullets(t *testing.T) {
+	n := &Note{Body: "- [fact] one\n"}
+	res, err := n.Merge(Additions{Obs: []string{"fact: one"}})
+	require.NoError(t, err)
+	assert.Equal(t, 1, res.AddedObs)
+	assert.Equal(t, "- [fact] one\n\n# Observations\n- [fact] one\n", n.Body)
+}
+
 func TestTagsExcludeNumbersAndHex(t *testing.T) {
 	o, ok := ParseObservation("- [bug] Fixed #42 and color #ff00aa #3e8 #auth #cafe #fff")
 	require.True(t, ok)

@@ -30,13 +30,14 @@ type NoteWriteCmd struct {
 	Tags        string   `help:"Comma-separated tags (merged with existing)."`
 	Resource    string   `help:"Canonical URI of what the note is about."`
 	Meta        []string `sep:"none" placeholder:"KEY=VALUE" help:"Extra frontmatter field (repeatable)."`
-	Content     string   `help:"Body markdown, or - for stdin (new notes, or with --force)."`
+	Content     string   `help:"Body markdown, or - for stdin (new notes; to revise an existing body use note edit --op replace_body)."`
 	Obs         []string `sep:"none" placeholder:"CATEGORY: TEXT" help:"Observation to add (repeatable)."`
 	Rel         []string `sep:"none" placeholder:"TYPE: TARGET" help:"Relation to add (repeatable)."`
 	Source      []string `sep:"none" help:"Source for this write's observations (repeatable)."`
 	Force       bool     `help:"Replace an existing note instead of adding to it."`
 	DryRun      bool     `help:"Show the result without writing."`
 	AllowEmpty  bool     `help:"Allow a note with no body."`
+	ExpectHash  string   `help:"Fail unless the existing note's file still has this hash (from note read)."`
 }
 
 // Run executes `note write`.
@@ -61,7 +62,7 @@ func (cmd *NoteWriteCmd) Run(c *Ctx) error {
 		Title: cmd.Title, Type: cmd.Type, Description: cmd.Description, Resource: cmd.Resource,
 		Tags: splitTags(cmd.Tags), Meta: meta, Content: content,
 		Obs: cmd.Obs, Rels: cmd.Rel, Sources: cmd.Source,
-		Force: cmd.Force, DryRun: cmd.DryRun, AllowEmpty: cmd.AllowEmpty,
+		Force: cmd.Force, DryRun: cmd.DryRun, AllowEmpty: cmd.AllowEmpty, ExpectHash: cmd.ExpectHash,
 	})
 	if err != nil {
 		return err
@@ -73,7 +74,7 @@ func (cmd *NoteWriteCmd) Run(c *Ctx) error {
 		c.Printf("--- dry-run (%s) ---\n%s", res.ID, res.Rendered)
 		return c.Emit(d)
 	}
-	d.Set("path", res.Path).Set("added_observations", res.AddedObs).Set("added_relations", res.AddedRels).
+	d.Set("path", res.Path).Set("hash", res.Hash).Set("added_observations", res.AddedObs).Set("added_relations", res.AddedRels).
 		Set("added_sources", res.AddedSources).Set("warning", res.Warning)
 	if res.Warning != "" {
 		c.Printf("warning: %s\n", res.Warning)
@@ -91,7 +92,8 @@ func (cmd *NoteWriteCmd) Run(c *Ctx) error {
 
 // ViewCmd prints a note's raw bytes (`note view` and `read`).
 type ViewCmd struct {
-	Ref string `arg:"" help:"Note ID, path, or title."`
+	Ref  string `arg:"" help:"Note ID, path, or title."`
+	Body bool   `help:"Print only the document: no frontmatter, Observations, Relations, or source footnotes."`
 }
 
 // Run executes `note view`.
@@ -102,6 +104,10 @@ func (cmd *ViewCmd) Run(c *Ctx) error {
 	}
 	cn, err := b.Resolve(cmd.Ref)
 	if err != nil {
+		return err
+	}
+	if cmd.Body {
+		_, err = c.Stdout.Write([]byte(cn.Note.Document()))
 		return err
 	}
 	data, err := os.ReadFile(b.Abs(cn.Path))
@@ -127,6 +133,10 @@ func (cmd *NoteReadCmd) Run(c *Ctx) error {
 	if err != nil {
 		return err
 	}
+	data, err := os.ReadFile(b.Abs(cn.Path))
+	if err != nil {
+		return err
+	}
 	fm := &cn.Note.FM
 	var obs, rels, srcs output.List
 	for _, o := range note.Observations(cn.Note.Body) {
@@ -147,7 +157,7 @@ func (cmd *NoteReadCmd) Run(c *Ctx) error {
 	links := output.List(note.Targets(cn.Note.Body, cn.ID))
 	d := output.New().Set("success", true).Set("id", cn.ID).Set("type", fm.Type).Set("title", cn.Title()).
 		Set("description", fm.Description).Set("tags", output.List(fm.Tags)).Set("trust", fm.Trust()).
-		Set("resource", fm.Resource).Set("path", b.Abs(cn.Path))
+		Set("resource", fm.Resource).Set("path", b.Abs(cn.Path)).Set("hash", bundle.Hash(data))
 	if fm.Generated != nil {
 		d.Set("generated_by", fm.Generated.By).Set("generated_at", fm.Generated.At)
 	}
@@ -176,7 +186,7 @@ func (cmd *NoteReadCmd) Run(c *Ctx) error {
 // NoteEditCmd is `note edit`.
 type NoteEditCmd struct {
 	Ref         string   `arg:"" help:"Note ID, path, or title."`
-	Op          string   `enum:"append,prepend,find_replace,replace_section,insert_before_section,insert_after_section," default:"" help:"Body operation: append, prepend, find_replace, replace_section, insert_before_section, insert_after_section."`
+	Op          string   `enum:"append,prepend,find_replace,replace_section,insert_before_section,insert_after_section,replace_body," default:"" help:"Body operation: append, prepend, find_replace, replace_section, insert_before_section, insert_after_section, replace_body (replace the document, keeping metadata, observations, and relations)."`
 	Content     string   `help:"Content for the operation, or - for stdin."`
 	Section     string   `help:"Section heading for section operations."`
 	Find        string   `help:"Text to find (find_replace)."`
@@ -186,6 +196,8 @@ type NoteEditCmd struct {
 	Tags        *string  `help:"Replace the tags (comma-separated)."`
 	Resource    *string  `help:"Set the resource URI."`
 	Meta        []string `sep:"none" placeholder:"KEY=VALUE" help:"Set an extra frontmatter field (repeatable)."`
+	ExpectHash  string   `help:"Fail unless the note's file still has this hash (from note read)."`
+	DryRun      bool     `help:"Show the result without writing."`
 }
 
 // Run executes `note edit`.
@@ -209,6 +221,7 @@ func (cmd *NoteEditCmd) Run(c *Ctx) error {
 	o := bundle.EditOpts{
 		Op: cmd.Op, Content: content, Section: cmd.Section, Find: cmd.Find, Count: cmd.Count,
 		Title: cmd.Title, Description: cmd.Description, Resource: cmd.Resource, Meta: meta,
+		ExpectHash: cmd.ExpectHash, DryRun: cmd.DryRun,
 	}
 	if cmd.Tags != nil {
 		tags := splitTags(*cmd.Tags)
@@ -218,8 +231,16 @@ func (cmd *NoteEditCmd) Run(c *Ctx) error {
 	if err != nil {
 		return err
 	}
+	if res.Warning != "" {
+		c.Printf("warning: %s\n", res.Warning)
+	}
+	d := output.New().Set("success", true).Set("status", res.Status).Set("id", res.ID)
+	if res.Status == "dry-run" {
+		c.Printf("--- dry-run (%s) ---\n%s", res.ID, res.Rendered)
+		return c.Emit(d.Set("op", cmd.Op).Set("warning", res.Warning).Set("rendered", res.Rendered))
+	}
 	c.Printf("Edited %s\n", res.Path)
-	return c.Emit(output.New().Set("success", true).Set("status", res.Status).Set("id", res.ID).Set("path", res.Path).Set("op", cmd.Op))
+	return c.Emit(d.Set("path", res.Path).Set("hash", res.Hash).Set("op", cmd.Op).Set("warning", res.Warning))
 }
 
 // NoteVerifyCmd is `note verify`.
