@@ -8,6 +8,12 @@ import (
 
 var headingRe = regexp.MustCompile(`^(#+)[ \t]+(.*)$`)
 
+// The tool's conventional section names (§3.3).
+const (
+	ObservationsSection = "Observations"
+	RelationsSection    = "Relations"
+)
+
 // Heading is an ATX heading line in a body.
 type Heading struct {
 	Line  int // index into the body's lines
@@ -192,16 +198,43 @@ func isTag(word string) bool {
 	return !allHex || !hasDigit
 }
 
-// Observations lists every observation line in a body.
+// Observations lists the observation lines in a body's Observations sections
+// (§3.4). Observation-shaped lines anywhere else are ordinary prose.
 func Observations(body string) []Observation {
 	var out []Observation
-	for i, l := range lines(body) {
+	ls := lines(body)
+	in := inObservations(ls)
+	for i, l := range ls {
+		if !in[i] {
+			continue
+		}
 		if o, ok := ParseObservation(l); ok {
 			o.Index = i
 			out = append(out, o)
 		}
 	}
 	return out
+}
+
+// inObservations reports, for each line, whether it lies inside a section
+// headed `Observations` (any level, case-insensitively). Heading lines are
+// never inside.
+func inObservations(ls []string) []bool {
+	in := make([]bool, len(ls))
+	level := 0 // the open Observations section's heading level, or 0
+	for i, l := range ls {
+		if h, ok := parseHeading(l); ok {
+			if level > 0 && h.Level <= level {
+				level = 0
+			}
+			if level == 0 && strings.EqualFold(h.Text, ObservationsSection) {
+				level = h.Level
+			}
+			continue
+		}
+		in[i] = level > 0
+	}
+	return in
 }
 
 // lineKey is a line's text ignoring indentation and trailing source refs.

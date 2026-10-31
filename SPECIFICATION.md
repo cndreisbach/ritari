@@ -256,9 +256,14 @@ headings.)
 - [category] content #tag #tag (context) [^1] [^2]
 ```
 
-Recognized anywhere in the body, not only under `# Observations`, on any line
-matching: optional leading whitespace, a `-` or `*` bullet, `[category]`, at
-least one whitespace, then the rest.
+Recognized only inside an **Observations section**: a section (§3.3) whose
+heading is `Observations`, at any level, matched case-insensitively, including
+any subsections under it. There, an observation is any line matching: optional
+leading whitespace, a `-` or `*` bullet, `[category]`, at least one whitespace,
+then the rest. The same shape anywhere else in the body (`- [WIP] Draft the
+intro` in a plan, say) is ordinary prose, so a whole document can live in a
+note without its bullets turning into facts. Heading lines are never
+observations.
 
 Parsing the rest:
 
@@ -590,11 +595,12 @@ together came from the same source).
 - Work on the body without its derived footnote definitions (§3.7).
 - Allocate sources against the note's existing ones (§3.7); the refs apply to every
   observation in this write.
-- For each new observation line: if an existing body line has the same text
-  ignoring trailing source references, **do not add a line**; instead union the refs
-  into that existing line (rewrite it only if the ref set grew, preserving
-  indentation). Otherwise, if the exact line (trimmed) is not already present, add
-  it. Duplicates within one write are added once.
+- For each new observation line: if a line in an Observations section (§3.4) has
+  the same text ignoring trailing source references, **do not add a line**; instead
+  union the refs into that existing line (rewrite it only if the ref set grew,
+  preserving indentation). Otherwise add it. Lines outside Observations sections
+  are prose and never count as a match. Duplicates within one write are added
+  once.
 - For each new relation line: add it unless the identical line (trimmed) already
   exists.
 - Append new observation lines at the end of the existing `Observations` section
