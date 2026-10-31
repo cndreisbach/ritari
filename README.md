@@ -114,7 +114,9 @@ for sessions in that project.
 
 When `rit` runs without a terminal, as it does under an agent, it prints flat
 YAML that is easy to parse. In a terminal it prints readable text. Use
-`--output text` or `--output yaml` to choose. Writes are stamped with who made
+`--output text`, `--output yaml`, or `--output json` to choose; JSON is
+newline-delimited flat objects, the same documents as the YAML stream. Writes are
+stamped with who made
 them: `rit` recognizes Claude Code, Codex, Cursor, Rovo Dev, and Pi, and otherwise
 uses your configured author (`rit config author human:you@example.com`) or your
 git email. An agent that names its model is stamped as `<agent>/<model>` — Pi's

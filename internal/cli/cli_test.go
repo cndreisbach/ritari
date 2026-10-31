@@ -12,20 +12,23 @@ func TestMode(t *testing.T) {
 	env := func(v string) func(string) string { return func(string) string { return v } }
 	for _, c := range []struct {
 		flag, envv string
-		tty, want  bool
+		tty        bool
+		want       string
 	}{
-		{"", "", true, false},
-		{"", "", false, true},
-		{"", "text", false, false},
-		{"yaml", "text", true, true},
-		{"TEXT", "", false, false},
+		{"", "", true, "text"},
+		{"", "", false, "yaml"},
+		{"", "text", false, "text"},
+		{"yaml", "text", true, "yaml"},
+		{"TEXT", "", false, "text"},
+		{"json", "text", true, "json"},
+		{"", "JSON", true, "json"},
 	} {
 		got, err := mode(c.flag, IO{Getenv: env(c.envv), IsTerminal: c.tty})
 		require.NoError(t, err)
 		assert.Equal(t, c.want, got, "%+v", c)
 	}
-	_, err := mode("json", IO{Getenv: env("")})
-	assert.EqualError(t, err, `unknown output format "json" (want text or yaml)`)
+	_, err := mode("toml", IO{Getenv: env("")})
+	assert.EqualError(t, err, `unknown output format "toml" (want text, yaml, or json)`)
 }
 
 func TestParseMeta(t *testing.T) {

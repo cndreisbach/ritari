@@ -929,13 +929,13 @@ the allowed-category list. Counts in the result reflect filtering. The command f
 ### 9.1 Global behavior
 
 ```
-rit [--output text|yaml] [--project NAME] <command> ...
+rit [--output text|yaml|json] [--project NAME] <command> ...
 ```
 
-- `--output`/`-o`: `text` or `yaml`. If unset, the `RITARI_OUTPUT` environment variable
-  is consulted; if still unset, **auto**: machine (YAML) mode unless standard output
-  is a terminal. An unrecognized value prints `<tool>: unknown output format "<x>"
-  (want text or yaml)` to stderr and exits with status 2.
+- `--output`/`-o`: `text`, `yaml`, or `json`. If unset, the `RITARI_OUTPUT` environment
+  variable is consulted; if still unset, **auto**: machine (YAML) mode unless standard
+  output is a terminal. An unrecognized value prints `<tool>: unknown output format
+  "<x>" (want text, yaml, or json)` to stderr and exits with status 2.
 - `--project`/`-p`: project name; overrides the default and `RITARI_PROJECT`.
 - A string flag value that begins with `-` MUST be given in the `--flag=value` form;
   the space-separated form is a usage error (this is the standard behavior of the
@@ -953,6 +953,11 @@ nothing nests.
   document carrying `success: true` and `count`, then one document per record.
 - A field whose value is an empty string is **omitted**; an empty list is omitted
   unless the spec below says it is emitted as an explicit `[]` ("none" as an answer).
+- With `--output json` the same documents are written as **newline-delimited JSON**:
+  one flat JSON object per line, with the same fields, the same key order, and the
+  same omission rules. A record set is still a stream, so the header is the first line
+  and each record follows on its own line. JSON values are typed, and `<`, `>`, and
+  `&` are not escaped.
 - Key order is as listed in this specification.
 - On failure: a document `success: false` + `error: <message>` on standard output
   (machine mode only), the message on standard error as `<tool>: <message>`, and exit

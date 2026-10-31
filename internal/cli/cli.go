@@ -20,7 +20,7 @@ import (
 
 // CLI is the command tree.
 type CLI struct {
-	Output      string `short:"o" placeholder:"text|yaml" help:"Output format (default: yaml unless stdout is a terminal)."`
+	Output      string `short:"o" placeholder:"text|yaml|json" help:"Output format (default: yaml unless stdout is a terminal)."`
 	ProjectName string `name:"project" short:"p" placeholder:"NAME" help:"Project to operate on (default: RITARI_PROJECT, then the registry default)."`
 
 	Note    NoteCmd    `cmd:"" help:"Write, read, edit, and manage notes."`
@@ -54,6 +54,7 @@ type IO struct {
 type Ctx struct {
 	IO
 	Machine     bool
+	JSON        bool
 	projectFlag string
 	reg         *registry.Registry
 }
@@ -93,16 +94,22 @@ func Main(args []string, io IO) (code int) {
 		warn(io, err)
 		return 2
 	}
-	machine, err := mode(cli.Output, io)
+	format, err := mode(cli.Output, io)
 	if err != nil {
 		warn(io, err)
 		return 2
 	}
-	ctx := &Ctx{IO: io, Machine: machine, projectFlag: cli.ProjectName}
+	machine, jsonOut := format != "text", format == "json"
+	ctx := &Ctx{IO: io, Machine: machine, JSON: jsonOut, projectFlag: cli.ProjectName}
 	if err := kctx.Run(ctx); err != nil {
 		var r reported
 		if !errors.As(err, &r) && machine {
-			_ = output.Write(io.Stdout, output.New().Set("success", false).Set("error", err.Error()))
+			doc := output.New().Set("success", false).Set("error", err.Error())
+			if jsonOut {
+				_ = output.WriteJSON(io.Stdout, doc)
+			} else {
+				_ = output.Write(io.Stdout, doc)
+			}
 		}
 		warn(io, err)
 		return 1
@@ -114,26 +121,30 @@ func warn(io IO, err error) {
 	_, _ = fmt.Fprintf(io.Stderr, "rit: %v\n", err)
 }
 
-func mode(flag string, io IO) (bool, error) {
-	v := flag
+func mode(flag string, io IO) (string, error) {
+	v := strings.TrimSpace(flag)
 	if v == "" {
-		v = io.Getenv("RITARI_OUTPUT")
+		v = strings.TrimSpace(io.Getenv("RITARI_OUTPUT"))
 	}
-	switch strings.ToLower(strings.TrimSpace(v)) {
+	switch strings.ToLower(v) {
 	case "":
-		return !io.IsTerminal, nil
-	case "yaml":
-		return true, nil
-	case "text":
-		return false, nil
+		if io.IsTerminal {
+			return "text", nil
+		}
+		return "yaml", nil
+	case "text", "yaml", "json":
+		return strings.ToLower(v), nil
 	}
-	return false, fmt.Errorf("unknown output format %q (want text or yaml)", v)
+	return "", fmt.Errorf("unknown output format %q (want text, yaml, or json)", v)
 }
 
 // Emit writes machine-mode documents.
 func (c *Ctx) Emit(docs ...*output.Doc) error {
 	if !c.Machine {
 		return nil
+	}
+	if c.JSON {
+		return output.WriteJSON(c.Stdout, docs...)
 	}
 	return output.Write(c.Stdout, docs...)
 }
