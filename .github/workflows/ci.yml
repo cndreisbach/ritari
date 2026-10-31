@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v5
         with:
-          install_args: go golangci-lint go:golang.org/x/vuln/cmd/govulncheck uv pipx:okflint
+          install_args: go golangci-lint go:golang.org/x/vuln/cmd/govulncheck uv pipx:okflint node
           cache: true
       - name: Test
         run: go test ./...
@@ -26,3 +26,10 @@ jobs:
         run: golangci-lint run ./...
       - name: Vulnerability check
         run: govulncheck ./...
+
+      - name: Install pi-ritari dependencies
+        run: npm ci --prefix pi-ritari
+      - name: Typecheck pi-ritari
+        run: npm run typecheck --prefix pi-ritari
+      - name: Test pi-ritari
+        run: npm test --prefix pi-ritari
