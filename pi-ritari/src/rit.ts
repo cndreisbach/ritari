@@ -68,6 +68,17 @@ function exitMessage(result: { stderr: string; code: number }): string {
 	return stderr !== "" ? stderr : `rit exited with status ${result.code}`;
 }
 
+const NEEDS_JSON = /unknown output format "json"/;
+
+/**
+ * The package and the CLI are released together, so an older `rit` that does
+ * not know --output json is a version mismatch, not a bug; say so plainly.
+ */
+function outdated(stderr: string): string | undefined {
+	if (!NEEDS_JSON.test(stderr)) return undefined;
+	return "the rit on PATH is too old for pi-ritari: it does not support --output json (upgrade rit, or put a newer build first on PATH)";
+}
+
 /** Run a command that writes JSON documents and return them. */
 export async function run(
 	exec: Exec,
@@ -80,7 +91,7 @@ export async function run(
 	const docs = parseLenient(result.stdout);
 	const failure = failureOf(docs);
 	if (failure !== undefined) throw new RitariError(failure);
-	if (result.code !== 0) throw new RitariError(exitMessage(result));
+	if (result.code !== 0) throw new RitariError(outdated(result.stderr) ?? exitMessage(result));
 	if (docs.length === 0) throw new RitariError("rit printed no output");
 	return docs;
 }
@@ -96,7 +107,7 @@ export async function runText(
 	const result = await exec("rit", ritArgs(project, words), { cwd, timeout: 60_000, signal });
 	if (result.code !== 0) {
 		const failure = failureOf(parseLenient(result.stdout));
-		throw new RitariError(failure ?? exitMessage(result));
+		throw new RitariError(failure ?? outdated(result.stderr) ?? exitMessage(result));
 	}
 	return result.stdout;
 }

@@ -65,6 +65,11 @@ describe("run", () => {
 		const { exec } = recorder({ stderr: "rit: bad flag\n", code: 1 });
 		await expect(run(exec, "/repo", "work", ["nope"])).rejects.toThrow("rit: bad flag");
 	});
+
+	it("explains a rit that is too old to know --output json", async () => {
+		const { exec } = recorder({ stderr: 'rit: unknown output format "json" (want text or yaml)\n', code: 2 });
+		await expect(run(exec, "/repo", "work", ["ls"])).rejects.toThrow("too old for pi-ritari");
+	});
 });
 
 describe("runText", () => {
