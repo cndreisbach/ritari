@@ -10,7 +10,10 @@ sources:
     resource: Clinton, development session 2026-10-19
   - id: "3"
     resource: skill-usage report, Clinton's transcripts, 2026-10-19
-generated: {by: claude-code, at: 2026-10-19T02:51:37Z}
+  - id: "4"
+    resource: Clinton, development session 2026-10-31
+generated: {by: claude-code, at: 2026-10-31T02:34:40Z}
+state: done
 ---
 
 # Observations
@@ -30,6 +33,10 @@ generated: {by: claude-code, at: 2026-10-19T02:51:37Z}
 - [context] The one load was ritari-notes and ritari-tasks, after rit was already in use — loaded at the moment of writing, the pattern references/ pointers tied to commands would rely on [^3]
 - [context] No session read rit daily in its first 10 tool calls, so session-start continuity is not happening [^3]
 - [open-thread] Rerun skill-usage with the parser fixes and --skip-project ritari to see usage outside ritari development [^3]
+- [outcome] Shipped — three skills (ritari with references/writing.md, tasks.md, daily.md and lint.md; ritari-ingest; ritari-reflect), spec §11 rewritten, and SKILL.md says when to read each reference (enforced by a skills test) [^4]
+- [outcome] Session start and end moved out of routing into project-scoped hooks from rit install hooks, which run rit brief for Claude Code and Pi [^4]
+- [outcome] rit install skills reports outdated and retired ritari-* skills and removes retired ones with --cleanup [^4]
+- [open-thread] Rerun mise run skill-usage with --skip-project ritari to measure routing outside ritari development [^4]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)
@@ -38,3 +45,4 @@ generated: {by: claude-code, at: 2026-10-19T02:51:37Z}
 [^1]: Clinton, development session 2026-10-18
 [^2]: Clinton, development session 2026-10-19
 [^3]: skill-usage report, Clinton's transcripts, 2026-10-19
+[^4]: Clinton, development session 2026-10-31

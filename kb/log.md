@@ -10,6 +10,8 @@
 * **Create**: [2026-10-31](/daily/2026-10-31.md)
 * **Update**: [replace_body keeps structured sections](/decisions/replace-body-keeps-structured-sections.md)
 * **Update**: [2026-10-31](/daily/2026-10-31.md)
+* **Update**: [Skill routing](/ideas/skill-routing.md)
+* **Update**: [Pi extension](/ideas/pi-extension.md)
 
 ## 2026-10-19
 
