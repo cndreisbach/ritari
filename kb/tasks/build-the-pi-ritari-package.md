@@ -6,7 +6,7 @@ tags: [pi, extension, npm]
 sources:
   - id: "1"
     resource: Clinton, development session 2026-10-31
-generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:02:33Z}
+generated: {by: pi/~deepseek/deepseek-flash-latest, at: 2026-10-31T03:06:01Z}
 state: open
 ---
 
@@ -25,6 +25,10 @@ state: open
 - [next-step] merge feat/pi-ritari, then try pi install ./pi-ritari in a real Pi session against this kb [^1]
 - [next-step] add NPM_TOKEN before a release that touches pi-ritari [^1]
 - [next-step] decide whether the end-of-run lint and open-thread report (build order step three) is worth adding to the package [^1]
+- [outcome] pi install ./pi-ritari loads the package — pi list shows the local path and the session brief comes from the package (the generated hook and .pi/ are gone) [^1]
+- [problem] the tools failed in the real session because rit on PATH is the released 3.0.0, which predates --output json; the brief still worked because it asks for text [^1]
+- [fix] tools now report a version mismatch instead of a bare unknown-output-format error, and a local test needs the repo's bin/ first on PATH before starting Pi [^1]
+- [next-step] after the release, pi-ritari and rit share the tag version, so this mismatch cannot happen from npm installs [^1]
 
 # Relations
 - implements [Pi extension](/ideas/pi-extension.md)
