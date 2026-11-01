@@ -9,7 +9,7 @@ sources:
     resource: Branch claude/wonderful-feynman-mres83
   - id: "3"
     resource: "Adversarial review of PR #9"
-generated: {by: claude-code, at: 2026-11-01T13:50:30Z}
+generated: { by: claude-code, at: 2026-11-01T13:50:30Z }
 priority: high
 state: done
 ---
@@ -24,6 +24,7 @@ state: done
 - [x] Spec, skills, and acceptance tests
 
 # Observations
+
 - [state] in-progress [^1]
 - [context] Phase 3 (marking notes in read, search, and context) is deferred to a later change [^1]
 - [next-step] Add internal/screen with the scanner and pattern bank [^1]
@@ -34,8 +35,11 @@ state: done
 - [context] Lookalike-letter folding and HTML entity decoding in the pattern bank were left out to avoid a golang.org/x/text dependency [^3]
 
 # Relations
+
 - implements [Screen notes for hidden instructions](/ideas/screen-notes-for-hidden-instructions.md)
 
 [^1]: Clinton, development session 2026-11-01
+
 [^2]: Branch claude/wonderful-feynman-mres83
+
 [^3]: Adversarial review of PR #9
