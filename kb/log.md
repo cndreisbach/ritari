@@ -18,6 +18,10 @@
 * **Create**: [2026-11-01](/daily/2026-11-01.md)
 * **Create**: [Writes warn only about hidden content they add](/decisions/writes-warn-only-about-hidden-content-they-add.md)
 * **Update**: [2026-11-01](/daily/2026-11-01.md)
+* **Create**: [Mark notes with hidden content in read, search, context, and brief](/tasks/mark-notes-with-hidden-content-in-read-search-context-and-brief.md)
+* **Create**: [Mark notes by their worst hidden finding](/decisions/mark-notes-by-their-worst-hidden-finding.md)
+* **Create**: [Raw reads warn on stderr](/decisions/raw-reads-warn-on-stderr.md)
+* **Create**: [Brief removes hidden spans](/decisions/brief-removes-hidden-spans.md)
 
 ## 2026-10-30
 

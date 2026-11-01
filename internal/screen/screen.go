@@ -4,6 +4,7 @@ package screen
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -39,6 +40,9 @@ type span struct {
 	// attribute values, and unused reference definitions are only scanned
 	// for instructions.
 	flag bool
+	// start and end are the span's byte range in the body, markup
+	// included, for flagged spans (Strip removes them).
+	start, end int
 }
 
 var md = goldmark.New(goldmark.WithExtensions(extension.Footnote))
@@ -59,6 +63,67 @@ func Note(n *note.Note) []Finding {
 		}
 	}
 	return out
+}
+
+// Worst names the most serious rule among findings: hidden-instruction,
+// then hidden-content, or "" when there are none (§8.1).
+func Worst(fs []Finding) string {
+	worst := ""
+	for _, f := range fs {
+		if f.Rule == HiddenInstruction {
+			return HiddenInstruction
+		}
+		worst = HiddenContent
+	}
+	return worst
+}
+
+// Strip removes what a reader would not see from a body: the flagged hidden
+// spans (comments, hidden and never-rendered elements, markup included) and
+// disallowed invisible characters (§8.1). Text that is only scanned (titles,
+// attribute values, unused reference definitions) stays.
+func Strip(body string) string {
+	var ranges [][2]int
+	for _, s := range hiddenSpans(body) {
+		if s.flag && s.end > s.start {
+			ranges = append(ranges, [2]int{s.start, s.end})
+		}
+	}
+	sort.Slice(ranges, func(i, j int) bool { return ranges[i][0] < ranges[j][0] })
+	var b strings.Builder
+	at := 0
+	for _, r := range ranges {
+		if r[1] <= at {
+			continue
+		}
+		if r[0] > at {
+			b.WriteString(body[at:r[0]])
+		}
+		at = r[1]
+		// Removing a span from between two words leaves one space, not two.
+		if out := b.String(); at < len(body) && body[at] == ' ' && strings.HasSuffix(out, " ") {
+			at++
+		}
+	}
+	b.WriteString(body[at:])
+	return StripInvisible(b.String())
+}
+
+// StripInvisible removes disallowed invisible characters from s, leaving
+// allowed ones (an emoji ZWJ, a Persian ZWNJ) in place.
+func StripInvisible(s string) string {
+	if !strings.ContainsFunc(s, suspicious) {
+		return s
+	}
+	rs := []rune(s)
+	bad := flagged(rs)
+	var b strings.Builder
+	for i, r := range rs {
+		if !bad[i] {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // New returns the findings in after that are not in before, counting

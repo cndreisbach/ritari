@@ -61,10 +61,10 @@ func htmlSpans(src, masked string) []span {
 	var stack []openElem
 	hiding := 0 // number of hiding elements on the stack
 	var hidden strings.Builder
-	hiddenKind := ""
-	flush := func() {
+	hiddenKind, hiddenStart := "", 0
+	flush := func(end int) {
 		if t := strings.TrimSpace(hidden.String()); t != "" {
-			out = append(out, span{kind: hiddenKind, text: t, flag: true})
+			out = append(out, span{kind: hiddenKind, text: t, flag: true, start: hiddenStart, end: end})
 		}
 		hidden.Reset()
 		hiddenKind = ""
@@ -92,7 +92,7 @@ func htmlSpans(src, masked string) []span {
 			text(last, i)
 			body, end := comment(src, masked, i)
 			if strings.TrimSpace(body) != "" {
-				out = append(out, span{kind: "an HTML comment", text: body, flag: true})
+				out = append(out, span{kind: "an HTML comment", text: body, flag: true, start: i, end: end})
 			}
 			i, last = end, end
 			continue
@@ -107,7 +107,7 @@ func htmlSpans(src, masked string) []span {
 			}
 			inner := src[i+2 : max(i+2, stop-1)]
 			if strings.TrimSpace(inner) != "" {
-				out = append(out, span{kind: "an HTML comment", text: inner, flag: true})
+				out = append(out, span{kind: "an HTML comment", text: inner, flag: true, start: i, end: stop})
 			}
 			i, last = stop, stop
 			continue
@@ -136,7 +136,7 @@ func htmlSpans(src, masked string) []span {
 				}
 				stack = stack[:k]
 				if hiding == 0 && hiddenKind != "" {
-					flush()
+					flush(i)
 				}
 				break
 			}
@@ -153,6 +153,7 @@ func htmlSpans(src, masked string) []span {
 			continue
 		}
 		text(last, i)
+		open := i
 		for _, a := range attrs {
 			if a.name != "style" && strings.TrimSpace(a.value) != "" {
 				out = append(out, span{kind: "an HTML attribute", text: a.value})
@@ -161,6 +162,7 @@ func htmlSpans(src, masked string) []span {
 		i, last = close, close
 		hides := neverRendered[name] || hidesByAttrs(attrs)
 		if hides && hiding == 0 {
+			hiddenStart = open
 			hiddenKind = "a hidden HTML element"
 			if neverRendered[name] {
 				hiddenKind = "a <" + name + "> element"
@@ -176,20 +178,20 @@ func htmlSpans(src, masked string) []span {
 				hidden.WriteString(src[i:stop])
 				hidden.WriteByte(' ')
 			}
-			if hides && hiding == 0 {
-				flush()
-			}
 			gt := strings.IndexByte(masked[stop:], '>')
 			if endTag < 0 || gt < 0 {
 				i, last = len(masked), len(masked)
 			} else {
 				i, last = stop+gt+1, stop+gt+1
 			}
+			if hides && hiding == 0 {
+				flush(i)
+			}
 			continue
 		}
 		if voidElements[name] || selfClosing {
 			if hides && hiding == 0 {
-				flush()
+				flush(i)
 			}
 			continue
 		}
@@ -200,7 +202,7 @@ func htmlSpans(src, masked string) []span {
 	}
 	text(last, len(src))
 	if hiddenKind != "" {
-		flush()
+		flush(len(src))
 	}
 	return out
 }
