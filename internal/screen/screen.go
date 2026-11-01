@@ -131,8 +131,13 @@ func strip(body string, spans []span) string {
 			lastSpace = false
 			continue
 		}
-		// Removing a span from between two words leaves one space, not two.
-		if lastSpace && at < len(body) && body[at] == ' ' {
+		// Removing a span from between two words leaves one space, not two;
+		// removing all of a line leaves no blank line in its place.
+		out := b.String()
+		switch {
+		case lastSpace && at < len(body) && body[at] == ' ':
+			at++
+		case (out == "" || strings.HasSuffix(out, "\n")) && at < len(body) && body[at] == '\n':
 			at++
 		}
 	}
@@ -266,11 +271,14 @@ func hiddenSpans(body string) []span {
 	}
 	var out []span
 	used := map[string]bool{}
+	var links, defs []ast.Node
 	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
 		switch v := n.(type) {
+		case *ast.LinkReferenceDefinition:
+			defs = append(defs, n)
 		case *ast.CodeSpan:
 			for c := v.FirstChild(); c != nil; c = c.NextSibling() {
 				if t, ok := c.(*ast.Text); ok {
@@ -287,11 +295,13 @@ func hiddenSpans(body string) []span {
 				mask(f.Info.Segment)
 			}
 		case *ast.Link:
+			links = append(links, n)
 			used[linkKey(v.Destination, v.Title)] = true
 			if len(v.Title) > 0 {
 				out = append(out, span{kind: "a link title", text: string(v.Title)})
 			}
 		case *ast.Image:
+			links = append(links, n)
 			used[linkKey(v.Destination, v.Title)] = true
 			if len(v.Title) > 0 {
 				out = append(out, span{kind: "an image title", text: string(v.Title)})
@@ -300,58 +310,72 @@ func hiddenSpans(body string) []span {
 		return ast.WalkContinue, nil
 	})
 	out = append(out, htmlSpans(body, string(masked))...)
-	unused := map[string]bool{}
 	for _, r := range ctx.References() {
 		if used[linkKey(r.Destination(), r.Title())] {
 			continue
 		}
-		unused[refLabel(string(r.Label()))] = true
 		t := strings.TrimSpace(string(r.Label()) + " " + string(r.Title()))
 		out = append(out, span{kind: "an unused reference definition", text: t})
 	}
-	return append(out, removals(string(masked), ctx, unused)...)
+	out = append(out, titleRemovals(string(masked), links, src)...)
+	return append(out, refDefRemovals(string(masked), defs)...)
 }
 
-var (
-	// inlineTitleRe finds the title of an inline link or image:
-	// `](dest "title")`. Group 1 is the title with its leading space.
-	inlineTitleRe = regexp.MustCompile(`\]\(\s*(?:<[^>\n]*>|[^\s()<]*(?:\([^\s()]*\)[^\s()]*)*)(\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))\s*\)`)
-	// refDefRe finds a one-line reference definition. Group 1 is the
-	// label, group 2 the title with its leading space.
-	refDefRe = regexp.MustCompile(`(?m)^ {0,3}\[((?:[^\]\\\n]|\\.)+)\]:[ \t]*(?:<[^>\n]*>|\S+)([ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?[ \t]*(?:\n|$)`)
-)
+func linkKey(dest, title []byte) string { return string(dest) + "\x00" + string(title) }
 
-// refLabel normalizes a reference label for matching: case-folded, with runs
-// of whitespace collapsed.
-func refLabel(s string) string { return strings.ToLower(strings.Join(strings.Fields(s), " ")) }
+// linkTailRe matches the rest of an inline link or image from the end of
+// its text: `](dest "title")`, allowing emphasis or code closers before the
+// bracket. Group 1 is the title with its leading space.
+var linkTailRe = regexp.MustCompile(`^[*_~` + "`" + `]*\]\(\s*(?:<[^>\n]*>|[^\s()<]*(?:\([^\s()]*\)[^\s()]*)*)(\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))\s*\)`)
 
-// removals finds what Strip removes outside HTML: link and image titles, the
-// titles of used reference definitions, and whole unused ones (lines whose
-// label the parser recognized, so a lookalike line in prose is left alone).
-// It works on the masked body, so nothing in code is touched.
-func removals(masked string, ctx parser.Context, unused map[string]bool) []span {
+// titleRemovals finds the title of each inline link and image the parser
+// produced, right after its text, for Strip to remove. Text that only looks
+// like a link is never touched.
+func titleRemovals(masked string, links []ast.Node, src []byte) []span {
 	var out []span
-	for _, m := range inlineTitleRe.FindAllStringSubmatchIndex(masked, -1) {
-		out = append(out, span{strip: true, start: m[2], end: m[3]})
-	}
-	known := map[string]bool{}
-	for _, r := range ctx.References() {
-		known[refLabel(string(r.Label()))] = true
-	}
-	for _, m := range refDefRe.FindAllStringSubmatchIndex(masked, -1) {
-		label := refLabel(masked[m[2]:m[3]])
-		switch {
-		case !known[label]:
-		case unused[label]:
-			out = append(out, span{strip: true, start: m[0], end: m[1]})
-		case m[4] >= 0:
-			out = append(out, span{strip: true, start: m[4], end: m[5]})
+	for _, l := range links {
+		pos := -1
+		_ = ast.Walk(l, func(c ast.Node, entering bool) (ast.WalkStatus, error) {
+			if t, ok := c.(*ast.Text); ok && entering && t.Segment.Stop > pos {
+				pos = t.Segment.Stop
+			}
+			return ast.WalkContinue, nil
+		})
+		if pos < 0 || pos > len(masked) {
+			continue
+		}
+		if m := linkTailRe.FindStringSubmatchIndex(masked[pos:]); m != nil && m[2] >= 0 {
+			out = append(out, span{strip: true, start: pos + m[2], end: pos + m[3]})
 		}
 	}
 	return out
 }
 
-func linkKey(dest, title []byte) string { return string(dest) + "\x00" + string(title) }
+// refDefRemovals returns, for Strip to remove whole, the lines of each
+// reference definition the parser found: they render as nothing. Lines the
+// parser kept as paragraph text are never touched, whatever they look like;
+// definitions in block quotes and lists, and ones spanning lines, are found.
+func refDefRemovals(masked string, defs []ast.Node) []span {
+	var out []span
+	for _, d := range defs {
+		lines := d.Lines()
+		if lines.Len() == 0 {
+			continue
+		}
+		start := lines.At(0).Start
+		start = strings.LastIndexByte(masked[:start], '\n') + 1 // from the line's start, markers included
+		end := lines.At(lines.Len() - 1).Stop
+		if end < len(masked) {
+			if nl := strings.IndexByte(masked[end:], '\n'); nl >= 0 {
+				end += nl + 1
+			} else {
+				end = len(masked)
+			}
+		}
+		out = append(out, span{strip: true, start: start, end: min(end, len(masked))})
+	}
+	return out
+}
 
 const excerptLen = 80
 

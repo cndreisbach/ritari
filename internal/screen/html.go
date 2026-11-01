@@ -98,6 +98,8 @@ func htmlSpans(src, masked string) []span {
 			hidden.WriteByte(' ')
 		}
 	}
+	lower := asciiLower(masked) // same byte offsets, unlike strings.ToLower
+	lastGT := strings.LastIndexByte(masked, '>')
 	i, last := 0, 0
 	for i < len(masked) {
 		lt := strings.IndexByte(masked[i:], '<')
@@ -110,6 +112,10 @@ func htmlSpans(src, masked string) []span {
 			continue
 		}
 		rest := masked[i:]
+		if i > lastGT && !strings.HasPrefix(rest, "<!") && !strings.HasPrefix(rest, "<?") {
+			i++ // no tag can close after the last '>'
+			continue
+		}
 		switch {
 		case strings.HasPrefix(rest, "<!--"):
 			text(last, i)
@@ -203,7 +209,7 @@ func htmlSpans(src, masked string) []span {
 			}
 		}
 		if rawText[name] && !selfClosing {
-			endTag := strings.Index(strings.ToLower(masked[i:]), "</"+name)
+			endTag := strings.Index(lower[i:], "</"+name)
 			stop := len(masked)
 			if endTag >= 0 {
 				stop = i + endTag
@@ -241,6 +247,17 @@ func htmlSpans(src, masked string) []span {
 	return out
 }
 
+// asciiLower lowercases ASCII letters only, so byte offsets are unchanged.
+func asciiLower(s string) string {
+	b := []byte(s)
+	for i, c := range b {
+		if c >= 'A' && c <= 'Z' {
+			b[i] = c + 'a' - 'A'
+		}
+	}
+	return string(b)
+}
+
 // comment returns the text of the comment starting at i and the offset just
 // past it. `<!-->` and `<!--->` are empty; an unclosed comment runs to the end.
 func comment(src, masked string, i int) (string, int) {
@@ -255,7 +272,7 @@ func comment(src, masked string, i int) (string, int) {
 	if k := strings.Index(rest, "-->"); k >= 0 {
 		end, n = k, 3
 	}
-	if k := strings.Index(rest, "--!>"); k >= 0 && k < end {
+	if k := strings.Index(rest[:end], "--!>"); k >= 0 {
 		end, n = k, 4
 	}
 	return src[start : start+end], start + end + n

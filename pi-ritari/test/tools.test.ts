@@ -253,7 +253,20 @@ describe("ritari_read", () => {
 		);
 		const text = (result.content[0] as { text: string }).text;
 		expect(text).toContain("hidden: unknown");
+		expect(text).toContain("could not check this note for hidden content");
 		expect(text).toContain("Text.");
+	});
+
+	it("rethrows when the read is cancelled during the hidden check", async () => {
+		const controller = new AbortController();
+		const exec: Exec = async (_command, args) => {
+			if (args.includes("view")) return { stdout: "Text.\n", stderr: "", code: 0, killed: false };
+			controller.abort();
+			return { stdout: "", stderr: "rit: interrupted", code: 1, killed: true };
+		};
+		await expect(
+			tool(exec, "ritari_read").execute("call", { ref: "ideas/retry", body: true }, controller.signal, undefined, ctx),
+		).rejects.toThrow();
 	});
 });
 

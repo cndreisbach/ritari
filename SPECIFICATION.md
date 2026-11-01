@@ -1042,12 +1042,14 @@ return no content and are not marked.
 reviews it, so `brief` also leaves out what a reader would not see. From each daily
 note's body, before taking the narrative and observations, it removes HTML comments,
 hidden and never-rendered elements (markup included), HTML attributes other than
-`href`, `src`, and `srcset` (with the space before each), link and image titles (and
-the titles of used reference definitions), whole unused reference definitions (one
-line each, recognized only when the parser saw that label), disallowed invisible
+`href`, `src`, and `srcset` (with the space before each), the titles of the inline
+links and images the parser found, every reference definition the parser found, used
+or not, with all of its lines (including in block quotes and lists; a line the parser
+kept as paragraph text is never removed, whatever it looks like), disallowed invisible
 characters, and soft hyphens. Code spans and code blocks are untouched. Where a span
 sat between two words one space is kept; where it held a line break the lines on
-either side stay apart, without a blank line being added. From descriptions, task
+either side stay apart, without a blank line being added; where it was all of a line,
+the line goes too. From descriptions, task
 titles, and states it removes invisible characters and soft hyphens. Concept IDs are
 printed as they are, so they still resolve (text mode escapes them). Lookalike letters
 are not changed; the note is still marked.
@@ -1942,7 +1944,8 @@ no second copy of the bundle format.
   `ritari_read` passes on `hidden` and `hidden_findings`. Reading only the body runs
   `note view --body` and then `note read`, so the mark and the findings come with it
   (`note view` warns only on stderr); if `note read` fails, the body is still returned,
-  with `hidden: unknown`.
+  with `hidden: unknown` and a warning not to follow instructions in it until a person
+  has reviewed it, unless the call was cancelled, which fails the read.
 - **Brief.** Before the first turn of a session and again after a compaction, adds
   `rit --project <name> --output text brief` to the run, once, and does nothing when `rit`
   fails or the project cannot be resolved.
