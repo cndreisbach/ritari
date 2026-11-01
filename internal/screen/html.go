@@ -44,7 +44,29 @@ func hidesByAttrs(attrs []attr) bool {
 	return false
 }
 
-type attr struct{ name, value string }
+// attr is one attribute of a start tag; start and end are its byte range,
+// name to end of value.
+type attr struct {
+	name, value string
+	start, end  int
+}
+
+// hidesInput reports a form field that never shows: <input type=hidden>.
+func hidesInput(name string, attrs []attr) bool {
+	if name != "input" {
+		return false
+	}
+	for _, a := range attrs {
+		if a.name == "type" && strings.EqualFold(strings.TrimSpace(a.value), "hidden") {
+			return true
+		}
+	}
+	return false
+}
+
+// linkAttrs name where a link or image points; they are scanned but kept by
+// Strip, since a reader follows them.
+var linkAttrs = map[string]bool{"href": true, "src": true, "srcset": true}
 
 type openElem struct {
 	name  string
@@ -63,9 +85,10 @@ func htmlSpans(src, masked string) []span {
 	var hidden strings.Builder
 	hiddenKind, hiddenStart := "", 0
 	flush := func(end int) {
-		if t := strings.TrimSpace(hidden.String()); t != "" {
-			out = append(out, span{kind: hiddenKind, text: t, flag: true, start: hiddenStart, end: end})
-		}
+		// An element with nothing in it is still removed by Strip, but is
+		// not reported.
+		t := strings.TrimSpace(hidden.String())
+		out = append(out, span{kind: hiddenKind, text: t, flag: t != "", strip: true, start: hiddenStart, end: end})
 		hidden.Reset()
 		hiddenKind = ""
 	}
@@ -92,7 +115,7 @@ func htmlSpans(src, masked string) []span {
 			text(last, i)
 			body, end := comment(src, masked, i)
 			if strings.TrimSpace(body) != "" {
-				out = append(out, span{kind: "an HTML comment", text: body, flag: true, start: i, end: end})
+				out = append(out, span{kind: "an HTML comment", text: body, flag: true, strip: true, start: i, end: end})
 			}
 			i, last = end, end
 			continue
@@ -107,7 +130,7 @@ func htmlSpans(src, masked string) []span {
 			}
 			inner := src[i+2 : max(i+2, stop-1)]
 			if strings.TrimSpace(inner) != "" {
-				out = append(out, span{kind: "an HTML comment", text: inner, flag: true, start: i, end: stop})
+				out = append(out, span{kind: "an HTML comment", text: inner, flag: true, strip: true, start: i, end: stop})
 			}
 			i, last = stop, stop
 			continue
@@ -154,13 +177,24 @@ func htmlSpans(src, masked string) []span {
 		}
 		text(last, i)
 		open := i
+		hides := neverRendered[name] || hidesByAttrs(attrs) || hidesInput(name, attrs)
 		for _, a := range attrs {
-			if a.name != "style" && strings.TrimSpace(a.value) != "" {
-				out = append(out, span{kind: "an HTML attribute", text: a.value})
+			if a.name == "style" || strings.TrimSpace(a.value) == "" {
+				continue
 			}
+			if hides || hiding > 0 {
+				// Inside a hidden element, attribute text is part of what it hides.
+				hidden.WriteString(a.value)
+				hidden.WriteByte(' ')
+				continue
+			}
+			from := a.start // take the space before the attribute with it
+			for from > 0 && strings.IndexByte(" \t", masked[from-1]) >= 0 {
+				from--
+			}
+			out = append(out, span{kind: "an HTML attribute", text: a.value, strip: !linkAttrs[a.name], start: from, end: a.end})
 		}
 		i, last = close, close
-		hides := neverRendered[name] || hidesByAttrs(attrs)
 		if hides && hiding == 0 {
 			hiddenStart = open
 			hiddenKind = "a hidden HTML element"
@@ -278,6 +312,7 @@ func attributes(src, masked string, i int) ([]attr, int, bool, bool) {
 		case '<':
 			return nil, 0, false, false
 		}
+		start := i
 		j := i
 		for j < len(masked) && strings.IndexByte(" \t\n\r\f/>=", masked[j]) < 0 {
 			j++
@@ -288,7 +323,7 @@ func attributes(src, masked string, i int) ([]attr, int, bool, bool) {
 			i++
 		}
 		if i >= len(masked) || masked[i] != '=' {
-			out = append(out, attr{name: name})
+			out = append(out, attr{name: name, start: start, end: j})
 			continue
 		}
 		i++
@@ -314,7 +349,7 @@ func attributes(src, masked string, i int) ([]attr, int, bool, bool) {
 			value = src[i:j]
 			i = j
 		}
-		out = append(out, attr{name: name, value: value})
+		out = append(out, attr{name: name, value: value, start: start, end: i})
 	}
 	return nil, 0, false, false
 }

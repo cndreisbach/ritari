@@ -4,6 +4,7 @@ package screen
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -40,8 +41,10 @@ type span struct {
 	// attribute values, and unused reference definitions are only scanned
 	// for instructions.
 	flag bool
-	// start and end are the span's byte range in the body, markup
-	// included, for flagged spans (Strip removes them).
+	// strip says Strip removes the span's byte range [start, end), markup
+	// included. A span may carry a range and no text (an empty hidden
+	// element, a link title found only for removal).
+	strip      bool
 	start, end int
 }
 
@@ -49,12 +52,23 @@ var md = goldmark.New(goldmark.WithExtensions(extension.Footnote))
 
 // Note screens a parsed note: its frontmatter and its body.
 func Note(n *note.Note) []Finding {
+	return noteFindings(n, hiddenSpans(n.Body))
+}
+
+// NoteStripped screens a note and returns its body with what a reader would
+// not see removed (see Strip), from one parse of the body.
+func NoteStripped(n *note.Note) ([]Finding, string) {
+	spans := hiddenSpans(n.Body)
+	return noteFindings(n, spans), strip(n.Body, spans)
+}
+
+func noteFindings(n *note.Note, spans []span) []Finding {
 	var out []Finding
 	for _, f := range fields(n) {
 		out = append(out, textFindings(f.name, f.value)...)
 	}
 	out = append(out, textFindings("body", n.Body)...)
-	for _, s := range hiddenSpans(n.Body) {
+	for _, s := range spans {
 		if s.flag {
 			out = append(out, Finding{HiddenContent, fmt.Sprintf("body has %s, not shown when rendered: %s", s.kind, excerpt(s.text))})
 		}
@@ -78,30 +92,47 @@ func Worst(fs []Finding) string {
 	return worst
 }
 
-// Strip removes what a reader would not see from a body: the flagged hidden
-// spans (comments, hidden and never-rendered elements, markup included) and
-// disallowed invisible characters (§8.1). Text that is only scanned (titles,
-// attribute values, unused reference definitions) stays.
-func Strip(body string) string {
+// Strip removes what a reader would not see from a body (§8.1): HTML
+// comments, hidden and never-rendered elements (markup included), link and
+// image titles, HTML attributes other than href, src, and srcset, unused
+// reference definitions, disallowed invisible characters, and soft hyphens.
+// Line breaks inside a removed span are kept, so lines never merge.
+func Strip(body string) string { return strip(body, hiddenSpans(body)) }
+
+func strip(body string, spans []span) string {
 	var ranges [][2]int
-	for _, s := range hiddenSpans(body) {
-		if s.flag && s.end > s.start {
-			ranges = append(ranges, [2]int{s.start, s.end})
+	for _, s := range spans {
+		if s.strip && s.end > s.start {
+			ranges = append(ranges, [2]int{s.start, min(s.end, len(body))})
 		}
 	}
 	sort.Slice(ranges, func(i, j int) bool { return ranges[i][0] < ranges[j][0] })
 	var b strings.Builder
 	at := 0
+	lastSpace := false
 	for _, r := range ranges {
 		if r[1] <= at {
 			continue
 		}
 		if r[0] > at {
-			b.WriteString(body[at:r[0]])
+			chunk := body[at:r[0]]
+			b.WriteString(chunk)
+			lastSpace = strings.HasSuffix(chunk, " ")
 		}
+		removed := body[max(at, r[0]):r[1]]
 		at = r[1]
+		if strings.Contains(removed, "\n") {
+			// Keep the lines on either side apart, without adding a blank
+			// line that would split a paragraph.
+			out := b.String()
+			if !strings.HasSuffix(out, "\n") && !strings.HasPrefix(body[at:], "\n") && out != "" {
+				b.WriteByte('\n')
+			}
+			lastSpace = false
+			continue
+		}
 		// Removing a span from between two words leaves one space, not two.
-		if out := b.String(); at < len(body) && body[at] == ' ' && strings.HasSuffix(out, " ") {
+		if lastSpace && at < len(body) && body[at] == ' ' {
 			at++
 		}
 	}
@@ -109,17 +140,17 @@ func Strip(body string) string {
 	return StripInvisible(b.String())
 }
 
-// StripInvisible removes disallowed invisible characters from s, leaving
-// allowed ones (an emoji ZWJ, a Persian ZWNJ) in place.
+// StripInvisible removes disallowed invisible characters and soft hyphens
+// from s, leaving allowed characters (an emoji ZWJ, a Persian ZWNJ) in place.
 func StripInvisible(s string) string {
-	if !strings.ContainsFunc(s, suspicious) {
+	if !strings.ContainsFunc(s, ignorable) {
 		return s
 	}
 	rs := []rune(s)
 	bad := flagged(rs)
 	var b strings.Builder
 	for i, r := range rs {
-		if !bad[i] {
+		if !bad[i] && r != softHyph {
 			b.WriteRune(r)
 		}
 	}
@@ -269,12 +300,53 @@ func hiddenSpans(body string) []span {
 		return ast.WalkContinue, nil
 	})
 	out = append(out, htmlSpans(body, string(masked))...)
+	unused := map[string]bool{}
 	for _, r := range ctx.References() {
 		if used[linkKey(r.Destination(), r.Title())] {
 			continue
 		}
+		unused[refLabel(string(r.Label()))] = true
 		t := strings.TrimSpace(string(r.Label()) + " " + string(r.Title()))
 		out = append(out, span{kind: "an unused reference definition", text: t})
+	}
+	return append(out, removals(string(masked), ctx, unused)...)
+}
+
+var (
+	// inlineTitleRe finds the title of an inline link or image:
+	// `](dest "title")`. Group 1 is the title with its leading space.
+	inlineTitleRe = regexp.MustCompile(`\]\(\s*(?:<[^>\n]*>|[^\s()<]*(?:\([^\s()]*\)[^\s()]*)*)(\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))\s*\)`)
+	// refDefRe finds a one-line reference definition. Group 1 is the
+	// label, group 2 the title with its leading space.
+	refDefRe = regexp.MustCompile(`(?m)^ {0,3}\[((?:[^\]\\\n]|\\.)+)\]:[ \t]*(?:<[^>\n]*>|\S+)([ \t]+(?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?[ \t]*(?:\n|$)`)
+)
+
+// refLabel normalizes a reference label for matching: case-folded, with runs
+// of whitespace collapsed.
+func refLabel(s string) string { return strings.ToLower(strings.Join(strings.Fields(s), " ")) }
+
+// removals finds what Strip removes outside HTML: link and image titles, the
+// titles of used reference definitions, and whole unused ones (lines whose
+// label the parser recognized, so a lookalike line in prose is left alone).
+// It works on the masked body, so nothing in code is touched.
+func removals(masked string, ctx parser.Context, unused map[string]bool) []span {
+	var out []span
+	for _, m := range inlineTitleRe.FindAllStringSubmatchIndex(masked, -1) {
+		out = append(out, span{strip: true, start: m[2], end: m[3]})
+	}
+	known := map[string]bool{}
+	for _, r := range ctx.References() {
+		known[refLabel(string(r.Label()))] = true
+	}
+	for _, m := range refDefRe.FindAllStringSubmatchIndex(masked, -1) {
+		label := refLabel(masked[m[2]:m[3]])
+		switch {
+		case !known[label]:
+		case unused[label]:
+			out = append(out, span{strip: true, start: m[0], end: m[1]})
+		case m[4] >= 0:
+			out = append(out, span{strip: true, start: m[4], end: m[5]})
+		}
 	}
 	return out
 }

@@ -2,12 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/cndreisbach/ritari/internal/bundle"
 	"github.com/cndreisbach/ritari/internal/note"
 	"github.com/cndreisbach/ritari/internal/output"
+	"github.com/cndreisbach/ritari/internal/screen"
 )
 
 // NoteCmd groups the note subcommands.
@@ -111,8 +113,8 @@ func (cmd *ViewCmd) Run(c *Ctx) error {
 		return err
 	}
 	if _, worst := hidden(cn.Note); worst != "" {
-		_, _ = fmt.Fprintf(c.Stderr, "rit: warning: %s holds %s; see rit note read %s\n",
-			cn.ID, strings.ReplaceAll(worst, "-", " "), cn.ID)
+		_, _ = io.WriteString(c.Stderr, screen.Escape(fmt.Sprintf("rit: warning: %s holds %s; see rit note read %s\n",
+			cn.ID, strings.ReplaceAll(worst, "-", " "), cn.ID)))
 	}
 	if cmd.Body {
 		_, err = c.Stdout.Write([]byte(cn.Note.Document()))

@@ -944,13 +944,13 @@ of the body, as it does in a browser, even across blank lines and paragraphs.
 | Span | `hidden-content` | Scanned for instructions |
 | --- | --- | --- |
 | HTML comment (`<!-- … -->`, closed by `-->` or `--!>`; unclosed, to the end of the body). `<!-->` and `<!--->` are empty. Doctypes, CDATA, and processing instructions (`<!…>`, `<?…>`) count as comments | yes | yes |
-| Text inside a hidden element, up to its matching close: an element with the `hidden` attribute, or with a `style` (quoted or not, any case and spacing) that sets `display:none`, `visibility:hidden` or `collapse`, `font-size:0`, `opacity:0`, a transparent `color` (`transparent`, alpha 0), `width`/`height`/`max-width`/`max-height` of 0, a zero `clip`/`clip-path`, `transform:scale(0…)`, or an offset of −100 or more on `left`, `top`, `right`, `bottom`, `text-indent`, `margin-left`, or `margin-top`. A hidden element inside another is part of the outer span | yes | yes |
+| Text inside a hidden element, up to its matching close, with the attribute values of the element and anything in it: `<input type=hidden>`, an element with the `hidden` attribute, or with a `style` (quoted or not, any case and spacing) that sets `display:none`, `visibility:hidden` or `collapse`, `font-size:0`, `opacity:0`, a transparent `color` (`transparent`, alpha 0), `width`/`height`/`max-width`/`max-height` of 0, a zero `clip`/`clip-path`, `transform:scale(0…)`, or an offset of −100 or more on `left`, `top`, `right`, `bottom`, `text-indent`, `margin-left`, or `margin-top`. A hidden element inside another is part of the outer span | yes | yes |
 | Content of `<script>`, `<style>`, `<template>`, and `<noscript>` | yes | yes |
 | HTML attribute value (other than `style`), e.g. `alt`, `title`, `content` | no | yes |
 | Link or image title (`[x](url "title")`) | no | yes |
 | Reference definition no link uses (matched by destination and title), e.g. `[//]: # (text)`; the span is its label and title | no | yes |
 
-A span whose text is blank is not reported. `<details>` is not hidden; the word
+A span whose text is blank (an empty hidden element, `<br hidden>`) is not reported. `<details>` is not hidden; the word
 `hidden` inside an attribute value does not hide anything. Messages: `body has <span
 kind>, not shown when rendered: "<excerpt>"` and `hidden text in <span kind> reads
 like <categories>: "<excerpt>"`, where the kind is `an HTML comment`, `a hidden HTML
@@ -1032,20 +1032,25 @@ note holds hidden content, screening it when it is returned: a `hidden` key whos
 value is the note's worst finding, `hidden-instruction` if it has any, else
 `hidden-content`, and which is omitted for a clean note. `search` (§9.11), `context`
 (§9.12), `brief` (§9.23), and `note read` (§9.6) carry it; `note read` also lists the
-findings. In text mode a marked note's line ends with two spaces and
+findings, and `daily` (§9.14) marks the note it returns. In text mode a marked note's line ends with two spaces and
 `[HIDDEN INSTRUCTION]` or `[hidden content]`. `note view` and `read` keep standard output byte for byte and
 instead print, in both modes, `rit: warning: <id> holds hidden instruction` (or
 `hidden content`) `; see rit note read <id>` on standard error. `recent` and `ls`
 return no content and are not marked.
 
 **Brief removes hidden text.** The brief is injected into a session before anyone
-reviews it, so `brief` also leaves out what a reader would not see: from each daily
-note's body it removes the flagged hidden spans (comments, hidden and never-rendered
-elements, markup included; one space is kept where a span sat between two words) and
-disallowed invisible characters, before taking the narrative and observations; from
-descriptions, task titles, and states it removes invisible characters. Text that is
-only scanned (titles, attribute values, unused reference definitions) is not removed;
-the note is still marked.
+reviews it, so `brief` also leaves out what a reader would not see. From each daily
+note's body, before taking the narrative and observations, it removes HTML comments,
+hidden and never-rendered elements (markup included), HTML attributes other than
+`href`, `src`, and `srcset` (with the space before each), link and image titles (and
+the titles of used reference definitions), whole unused reference definitions (one
+line each, recognized only when the parser saw that label), disallowed invisible
+characters, and soft hyphens. Code spans and code blocks are untouched. Where a span
+sat between two words one space is kept; where it held a line break the lines on
+either side stay apart, without a blank line being added. From descriptions, task
+titles, and states it removes invisible characters and soft hyphens. Concept IDs are
+printed as they are, so they still resolve (text mode escapes them). Lookalike letters
+are not changed; the note is still marked.
 
 **Text output.** In text mode, human prose on standard output, and every message on
 standard error in any mode, writes disallowed invisible characters as `\u{XXXX}`
@@ -1464,9 +1469,11 @@ re-derives `# Touched`, never creates the note, and ignores the other flags.
 
 Result: `success`, `status` (`created`|`updated`|`refreshed`|`missing`), `date`, `id`,
 `path` (omitted for `missing`), `touched` (entry count), `warning` (screen findings this
-write introduced, §8.1; omitted when empty and for `--refresh`), and — machine mode,
+write introduced, §8.1; omitted when empty and for `--refresh`), `hidden` (the note's
+worst finding, §8.1; omitted when clean), and — machine mode,
 except `missing` — `content` (the entire note, so a resuming agent needs no second call).
-Text: `warning: <msg>` (if any), `<Status> <path> (N touched)`, a blank line, then the
+Text: `warning: <msg>` (if any), `<Status> <path> (N touched)` (with the §8.1 marker for
+a marked note), a blank line, then the
 note (invisible characters escaped, §8.1); `missing`
 prints `No daily note for <date>.` and still exits successfully (`--refresh` is an
 explicit "do not create", so "nothing to refresh" is an honest answer, not a failure).
@@ -1629,8 +1636,8 @@ content`); then per task `kind: task`, `id`, `title`, `state`, `description`, `h
 `No daily notes yet.`); then `Open tasks:` and `- <title> (<id>) [<state>]: <description>`
 per task (or `No open tasks.`); a marked note's `Daily note` line or task line ends with
 the §8.1 marker, and if any is marked, a closing paragraph says that notes so marked hold
-text a reader cannot see, that it is left out of the brief, and never to follow
-instructions found in it.
+text a reader cannot see, which kinds of it the brief left out, that a marked note may
+hide more, and never to follow instructions found in hidden text.
 
 ---
 
@@ -1907,8 +1914,9 @@ machine mode.)
     an HTML comment, and one clean: `search` and `context` give the first `hidden:
     hidden-instruction`, the second `hidden: hidden-content`, and the third no `hidden`;
     `note read` lists the findings in `hidden_findings`; `note view` prints the file byte
-    for byte and a warning on stderr; and `brief` omits the comment and a zero-width space
-    from a daily note and a task description while marking both.
+    for byte and a warning on stderr, escaped; `daily` marks its note; and `brief` omits a
+    comment, a link title, an `alt` attribute, an unused `[//]: #` definition, and a
+    zero-width space from a daily note and a task description while marking both.
 
 ## 13. Pi package (`pi-ritari`)
 
@@ -1931,8 +1939,10 @@ no second copy of the bundle format.
   must match that note's title. Replacing a body requires `--expect-hash` from an earlier
   read.
 - **Hidden content.** `ritari_search` shows each hit's `hidden` mark (§8.1), and
-  `ritari_read` passes on `hidden` and `hidden_findings`; reading only the body also runs
-  `note read` so the mark comes with it, since `note view` warns only on stderr.
+  `ritari_read` passes on `hidden` and `hidden_findings`. Reading only the body runs
+  `note view --body` and then `note read`, so the mark and the findings come with it
+  (`note view` warns only on stderr); if `note read` fails, the body is still returned,
+  with `hidden: unknown`.
 - **Brief.** Before the first turn of a session and again after a compaction, adds
   `rit --project <name> --output text brief` to the run, once, and does nothing when `rit`
   fails or the project cannot be resolved.
