@@ -188,7 +188,10 @@ func (cmd *DailyCmd) Run(c *Ctx) error {
 		c.Printf("No daily note for %s.\n", res.Date)
 		return c.Emit(d.Set("touched", 0))
 	}
-	d.Set("path", res.Path).Set("touched", res.Touched).Set("content", res.Content)
+	d.Set("path", res.Path).Set("touched", res.Touched).Set("warning", res.Warning).Set("content", res.Content)
+	if res.Warning != "" {
+		c.Printf("warning: %s\n", res.Warning)
+	}
 	c.Printf("%s %s (%d touched)\n\n%s", strings.ToUpper(res.Status[:1])+res.Status[1:], res.Path, res.Touched, res.Content)
 	return c.Emit(d)
 }

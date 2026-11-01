@@ -1,5 +1,22 @@
 # Update Log
 
+## 2026-11-01
+
+* **Update**: [Screen notes for hidden instructions](/ideas/screen-notes-for-hidden-instructions.md)
+* **Create**: [Screen notes for hidden content and instructions](/tasks/screen-notes-for-hidden-content-and-instructions.md)
+* **Create**: [Hidden content warns as hidden-content, and hidden text matching the pattern bank warns as hidden-instruction; both are warnings, never errors](/decisions/hidden-content-warns-as-hidden-content-and-hidden-text-matching-the-pattern-bank-warns-as-hidden-instruction-both-are-warnings-never-errors.md)
+* **Create**: [Link titles and unused reference definitions are scanned for instructions but are not hidden-content on their own](/decisions/link-titles-and-unused-reference-definitions-are-scanned-for-instructions-but-are-not-hidden-content-on-their-own.md)
+* **Create**: [Escape invisible characters in text-mode output only; note view and read stay raw](/decisions/escape-invisible-characters-in-text-mode-output-only-note-view-and-read-stay-raw.md)
+* **Create**: [Archived notes are screened like live ones](/decisions/archived-notes-are-screened-like-live-ones.md)
+* **Delete**: decisions/escape-invisible-characters-in-text-mode-output-only-note-view-and-read-stay-raw
+* **Delete**: decisions/hidden-content-warns-as-hidden-content-and-hidden-text-matching-the-pattern-bank-warns-as-hidden-instruction-both-are-warnings-never-errors
+* **Delete**: decisions/link-titles-and-unused-reference-definitions-are-scanned-for-instructions-but-are-not-hidden-content-on-their-own
+* **Create**: [Two hidden-content lint rules](/decisions/two-hidden-content-lint-rules.md)
+* **Create**: [Link titles are scanned, not flagged](/decisions/link-titles-are-scanned-not-flagged.md)
+* **Create**: [Escape invisible characters in text output](/decisions/escape-invisible-characters-in-text-output.md)
+* **Update**: [Screen notes for hidden content and instructions](/tasks/screen-notes-for-hidden-content-and-instructions.md)
+* **Create**: [2026-11-01](/daily/2026-11-01.md)
+
 ## 2026-10-30
 
 * **Create**: [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md)

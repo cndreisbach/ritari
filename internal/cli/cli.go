@@ -16,6 +16,7 @@ import (
 	"github.com/cndreisbach/ritari/internal/bundle"
 	"github.com/cndreisbach/ritari/internal/output"
 	"github.com/cndreisbach/ritari/internal/registry"
+	"github.com/cndreisbach/ritari/internal/screen"
 )
 
 // CLI is the command tree.
@@ -149,10 +150,11 @@ func (c *Ctx) Emit(docs ...*output.Doc) error {
 	return output.Write(c.Stdout, docs...)
 }
 
-// Printf writes human text (text mode only).
+// Printf writes human text (text mode only). Invisible characters are
+// escaped so a reader sees them (§8.1).
 func (c *Ctx) Printf(format string, a ...any) {
 	if !c.Machine {
-		_, _ = fmt.Fprintf(c.Stdout, format, a...)
+		_, _ = io.WriteString(c.Stdout, screen.Escape(fmt.Sprintf(format, a...)))
 	}
 }
 

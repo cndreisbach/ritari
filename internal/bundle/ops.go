@@ -14,12 +14,30 @@ import (
 	"strings"
 
 	"github.com/cndreisbach/ritari/internal/note"
+	"github.com/cndreisbach/ritari/internal/screen"
 )
 
 // saveNote renders n and writes it to the concept's file if it changed.
 func (b *Bundle) saveNote(rel string, n *note.Note) error {
 	_, err := writeIfChanged(b.Abs(rel), note.Render(n))
 	return err
+}
+
+// withScreen appends the screen's findings for a note file, as it will be
+// written, to a write's warning (§8.1). Findings never stop the write.
+func withScreen(warning string, data []byte) string {
+	n, err := note.Parse(data)
+	if err != nil {
+		return warning
+	}
+	parts := []string{}
+	if warning != "" {
+		parts = append(parts, warning)
+	}
+	if w := screen.Warning(screen.Note(n)); w != "" {
+		parts = append(parts, w)
+	}
+	return strings.Join(parts, "; ")
 }
 
 // Hash is the content hash of a note file: lowercase hex SHA-256 of its bytes.
@@ -124,6 +142,7 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 		}
 		n.FillGenerated(env.Actor, env.Stamp())
 		data := note.Render(n)
+		warning = withScreen(warning, data)
 		if o.DryRun {
 			res = Result{Status: "dry-run", ID: c.ID, Warning: warning, Rendered: string(data)}
 			return nil, nil

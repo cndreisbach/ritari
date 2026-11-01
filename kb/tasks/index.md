@@ -1,5 +1,7 @@
 # Tasks
 
+* [Screen notes for hidden content and instructions](/tasks/screen-notes-for-hidden-content-and-instructions.md) - Phase 1 and 2 of hidden-instruction screening: hidden-content and hidden-instruction lint rules, write warnings, and escaping in text output.
+
 # Archived
 
 * [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md) - Ship the Pi extension as an in-repo npm package with typed tools, brief injection, and JSON CLI output.

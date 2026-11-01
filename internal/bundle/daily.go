@@ -41,6 +41,7 @@ type DailyResult struct {
 	Path    string
 	Touched int
 	Content string
+	Warning string // screen findings for the note as written (§8.1); not for --refresh
 }
 
 // Daily implements the `daily` command (§7, §9.14).
@@ -82,6 +83,9 @@ func Daily(root string, env Env, o DailyOpts) (DailyResult, error) {
 		res.Touched = n
 		data, err := readAll(b.Abs(id + ".md"))
 		res.Content = data
+		if !o.Refresh {
+			res.Warning = withScreen("", []byte(data))
+		}
 		return nil, err
 	})
 	return res, err

@@ -11,6 +11,7 @@ import (
 
 	"github.com/cndreisbach/ritari/internal/bundle"
 	"github.com/cndreisbach/ritari/internal/note"
+	"github.com/cndreisbach/ritari/internal/screen"
 )
 
 // Severities.
@@ -35,11 +36,13 @@ const (
 	Orphan                = "orphan"
 	MalformedField        = "malformed-field"
 	ReservedCasing        = "reserved-casing"
+	HiddenContent         = screen.HiddenContent
+	HiddenInstruction     = screen.HiddenInstruction
 )
 
 // Rules lists every rule name, sorted.
 var Rules = []string{
-	DanglingLink, DuplicateTitle, MalformedField, MissingDescription, MissingTitle, MissingType, Orphan,
+	DanglingLink, DuplicateTitle, HiddenContent, HiddenInstruction, MalformedField, MissingDescription, MissingTitle, MissingType, Orphan,
 	ReservedCasing, StaleIndex, StaleVerification, TypeDirectoryMismatch, UnknownCategory, UnknownType, Unparseable,
 }
 
@@ -136,6 +139,9 @@ func findings(b *bundle.Bundle, categories []string) ([]Finding, error) {
 		casing(c.ID, c.Path)
 		for _, m := range fm.Malformed {
 			add(Warning, MalformedField, c, fmt.Sprintf("%s is malformed (%s) and is ignored", m.Key, m.Detail))
+		}
+		for _, f := range screen.Note(c.Note) {
+			add(Warning, f.Rule, c, f.Message)
 		}
 		if !live {
 			continue

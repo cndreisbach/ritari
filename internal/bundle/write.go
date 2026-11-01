@@ -240,6 +240,7 @@ func (b *Bundle) writeFresh(env Env, existing *Concept, id, typ string, o WriteO
 func (b *Bundle) finish(env Env, res WriteResult, rel string, n *note.Note, dryRun bool, ev Event) (WriteResult, []Event, error) {
 	n.FillGenerated(env.Actor, env.Stamp())
 	data := note.Render(n)
+	res.Warning = withScreen(res.Warning, data)
 	if dryRun {
 		res.Status, res.Path, res.Warning, res.Rendered = "dry-run", "", "", string(data)
 		return res, nil, nil
