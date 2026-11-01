@@ -23,6 +23,8 @@
 - **Create**: [Raw reads warn on stderr](/decisions/raw-reads-warn-on-stderr.md)
 - **Create**: [Brief removes hidden spans](/decisions/brief-removes-hidden-spans.md)
 - **Update**: [Mark notes with hidden content in read, search, context, and brief](/tasks/mark-notes-with-hidden-content-in-read-search-context-and-brief.md)
+* **Archive**: [Screen notes for hidden content and instructions](/tasks/screen-notes-for-hidden-content-and-instructions.md)
+* **Archive**: [Mark notes with hidden content in read, search, context, and brief](/tasks/mark-notes-with-hidden-content-in-read-search-context-and-brief.md)
 
 ## 2026-10-30
 

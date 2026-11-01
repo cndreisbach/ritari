@@ -8,6 +8,7 @@ sources:
   - id: "2"
     resource: Review rounds 1-3 of Phase 3
 generated: {by: claude-code, at: 2026-11-01T15:09:15Z}
+archived: true
 priority: high
 state: done
 ---

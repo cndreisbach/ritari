@@ -9,7 +9,8 @@ sources:
     resource: Branch claude/wonderful-feynman-mres83
   - id: "3"
     resource: "Adversarial review of PR #9"
-generated: { by: claude-code, at: 2026-11-01T13:50:30Z }
+generated: {by: claude-code, at: 2026-11-01T13:50:30Z}
+archived: true
 priority: high
 state: done
 ---
@@ -39,7 +40,5 @@ state: done
 - implements [Screen notes for hidden instructions](/ideas/screen-notes-for-hidden-instructions.md)
 
 [^1]: Clinton, development session 2026-11-01
-
 [^2]: Branch claude/wonderful-feynman-mres83
-
 [^3]: Adversarial review of PR #9
