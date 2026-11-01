@@ -99,6 +99,7 @@ func htmlSpans(src, masked string) []span {
 		}
 	}
 	lower := asciiLower(masked) // same byte offsets, unlike strings.ToLower
+	closeAt := firstFrom(masked, "-->", "--!>")
 	lastGT := strings.LastIndexByte(masked, '>')
 	i, last := 0, 0
 	for i < len(masked) {
@@ -119,7 +120,7 @@ func htmlSpans(src, masked string) []span {
 		switch {
 		case strings.HasPrefix(rest, "<!--"):
 			text(last, i)
-			body, end := comment(src, masked, i)
+			body, end := comment(src, masked, i, closeAt)
 			if strings.TrimSpace(body) != "" {
 				out = append(out, span{kind: "an HTML comment", text: body, flag: true, strip: true, start: i, end: end})
 			}
@@ -258,24 +259,48 @@ func asciiLower(s string) string {
 	return string(b)
 }
 
+// firstFrom returns a function giving the offset of the first of the
+// needles at or after an offset, and its length (-1, 0 when none). Calls must
+// come with offsets that never decrease; each needle's last answer is reused
+// while it still lies ahead, so a run of calls costs one pass over s.
+func firstFrom(s string, needles ...string) func(from int) (int, int) {
+	next := make([]int, len(needles)) // last answer per needle; -2 = not yet searched
+	for i := range next {
+		next[i] = -2
+	}
+	return func(from int) (int, int) {
+		best, size := -1, 0
+		for i, n := range needles {
+			if next[i] == -2 || (next[i] >= 0 && next[i] < from) {
+				if k := strings.Index(s[from:], n); k >= 0 {
+					next[i] = from + k
+				} else {
+					next[i] = -1
+				}
+			}
+			if k := next[i]; k >= 0 && (best < 0 || k < best) {
+				best, size = k, len(n)
+			}
+		}
+		return best, size
+	}
+}
+
 // comment returns the text of the comment starting at i and the offset just
 // past it. `<!-->` and `<!--->` are empty; an unclosed comment runs to the end.
-func comment(src, masked string, i int) (string, int) {
+// closeAt finds the next `-->` or `--!>`.
+func comment(src, masked string, i int, closeAt func(int) (int, int)) (string, int) {
 	start := i + 4
 	for _, empty := range []string{">", "->"} {
 		if strings.HasPrefix(masked[start:], empty) {
 			return "", start + len(empty)
 		}
 	}
-	rest := masked[start:]
-	end, n := len(rest), 0
-	if k := strings.Index(rest, "-->"); k >= 0 {
-		end, n = k, 3
+	k, n := closeAt(start)
+	if k < 0 {
+		return src[start:], len(masked)
 	}
-	if k := strings.Index(rest[:end], "--!>"); k >= 0 {
-		end, n = k, 4
-	}
-	return src[start : start+end], start + end + n
+	return src[start:k], k + n
 }
 
 func isNameByte(c byte, first bool) bool {

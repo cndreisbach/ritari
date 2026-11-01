@@ -4,7 +4,6 @@ package screen
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 
@@ -94,8 +93,9 @@ func Worst(fs []Finding) string {
 
 // Strip removes what a reader would not see from a body (§8.1): HTML
 // comments, hidden and never-rendered elements (markup included), link and
-// image titles, HTML attributes other than href, src, and srcset, unused
-// reference definitions, disallowed invisible characters, and soft hyphens.
+// image titles, HTML attributes other than href, src, and srcset, reference
+// definitions (used or not), disallowed invisible characters, and soft
+// hyphens.
 // Line breaks inside a removed span are kept, so lines never merge.
 func Strip(body string) string { return strip(body, hiddenSpans(body)) }
 
@@ -137,6 +137,8 @@ func strip(body string, spans []span) string {
 		switch {
 		case lastSpace && at < len(body) && body[at] == ' ':
 			at++
+		case (out == "" || strings.HasSuffix(out, "\n")) && strings.HasPrefix(body[at:], "\r\n"):
+			at += 2
 		case (out == "" || strings.HasSuffix(out, "\n")) && at < len(body) && body[at] == '\n':
 			at++
 		}
@@ -317,38 +319,137 @@ func hiddenSpans(body string) []span {
 		t := strings.TrimSpace(string(r.Label()) + " " + string(r.Title()))
 		out = append(out, span{kind: "an unused reference definition", text: t})
 	}
-	out = append(out, titleRemovals(string(masked), links, src)...)
+	out = append(out, titleRemovals(string(masked), links)...)
 	return append(out, refDefRemovals(string(masked), defs)...)
 }
 
 func linkKey(dest, title []byte) string { return string(dest) + "\x00" + string(title) }
 
-// linkTailRe matches the rest of an inline link or image from the end of
-// its text: `](dest "title")`, allowing emphasis or code closers before the
-// bracket. Group 1 is the title with its leading space.
-var linkTailRe = regexp.MustCompile(`^[*_~` + "`" + `]*\]\(\s*(?:<[^>\n]*>|[^\s()<]*(?:\([^\s()]*\)[^\s()]*)*)(\s+(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\((?:[^()\\]|\\.)*\)))\s*\)`)
-
-// titleRemovals finds the title of each inline link and image the parser
-// produced, right after its text, for Strip to remove. Text that only looks
-// like a link is never touched.
-func titleRemovals(masked string, links []ast.Node, src []byte) []span {
-	var out []span
+// titleRemovals finds the titles of the inline links and images the parser
+// produced, for Strip to remove. Every `](dest "title")` tail in the masked
+// body is scanned; a tail's title is removed only when it matches the title
+// of a link or image the parser found, so text that merely looks like a link
+// is left alone. Matching by title, not by node position, covers links whose
+// text is empty or ends in an image, raw HTML, or an autolink.
+func titleRemovals(masked string, links []ast.Node) []span {
+	want := map[string]int{}
 	for _, l := range links {
-		pos := -1
-		_ = ast.Walk(l, func(c ast.Node, entering bool) (ast.WalkStatus, error) {
-			if t, ok := c.(*ast.Text); ok && entering && t.Segment.Stop > pos {
-				pos = t.Segment.Stop
-			}
-			return ast.WalkContinue, nil
-		})
-		if pos < 0 || pos > len(masked) {
+		var title []byte
+		switch v := l.(type) {
+		case *ast.Link:
+			title = v.Title
+		case *ast.Image:
+			title = v.Title
+		}
+		if len(title) > 0 {
+			want[unescape(string(title))]++
+		}
+	}
+	if len(want) == 0 {
+		return nil
+	}
+	var out []span
+	for i := 0; i+1 < len(masked); i++ {
+		if masked[i] != ']' || masked[i+1] != '(' || (i > 0 && masked[i-1] == '\\') {
 			continue
 		}
-		if m := linkTailRe.FindStringSubmatchIndex(masked[pos:]); m != nil && m[2] >= 0 {
-			out = append(out, span{strip: true, start: pos + m[2], end: pos + m[3]})
+		start, end, title, ok := linkTail(masked, i+2)
+		if !ok {
+			continue
+		}
+		if key := unescape(title); want[key] > 0 {
+			want[key]--
+			out = append(out, span{strip: true, start: start, end: end})
 		}
 	}
 	return out
+}
+
+// linkTail reads an inline link's destination and title from i, just past
+// `](`, and returns the title's range (leading whitespace included) and its
+// content. ok is false when there is no title or the tail is not one.
+func linkTail(s string, i int) (start, end int, title string, ok bool) {
+	skip := func(j int) int {
+		nl := 0
+		for j < len(s) && (s[j] == ' ' || s[j] == '\t' || s[j] == '\n') {
+			if s[j] == '\n' {
+				if nl++; nl > 1 {
+					return -1
+				}
+			}
+			j++
+		}
+		return j
+	}
+	j := skip(i)
+	if j < 0 || j >= len(s) {
+		return 0, 0, "", false
+	}
+	if s[j] == '<' { // <destination>
+		k := strings.IndexAny(s[j+1:], ">\n")
+		if k < 0 || s[j+1+k] != '>' {
+			return 0, 0, "", false
+		}
+		j += k + 2
+	} else { // bare destination: escapes and balanced parentheses, any depth
+		depth := 0
+	dest:
+		for ; j < len(s); j++ {
+			switch c := s[j]; {
+			case c == '\\' && j+1 < len(s):
+				j++
+			case c == '(':
+				depth++
+			case c == ')':
+				if depth == 0 {
+					break dest
+				}
+				depth--
+			case c == ' ' || c == '\t' || c == '\n' || c < 0x20:
+				break dest
+			}
+		}
+	}
+	start = j
+	j = skip(j)
+	if j < 0 || j == start || j >= len(s) {
+		return 0, 0, "", false
+	}
+	open := s[j]
+	closer := map[byte]byte{'"': '"', '\'': '\'', '(': ')'}[open]
+	if closer == 0 {
+		return 0, 0, "", false
+	}
+	k := j + 1
+	for ; k < len(s) && s[k] != closer; k++ {
+		if s[k] == '\\' {
+			k++
+		} else if s[k] == '\n' && k+1 < len(s) && s[k+1] == '\n' {
+			return 0, 0, "", false // a title cannot span a blank line
+		}
+	}
+	if k >= len(s) {
+		return 0, 0, "", false
+	}
+	title = s[j+1 : k]
+	end = k + 1
+	if after := skip(end); after < 0 || after >= len(s) || s[after] != ')' {
+		return 0, 0, "", false
+	}
+	return start, end, title, true
+}
+
+// unescape drops backslash escapes, so a title from the source compares
+// equal to the parser's.
+func unescape(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\\' && i+1 < len(s) {
+			i++
+		}
+		b.WriteByte(s[i])
+	}
+	return strings.Join(strings.Fields(b.String()), " ")
 }
 
 // refDefRemovals returns, for Strip to remove whole, the lines of each
@@ -363,7 +464,11 @@ func refDefRemovals(masked string, defs []ast.Node) []span {
 			continue
 		}
 		start := lines.At(0).Start
-		start = strings.LastIndexByte(masked[:start], '\n') + 1 // from the line's start, markers included
+		// Take block quote markers on the line with it, but not a list
+		// marker, which would end its item.
+		if ls := strings.LastIndexByte(masked[:start], '\n') + 1; strings.Trim(masked[ls:start], " \t>") == "" {
+			start = ls
+		}
 		end := lines.At(lines.Len() - 1).Stop
 		if end < len(masked) {
 			if nl := strings.IndexByte(masked[end:], '\n'); nl >= 0 {

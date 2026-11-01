@@ -1044,8 +1044,9 @@ note's body, before taking the narrative and observations, it removes HTML comme
 hidden and never-rendered elements (markup included), HTML attributes other than
 `href`, `src`, and `srcset` (with the space before each), the titles of the inline
 links and images the parser found, every reference definition the parser found, used
-or not, with all of its lines (including in block quotes and lists; a line the parser
-kept as paragraph text is never removed, whatever it looks like), disallowed invisible
+or not, with all of its lines (including in block quotes, with their markers, and in
+lists, where the list marker stays; a line the parser kept as paragraph text is never
+removed, whatever it looks like), disallowed invisible
 characters, and soft hyphens. Code spans and code blocks are untouched. Where a span
 sat between two words one space is kept; where it held a line break the lines on
 either side stay apart, without a blank line being added; where it was all of a line,
