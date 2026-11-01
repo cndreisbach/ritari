@@ -12,9 +12,11 @@ sources:
   - id: "3"
     resource: https://github.com/OffeneDatenmodellierung/Roteiro/blob/main/docs/OKF_BUNDLE.md
     title: Roteiro docs/OKF_BUNDLE.md
-generated: {by: claude-code, at: 2026-10-18T17:51:51Z}
+  - id: "4"
+    resource: Branch claude/wonderful-feynman-mres83
+generated: {by: claude-code, at: 2026-11-01T03:04:13Z}
 priority: high
-state: proposed
+state: accepted
 ---
 
 # Observations
@@ -27,6 +29,7 @@ state: proposed
 - [constraint] Allow legitimate invisible characters: the zero-width joiner in emoji sequences and the zero-width non-joiner in Persian and Indic scripts [^1] [^2] [^3]
 - [context] okf-guard screens source documents (PDF, DOCX, HTML) but treats markdown as plain text, so it misses HTML comments in notes; the ritari-ingest skill could recommend running it on raw documents [^1] [^2] [^3]
 - [constraint] Visible but false statements (a fake preference) cannot be caught deterministically; provenance and trust tiers are the defense there [^1] [^2] [^3]
+- [context] Phases 1 and 2 are done (hidden-content and hidden-instruction lint rules, write warnings, text escaping); phase 3 remains [^4]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)
@@ -35,3 +38,4 @@ state: proposed
 [^1]: Clinton, development session 2026-10-18
 [^2]: [okf-guard](https://github.com/darshanNhb/okf-guard)
 [^3]: [Roteiro docs/OKF_BUNDLE.md](https://github.com/OffeneDatenmodellierung/Roteiro/blob/main/docs/OKF_BUNDLE.md)
+[^4]: Branch claude/wonderful-feynman-mres83

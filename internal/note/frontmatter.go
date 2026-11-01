@@ -78,7 +78,7 @@ var knownKeys = map[string]bool{
 // Parse reads a concept file. A file without a frontmatter block parses
 // successfully with empty frontmatter. An error means the file is unparseable.
 func Parse(data []byte) (*Note, error) {
-	text := strings.ReplaceAll(string(data), "\r\n", "\n")
+	text := fileText(data)
 	fmText, body, ok := split(text)
 	n := &Note{Body: body}
 	if !ok {
@@ -91,6 +91,18 @@ func Parse(data []byte) (*Note, error) {
 	}
 	n.FM = *fm
 	return n, nil
+}
+
+// fileText is a concept file's text as the parser reads it: CRLF line endings
+// become LF, and a leading byte-order mark is dropped.
+func fileText(data []byte) string {
+	return strings.TrimPrefix(strings.ReplaceAll(string(data), "\r\n", "\n"), "\uFEFF")
+}
+
+// SplitFrontmatter returns a concept file's frontmatter text and body, as
+// Parse sees them. ok is false when the file has no frontmatter block.
+func SplitFrontmatter(data []byte) (fm, body string, ok bool) {
+	return split(fileText(data))
 }
 
 // split separates the frontmatter text from the body. ok is false when the
