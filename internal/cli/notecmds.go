@@ -70,7 +70,10 @@ func (cmd *NoteWriteCmd) Run(c *Ctx) error {
 	d := output.New().Set("success", true).Set("status", res.Status).Set("id", res.ID)
 	if res.Status == "dry-run" {
 		d.Set("added_observations", res.AddedObs).Set("added_relations", res.AddedRels).Set("added_sources", res.AddedSources).
-			Set("rendered", res.Rendered)
+			Set("warning", res.Warning).Set("rendered", res.Rendered)
+		if res.Warning != "" {
+			c.Printf("warning: %s\n", res.Warning)
+		}
 		c.Printf("--- dry-run (%s) ---\n%s", res.ID, res.Rendered)
 		return c.Emit(d)
 	}

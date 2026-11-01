@@ -119,7 +119,7 @@ func Main(args []string, io IO) (code int) {
 }
 
 func warn(io IO, err error) {
-	_, _ = fmt.Fprintf(io.Stderr, "rit: %v\n", err)
+	_, _ = fmt.Fprintf(io.Stderr, "rit: %s\n", screen.Escape(err.Error()))
 }
 
 func mode(flag string, io IO) (string, error) {

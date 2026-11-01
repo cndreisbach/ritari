@@ -2,6 +2,7 @@ package screen
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -56,14 +57,14 @@ func re(expr string) *regexp.Regexp {
 }
 
 // normalize prepares text for the pattern bank: invisible characters are
-// dropped (so "ig\u200bnore" still reads "ignore"), letters are lowercased,
+// (and the soft hyphen) dropped (so "ig\u200bnore" still reads "ignore"), letters are lowercased,
 // and runs of spaces collapse. Newlines survive, for the line-start patterns.
 func normalize(s string) string {
 	var b strings.Builder
 	space := false
 	for _, r := range s {
 		switch {
-		case suspicious(r) && r != '\n':
+		case ignorable(r) && r != '\n':
 			continue
 		case r == '\n':
 			b.WriteByte('\n')
@@ -88,10 +89,7 @@ func Classify(text string) []string {
 	t := normalize(text)
 	var out []string
 	for _, p := range bank {
-		if len(out) > 0 && out[len(out)-1] == p.category {
-			continue
-		}
-		if p.re.MatchString(t) {
+		if !slices.Contains(out, p.category) && p.re.MatchString(t) {
 			out = append(out, p.category)
 		}
 	}

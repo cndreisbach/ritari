@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cndreisbach/ritari/internal/note"
+	"github.com/cndreisbach/ritari/internal/screen"
 	"github.com/cndreisbach/ritari/internal/vocab"
 )
 
@@ -41,7 +42,7 @@ type DailyResult struct {
 	Path    string
 	Touched int
 	Content string
-	Warning string // screen findings for the note as written (§8.1); not for --refresh
+	Warning string // screen findings this write introduced (§8.1); not for --refresh
 }
 
 // Daily implements the `daily` command (§7, §9.14).
@@ -54,6 +55,7 @@ func Daily(root string, env Env, o DailyOpts) (DailyResult, error) {
 		return DailyResult{}, err
 	}
 	var res DailyResult
+	var before []screen.Finding
 	err := Update(root, env, func(b *Bundle) ([]Event, error) {
 		id := b.Vocab.DailyDir() + "/" + date
 		res = DailyResult{Date: date, ID: id, Path: b.Abs(id + ".md")}
@@ -64,6 +66,7 @@ func Daily(root string, env Env, o DailyOpts) (DailyResult, error) {
 			}
 			res.Status = "refreshed"
 		} else {
+			before = b.screenDisk(id + ".md")
 			ev, err := b.writeDaily(env, id, date, o)
 			if err != nil {
 				return nil, err
@@ -84,7 +87,7 @@ func Daily(root string, env Env, o DailyOpts) (DailyResult, error) {
 		data, err := readAll(b.Abs(id + ".md"))
 		res.Content = data
 		if !o.Refresh {
-			res.Warning = withScreen("", []byte(data))
+			res.Warning = withScreen("", before, []byte(data))
 		}
 		return nil, err
 	})

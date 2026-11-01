@@ -23,18 +23,34 @@ func (b *Bundle) saveNote(rel string, n *note.Note) error {
 	return err
 }
 
-// withScreen appends the screen's findings for a note file, as it will be
-// written, to a write's warning (§8.1). Findings never stop the write.
-func withScreen(warning string, data []byte) string {
+// screenFile screens a note file's bytes; nil when it does not parse.
+func screenFile(data []byte) []screen.Finding {
 	n, err := note.Parse(data)
 	if err != nil {
-		return warning
+		return nil
 	}
+	return screen.Note(n)
+}
+
+// screenDisk screens the note file at rel as it is on disk now, before a
+// write replaces it; nil when there is none.
+func (b *Bundle) screenDisk(rel string) []screen.Finding {
+	data, err := os.ReadFile(b.Abs(rel))
+	if err != nil {
+		return nil
+	}
+	return screenFile(data)
+}
+
+// withScreen appends to a write's warning the screen findings that the write
+// introduces: those in the file as it will be written (data) that were not
+// in it before (§8.1). Findings never stop the write.
+func withScreen(warning string, before []screen.Finding, data []byte) string {
 	parts := []string{}
 	if warning != "" {
 		parts = append(parts, warning)
 	}
-	if w := screen.Warning(screen.Note(n)); w != "" {
+	if w := screen.Warning(screen.New(before, screenFile(data))); w != "" {
 		parts = append(parts, w)
 	}
 	return strings.Join(parts, "; ")
@@ -142,7 +158,7 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 		}
 		n.FillGenerated(env.Actor, env.Stamp())
 		data := note.Render(n)
-		warning = withScreen(warning, data)
+		warning = withScreen(warning, b.screenDisk(c.Path), data)
 		if o.DryRun {
 			res = Result{Status: "dry-run", ID: c.ID, Warning: warning, Rendered: string(data)}
 			return nil, nil

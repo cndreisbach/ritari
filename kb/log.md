@@ -16,6 +16,8 @@
 * **Create**: [Escape invisible characters in text output](/decisions/escape-invisible-characters-in-text-output.md)
 * **Update**: [Screen notes for hidden content and instructions](/tasks/screen-notes-for-hidden-content-and-instructions.md)
 * **Create**: [2026-11-01](/daily/2026-11-01.md)
+* **Create**: [Writes warn only about hidden content they add](/decisions/writes-warn-only-about-hidden-content-they-add.md)
+* **Update**: [2026-11-01](/daily/2026-11-01.md)
 
 ## 2026-10-30
 

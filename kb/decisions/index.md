@@ -12,3 +12,4 @@
 * [Skill set after routing review](/decisions/skill-set-after-routing-review.md) - Keep ritari, ritari-ingest and ritari-reflect; fold the rest into references; move session start/end out of routing.
 * [The package owns brief injection](/decisions/the-package-owns-brief-injection.md) - The pi-ritari package injects rit brief; the generated .pi/extensions hook is the no-npm fallback, never both.
 * [Two hidden-content lint rules](/decisions/two-hidden-content-lint-rules.md) - hidden-content warns on hidden content; hidden-instruction warns when hidden text matches the pattern bank. Both are warnings.
+* [Writes warn only about hidden content they add](/decisions/writes-warn-only-about-hidden-content-they-add.md) - note write, note edit, and daily report only the screen findings a write introduces; lint reports everything.
