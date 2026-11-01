@@ -44,7 +44,29 @@ func hidesByAttrs(attrs []attr) bool {
 	return false
 }
 
-type attr struct{ name, value string }
+// attr is one attribute of a start tag; start and end are its byte range,
+// name to end of value.
+type attr struct {
+	name, value string
+	start, end  int
+}
+
+// hidesInput reports a form field that never shows: <input type=hidden>.
+func hidesInput(name string, attrs []attr) bool {
+	if name != "input" {
+		return false
+	}
+	for _, a := range attrs {
+		if a.name == "type" && strings.EqualFold(strings.TrimSpace(a.value), "hidden") {
+			return true
+		}
+	}
+	return false
+}
+
+// linkAttrs name where a link or image points; they are scanned but kept by
+// Strip, since a reader follows them.
+var linkAttrs = map[string]bool{"href": true, "src": true, "srcset": true}
 
 type openElem struct {
 	name  string
@@ -61,11 +83,12 @@ func htmlSpans(src, masked string) []span {
 	var stack []openElem
 	hiding := 0 // number of hiding elements on the stack
 	var hidden strings.Builder
-	hiddenKind := ""
-	flush := func() {
-		if t := strings.TrimSpace(hidden.String()); t != "" {
-			out = append(out, span{kind: hiddenKind, text: t, flag: true})
-		}
+	hiddenKind, hiddenStart := "", 0
+	flush := func(end int) {
+		// An element with nothing in it is still removed by Strip, but is
+		// not reported.
+		t := strings.TrimSpace(hidden.String())
+		out = append(out, span{kind: hiddenKind, text: t, flag: t != "", strip: true, start: hiddenStart, end: end})
 		hidden.Reset()
 		hiddenKind = ""
 	}
@@ -75,6 +98,9 @@ func htmlSpans(src, masked string) []span {
 			hidden.WriteByte(' ')
 		}
 	}
+	lower := asciiLower(masked) // same byte offsets, unlike strings.ToLower
+	closeAt := firstFrom(masked, "-->", "--!>")
+	lastGT := strings.LastIndexByte(masked, '>')
 	i, last := 0, 0
 	for i < len(masked) {
 		lt := strings.IndexByte(masked[i:], '<')
@@ -87,12 +113,16 @@ func htmlSpans(src, masked string) []span {
 			continue
 		}
 		rest := masked[i:]
+		if i > lastGT && !strings.HasPrefix(rest, "<!") && !strings.HasPrefix(rest, "<?") {
+			i++ // no tag can close after the last '>'
+			continue
+		}
 		switch {
 		case strings.HasPrefix(rest, "<!--"):
 			text(last, i)
-			body, end := comment(src, masked, i)
+			body, end := comment(src, masked, i, closeAt)
 			if strings.TrimSpace(body) != "" {
-				out = append(out, span{kind: "an HTML comment", text: body, flag: true})
+				out = append(out, span{kind: "an HTML comment", text: body, flag: true, strip: true, start: i, end: end})
 			}
 			i, last = end, end
 			continue
@@ -107,7 +137,7 @@ func htmlSpans(src, masked string) []span {
 			}
 			inner := src[i+2 : max(i+2, stop-1)]
 			if strings.TrimSpace(inner) != "" {
-				out = append(out, span{kind: "an HTML comment", text: inner, flag: true})
+				out = append(out, span{kind: "an HTML comment", text: inner, flag: true, strip: true, start: i, end: stop})
 			}
 			i, last = stop, stop
 			continue
@@ -136,7 +166,7 @@ func htmlSpans(src, masked string) []span {
 				}
 				stack = stack[:k]
 				if hiding == 0 && hiddenKind != "" {
-					flush()
+					flush(i)
 				}
 				break
 			}
@@ -153,21 +183,34 @@ func htmlSpans(src, masked string) []span {
 			continue
 		}
 		text(last, i)
+		open := i
+		hides := neverRendered[name] || hidesByAttrs(attrs) || hidesInput(name, attrs)
 		for _, a := range attrs {
-			if a.name != "style" && strings.TrimSpace(a.value) != "" {
-				out = append(out, span{kind: "an HTML attribute", text: a.value})
+			if a.name == "style" || strings.TrimSpace(a.value) == "" {
+				continue
 			}
+			if hides || hiding > 0 {
+				// Inside a hidden element, attribute text is part of what it hides.
+				hidden.WriteString(a.value)
+				hidden.WriteByte(' ')
+				continue
+			}
+			from := a.start // take the space before the attribute with it
+			for from > 0 && strings.IndexByte(" \t", masked[from-1]) >= 0 {
+				from--
+			}
+			out = append(out, span{kind: "an HTML attribute", text: a.value, strip: !linkAttrs[a.name], start: from, end: a.end})
 		}
 		i, last = close, close
-		hides := neverRendered[name] || hidesByAttrs(attrs)
 		if hides && hiding == 0 {
+			hiddenStart = open
 			hiddenKind = "a hidden HTML element"
 			if neverRendered[name] {
 				hiddenKind = "a <" + name + "> element"
 			}
 		}
 		if rawText[name] && !selfClosing {
-			endTag := strings.Index(strings.ToLower(masked[i:]), "</"+name)
+			endTag := strings.Index(lower[i:], "</"+name)
 			stop := len(masked)
 			if endTag >= 0 {
 				stop = i + endTag
@@ -176,20 +219,20 @@ func htmlSpans(src, masked string) []span {
 				hidden.WriteString(src[i:stop])
 				hidden.WriteByte(' ')
 			}
-			if hides && hiding == 0 {
-				flush()
-			}
 			gt := strings.IndexByte(masked[stop:], '>')
 			if endTag < 0 || gt < 0 {
 				i, last = len(masked), len(masked)
 			} else {
 				i, last = stop+gt+1, stop+gt+1
 			}
+			if hides && hiding == 0 {
+				flush(i)
+			}
 			continue
 		}
 		if voidElements[name] || selfClosing {
 			if hides && hiding == 0 {
-				flush()
+				flush(i)
 			}
 			continue
 		}
@@ -200,29 +243,64 @@ func htmlSpans(src, masked string) []span {
 	}
 	text(last, len(src))
 	if hiddenKind != "" {
-		flush()
+		flush(len(src))
 	}
 	return out
 }
 
+// asciiLower lowercases ASCII letters only, so byte offsets are unchanged.
+func asciiLower(s string) string {
+	b := []byte(s)
+	for i, c := range b {
+		if c >= 'A' && c <= 'Z' {
+			b[i] = c + 'a' - 'A'
+		}
+	}
+	return string(b)
+}
+
+// firstFrom returns a function giving the offset of the first of the
+// needles at or after an offset, and its length (-1, 0 when none). Calls must
+// come with offsets that never decrease; each needle's last answer is reused
+// while it still lies ahead, so a run of calls costs one pass over s.
+func firstFrom(s string, needles ...string) func(from int) (int, int) {
+	next := make([]int, len(needles)) // last answer per needle; -2 = not yet searched
+	for i := range next {
+		next[i] = -2
+	}
+	return func(from int) (int, int) {
+		best, size := -1, 0
+		for i, n := range needles {
+			if next[i] == -2 || (next[i] >= 0 && next[i] < from) {
+				if k := strings.Index(s[from:], n); k >= 0 {
+					next[i] = from + k
+				} else {
+					next[i] = -1
+				}
+			}
+			if k := next[i]; k >= 0 && (best < 0 || k < best) {
+				best, size = k, len(n)
+			}
+		}
+		return best, size
+	}
+}
+
 // comment returns the text of the comment starting at i and the offset just
 // past it. `<!-->` and `<!--->` are empty; an unclosed comment runs to the end.
-func comment(src, masked string, i int) (string, int) {
+// closeAt finds the next `-->` or `--!>`.
+func comment(src, masked string, i int, closeAt func(int) (int, int)) (string, int) {
 	start := i + 4
 	for _, empty := range []string{">", "->"} {
 		if strings.HasPrefix(masked[start:], empty) {
 			return "", start + len(empty)
 		}
 	}
-	rest := masked[start:]
-	end, n := len(rest), 0
-	if k := strings.Index(rest, "-->"); k >= 0 {
-		end, n = k, 3
+	k, n := closeAt(start)
+	if k < 0 {
+		return src[start:], len(masked)
 	}
-	if k := strings.Index(rest, "--!>"); k >= 0 && k < end {
-		end, n = k, 4
-	}
-	return src[start : start+end], start + end + n
+	return src[start:k], k + n
 }
 
 func isNameByte(c byte, first bool) bool {
@@ -276,6 +354,7 @@ func attributes(src, masked string, i int) ([]attr, int, bool, bool) {
 		case '<':
 			return nil, 0, false, false
 		}
+		start := i
 		j := i
 		for j < len(masked) && strings.IndexByte(" \t\n\r\f/>=", masked[j]) < 0 {
 			j++
@@ -286,7 +365,7 @@ func attributes(src, masked string, i int) ([]attr, int, bool, bool) {
 			i++
 		}
 		if i >= len(masked) || masked[i] != '=' {
-			out = append(out, attr{name: name})
+			out = append(out, attr{name: name, start: start, end: j})
 			continue
 		}
 		i++
@@ -312,7 +391,7 @@ func attributes(src, masked string, i int) ([]attr, int, bool, bool) {
 			value = src[i:j]
 			i = j
 		}
-		out = append(out, attr{name: name, value: value})
+		out = append(out, attr{name: name, value: value, start: start, end: i})
 	}
 	return nil, 0, false, false
 }

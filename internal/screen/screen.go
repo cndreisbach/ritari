@@ -4,6 +4,7 @@ package screen
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -39,18 +40,34 @@ type span struct {
 	// attribute values, and unused reference definitions are only scanned
 	// for instructions.
 	flag bool
+	// strip says Strip removes the span's byte range [start, end), markup
+	// included. A span may carry a range and no text (an empty hidden
+	// element, a link title found only for removal).
+	strip      bool
+	start, end int
 }
 
 var md = goldmark.New(goldmark.WithExtensions(extension.Footnote))
 
 // Note screens a parsed note: its frontmatter and its body.
 func Note(n *note.Note) []Finding {
+	return noteFindings(n, hiddenSpans(n.Body))
+}
+
+// NoteStripped screens a note and returns its body with what a reader would
+// not see removed (see Strip), from one parse of the body.
+func NoteStripped(n *note.Note) ([]Finding, string) {
+	spans := hiddenSpans(n.Body)
+	return noteFindings(n, spans), strip(n.Body, spans)
+}
+
+func noteFindings(n *note.Note, spans []span) []Finding {
 	var out []Finding
 	for _, f := range fields(n) {
 		out = append(out, textFindings(f.name, f.value)...)
 	}
 	out = append(out, textFindings("body", n.Body)...)
-	for _, s := range hiddenSpans(n.Body) {
+	for _, s := range spans {
 		if s.flag {
 			out = append(out, Finding{HiddenContent, fmt.Sprintf("body has %s, not shown when rendered: %s", s.kind, excerpt(s.text))})
 		}
@@ -59,6 +76,92 @@ func Note(n *note.Note) []Finding {
 		}
 	}
 	return out
+}
+
+// Worst names the most serious rule among findings: hidden-instruction,
+// then hidden-content, or "" when there are none (§8.1).
+func Worst(fs []Finding) string {
+	worst := ""
+	for _, f := range fs {
+		if f.Rule == HiddenInstruction {
+			return HiddenInstruction
+		}
+		worst = HiddenContent
+	}
+	return worst
+}
+
+// Strip removes what a reader would not see from a body (§8.1): HTML
+// comments, hidden and never-rendered elements (markup included), link and
+// image titles, HTML attributes other than href, src, and srcset, reference
+// definitions (used or not), disallowed invisible characters, and soft
+// hyphens.
+// Line breaks inside a removed span are kept, so lines never merge.
+func Strip(body string) string { return strip(body, hiddenSpans(body)) }
+
+func strip(body string, spans []span) string {
+	var ranges [][2]int
+	for _, s := range spans {
+		if s.strip && s.end > s.start {
+			ranges = append(ranges, [2]int{s.start, min(s.end, len(body))})
+		}
+	}
+	sort.Slice(ranges, func(i, j int) bool { return ranges[i][0] < ranges[j][0] })
+	var b strings.Builder
+	at := 0
+	lastSpace := false
+	for _, r := range ranges {
+		if r[1] <= at {
+			continue
+		}
+		if r[0] > at {
+			chunk := body[at:r[0]]
+			b.WriteString(chunk)
+			lastSpace = strings.HasSuffix(chunk, " ")
+		}
+		removed := body[max(at, r[0]):r[1]]
+		at = r[1]
+		if strings.Contains(removed, "\n") {
+			// Keep the lines on either side apart, without adding a blank
+			// line that would split a paragraph.
+			out := b.String()
+			if !strings.HasSuffix(out, "\n") && !strings.HasPrefix(body[at:], "\n") && out != "" {
+				b.WriteByte('\n')
+			}
+			lastSpace = false
+			continue
+		}
+		// Removing a span from between two words leaves one space, not two;
+		// removing all of a line leaves no blank line in its place.
+		out := b.String()
+		switch {
+		case lastSpace && at < len(body) && body[at] == ' ':
+			at++
+		case (out == "" || strings.HasSuffix(out, "\n")) && strings.HasPrefix(body[at:], "\r\n"):
+			at += 2
+		case (out == "" || strings.HasSuffix(out, "\n")) && at < len(body) && body[at] == '\n':
+			at++
+		}
+	}
+	b.WriteString(body[at:])
+	return StripInvisible(b.String())
+}
+
+// StripInvisible removes disallowed invisible characters and soft hyphens
+// from s, leaving allowed characters (an emoji ZWJ, a Persian ZWNJ) in place.
+func StripInvisible(s string) string {
+	if !strings.ContainsFunc(s, ignorable) {
+		return s
+	}
+	rs := []rune(s)
+	bad := flagged(rs)
+	var b strings.Builder
+	for i, r := range rs {
+		if !bad[i] && r != softHyph {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // New returns the findings in after that are not in before, counting
@@ -170,11 +273,14 @@ func hiddenSpans(body string) []span {
 	}
 	var out []span
 	used := map[string]bool{}
+	var links, defs []ast.Node
 	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
 		switch v := n.(type) {
+		case *ast.LinkReferenceDefinition:
+			defs = append(defs, n)
 		case *ast.CodeSpan:
 			for c := v.FirstChild(); c != nil; c = c.NextSibling() {
 				if t, ok := c.(*ast.Text); ok {
@@ -191,11 +297,13 @@ func hiddenSpans(body string) []span {
 				mask(f.Info.Segment)
 			}
 		case *ast.Link:
+			links = append(links, n)
 			used[linkKey(v.Destination, v.Title)] = true
 			if len(v.Title) > 0 {
 				out = append(out, span{kind: "a link title", text: string(v.Title)})
 			}
 		case *ast.Image:
+			links = append(links, n)
 			used[linkKey(v.Destination, v.Title)] = true
 			if len(v.Title) > 0 {
 				out = append(out, span{kind: "an image title", text: string(v.Title)})
@@ -211,10 +319,168 @@ func hiddenSpans(body string) []span {
 		t := strings.TrimSpace(string(r.Label()) + " " + string(r.Title()))
 		out = append(out, span{kind: "an unused reference definition", text: t})
 	}
-	return out
+	out = append(out, titleRemovals(string(masked), links)...)
+	return append(out, refDefRemovals(string(masked), defs)...)
 }
 
 func linkKey(dest, title []byte) string { return string(dest) + "\x00" + string(title) }
+
+// titleRemovals finds the titles of the inline links and images the parser
+// produced, for Strip to remove. Every `](dest "title")` tail in the masked
+// body is scanned; a tail's title is removed only when it matches the title
+// of a link or image the parser found, so text that merely looks like a link
+// is left alone. Matching by title, not by node position, covers links whose
+// text is empty or ends in an image, raw HTML, or an autolink.
+func titleRemovals(masked string, links []ast.Node) []span {
+	want := map[string]int{}
+	for _, l := range links {
+		var title []byte
+		switch v := l.(type) {
+		case *ast.Link:
+			title = v.Title
+		case *ast.Image:
+			title = v.Title
+		}
+		if len(title) > 0 {
+			want[unescape(string(title))]++
+		}
+	}
+	if len(want) == 0 {
+		return nil
+	}
+	var out []span
+	for i := 0; i+1 < len(masked); i++ {
+		if masked[i] != ']' || masked[i+1] != '(' || (i > 0 && masked[i-1] == '\\') {
+			continue
+		}
+		start, end, title, ok := linkTail(masked, i+2)
+		if !ok {
+			continue
+		}
+		if key := unescape(title); want[key] > 0 {
+			want[key]--
+			out = append(out, span{strip: true, start: start, end: end})
+		}
+	}
+	return out
+}
+
+// linkTail reads an inline link's destination and title from i, just past
+// `](`, and returns the title's range (leading whitespace included) and its
+// content. ok is false when there is no title or the tail is not one.
+func linkTail(s string, i int) (start, end int, title string, ok bool) {
+	skip := func(j int) int {
+		nl := 0
+		for j < len(s) && (s[j] == ' ' || s[j] == '\t' || s[j] == '\n') {
+			if s[j] == '\n' {
+				if nl++; nl > 1 {
+					return -1
+				}
+			}
+			j++
+		}
+		return j
+	}
+	j := skip(i)
+	if j < 0 || j >= len(s) {
+		return 0, 0, "", false
+	}
+	if s[j] == '<' { // <destination>
+		k := strings.IndexAny(s[j+1:], ">\n")
+		if k < 0 || s[j+1+k] != '>' {
+			return 0, 0, "", false
+		}
+		j += k + 2
+	} else { // bare destination: escapes and balanced parentheses, any depth
+		depth := 0
+	dest:
+		for ; j < len(s); j++ {
+			switch c := s[j]; {
+			case c == '\\' && j+1 < len(s):
+				j++
+			case c == '(':
+				depth++
+			case c == ')':
+				if depth == 0 {
+					break dest
+				}
+				depth--
+			case c == ' ' || c == '\t' || c == '\n' || c < 0x20:
+				break dest
+			}
+		}
+	}
+	start = j
+	j = skip(j)
+	if j < 0 || j == start || j >= len(s) {
+		return 0, 0, "", false
+	}
+	open := s[j]
+	closer := map[byte]byte{'"': '"', '\'': '\'', '(': ')'}[open]
+	if closer == 0 {
+		return 0, 0, "", false
+	}
+	k := j + 1
+	for ; k < len(s) && s[k] != closer; k++ {
+		if s[k] == '\\' {
+			k++
+		} else if s[k] == '\n' && k+1 < len(s) && s[k+1] == '\n' {
+			return 0, 0, "", false // a title cannot span a blank line
+		}
+	}
+	if k >= len(s) {
+		return 0, 0, "", false
+	}
+	title = s[j+1 : k]
+	end = k + 1
+	if after := skip(end); after < 0 || after >= len(s) || s[after] != ')' {
+		return 0, 0, "", false
+	}
+	return start, end, title, true
+}
+
+// unescape drops backslash escapes, so a title from the source compares
+// equal to the parser's.
+func unescape(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\\' && i+1 < len(s) {
+			i++
+		}
+		b.WriteByte(s[i])
+	}
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+// refDefRemovals returns, for Strip to remove whole, the lines of each
+// reference definition the parser found: they render as nothing. Lines the
+// parser kept as paragraph text are never touched, whatever they look like;
+// definitions in block quotes and lists, and ones spanning lines, are found.
+func refDefRemovals(masked string, defs []ast.Node) []span {
+	var out []span
+	for _, d := range defs {
+		lines := d.Lines()
+		if lines.Len() == 0 {
+			continue
+		}
+		start := lines.At(0).Start
+		// Take block quote markers on the line with it, but not a list
+		// marker, which would end its item.
+		if ls := strings.LastIndexByte(masked[:start], '\n') + 1; strings.Trim(masked[ls:start], " \t>") == "" {
+			start = ls
+		}
+		end := lines.At(lines.Len() - 1).Stop
+		if end < len(masked) {
+			if nl := strings.IndexByte(masked[end:], '\n'); nl >= 0 {
+				end += nl + 1
+			} else {
+				end = len(masked)
+			}
+		}
+		out = append(out, span{strip: true, start: start, end: min(end, len(masked))})
+	}
+	return out
+}
 
 const excerptLen = 80
 

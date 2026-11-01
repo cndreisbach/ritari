@@ -1,5 +1,6 @@
 # Tasks
 
+* [Mark notes with hidden content in read, search, context, and brief](/tasks/mark-notes-with-hidden-content-in-read-search-context-and-brief.md) - Phase 3 of hidden-instruction screening: a hidden field on results that return note content, a stderr warning on raw reads, and hidden spans removed from brief.
 * [Screen notes for hidden content and instructions](/tasks/screen-notes-for-hidden-content-and-instructions.md) - Phase 1 and 2 of hidden-instruction screening: hidden-content and hidden-instruction lint rules, write warnings, and escaping in text output.
 
 # Archived

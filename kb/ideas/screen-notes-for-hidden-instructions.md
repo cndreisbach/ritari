@@ -14,9 +14,9 @@ sources:
     title: Roteiro docs/OKF_BUNDLE.md
   - id: "4"
     resource: Branch claude/wonderful-feynman-mres83
-generated: {by: claude-code, at: 2026-11-01T03:04:13Z}
+generated: {by: claude-code, at: 2026-11-01T15:09:15Z}
 priority: high
-state: accepted
+state: done
 ---
 
 # Observations
@@ -30,6 +30,7 @@ state: accepted
 - [context] okf-guard screens source documents (PDF, DOCX, HTML) but treats markdown as plain text, so it misses HTML comments in notes; the ritari-ingest skill could recommend running it on raw documents [^1] [^2] [^3]
 - [constraint] Visible but false statements (a fake preference) cannot be caught deterministically; provenance and trust tiers are the defense there [^1] [^2] [^3]
 - [context] Phases 1 and 2 are done (hidden-content and hidden-instruction lint rules, write warnings, text escaping); phase 3 remains [^4]
+- [context] Phase 3 is done: results mark notes with hidden content and brief removes hidden text [^4]
 
 # Relations
 - part_of [Roadmap](/projects/roadmap.md)

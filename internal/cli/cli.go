@@ -14,6 +14,7 @@ import (
 
 	"github.com/cndreisbach/ritari/internal/actor"
 	"github.com/cndreisbach/ritari/internal/bundle"
+	"github.com/cndreisbach/ritari/internal/note"
 	"github.com/cndreisbach/ritari/internal/output"
 	"github.com/cndreisbach/ritari/internal/registry"
 	"github.com/cndreisbach/ritari/internal/screen"
@@ -156,6 +157,24 @@ func (c *Ctx) Printf(format string, a ...any) {
 	if !c.Machine {
 		_, _ = io.WriteString(c.Stdout, screen.Escape(fmt.Sprintf(format, a...)))
 	}
+}
+
+// hidden screens a note and names its worst finding (§8.1).
+func hidden(n *note.Note) ([]screen.Finding, string) {
+	fs := screen.Note(n)
+	return fs, screen.Worst(fs)
+}
+
+// hiddenMarker is the text-mode mark for a note's worst finding, with a
+// leading space, or "".
+func hiddenMarker(worst string) string {
+	switch worst {
+	case screen.HiddenInstruction:
+		return "  [HIDDEN INSTRUCTION]"
+	case screen.HiddenContent:
+		return "  [hidden content]"
+	}
+	return ""
 }
 
 // Registry loads the project registry.
