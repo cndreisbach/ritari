@@ -356,7 +356,7 @@ func (cmd *BriefCmd) Run(c *Ctx) error {
 	}
 
 	docs := []*output.Doc{output.New().Set("success", true).Set("project", p.Name).Set("count", len(days)+len(tasks))}
-	c.Printf("Ritari knowledge base %q (%s). Search it before writing: rit search <terms>.\n", p.Name, p.Path)
+	c.Printf("Ritari knowledge base %q (%s). Search Ritari before writing (native search tools if you have them, else rit search <terms>).\n", p.Name, p.Path)
 	if len(days) == 0 {
 		c.Printf("\nNo daily notes yet.\n")
 	}

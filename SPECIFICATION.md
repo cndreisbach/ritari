@@ -1634,7 +1634,8 @@ Hidden text is left out of what `brief` prints, and notes that hold it are marke
 daily`, `id`, `date`, `description`, `hidden`, `narrative`, `observations` (`[category]
 content`); then per task `kind: task`, `id`, `title`, `state`, `description`, `hidden`
 (`hidden` omitted for a clean note). Text: `Ritari knowledge base "<name>"
-(<path>). Search it before writing: rit search <terms>.`; per daily note a blank line,
+(<path>). Search Ritari before writing (native search tools if you have them, else rit search
+<terms>).`; per daily note a blank line,
 `Daily note <date> (<id>)`, its narrative, and `- [category] content` per observation (or
 `No daily notes yet.`); then `Open tasks:` and `- <title> (<id>) [<state>]: <description>`
 per task (or `No open tasks.`); a marked note's `Daily note` line or task line ends with
@@ -1735,7 +1736,9 @@ implementer's.
    decide"), being asked to remember or record something, picking up earlier work or a task,
    writing the day's notes, and checking or cleaning up a knowledge base.
    `SKILL.md`: a table of its references and when to read each; that ingesting material and
-   consolidating daily notes are the other two skills; a session's shape (start with `brief`,
+   consolidating daily notes are the other two skills; that an agent with native Ritari tools
+   (such as the Pi package's, §13) prefers them over the CLI for what they support and falls
+   back to `rit` for the rest, the CLI examples being that fallback; a session's shape (start with `brief`,
    or with its output when a hook already ran it; work; finish by updating task state, the
    daily note, and lint). The bundle model (markdown files, no database). The output contract
    (§9.1) including that `note view`/`read` return raw bytes and that `--output text` gives
@@ -1932,7 +1935,9 @@ no second copy of the bundle format.
   `rit` 3.1.0). A release publishes it only when `pi-ritari/` changed since the previous tag.
 - **Tools.** `ritari_search`, `ritari_read`, `ritari_write`, and `ritari_edit`, grouped under
   the `ritari` namespace. Each call passes `--project <name> --output json`, and every result
-  names the project it used.
+  names the project it used. Each description calls the tool the preferred interface for its
+  operation, in place of running `rit` in a shell, and names the CLI as the fallback for what
+  the tool does not expose.
 - **Project resolution.** `RITARI_PROJECT`, else the nearest `ritari.yaml` at or above the
   working directory matched to a registered project by path, else the registry default. A
   `ritari.yaml` the registry does not know is an error naming the directory; it never falls

@@ -10,6 +10,18 @@ Knowledge Format (OKF): one file per concept, YAML frontmatter on top. There is
 no database and no index that can drift — every listing, search, and link graph
 is computed from the files on demand. The files are the source of truth.
 
+## Native tools first
+
+If your agent has native Ritari tools (for example `ritari_search`,
+`ritari_read`, `ritari_write`, and `ritari_edit` in Pi), prefer them over
+running `rit` in a shell whenever they support the operation. Use the CLI for
+operations or options those tools do not expose: daily notes, listings,
+metadata filters, moving and archiving, projects, and maintenance. Both go
+through Ritari, so never edit knowledge-base files directly either way, and
+search before you write.
+
+The `rit` commands below are the fallback interface, and the full one.
+
 ## Read the reference before the command
 
 This file covers driving `rit`. The details of doing each job well are in
