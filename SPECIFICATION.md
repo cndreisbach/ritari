@@ -874,7 +874,10 @@ appearance:
 Lines: `- [Title](/<id>.md) — <action>` (action past tense: `created`, `updated`,
 `moved`; other actions are the lower-cased action name, e.g. `archive`, `restore`),
 and for deletions `- <id> — deleted` (named, not linked). Note the action trails the
-link so the line is a real link (a graph edge) but **not** a typed relation.
+link so the line is a real link (a graph edge) but **not** a typed relation. An entry
+whose concept no longer exists at refresh time (deleted or moved after that day) keeps
+its historical action but is named, not linked: `- <id> — <action>`. Archived concepts
+still exist, so they stay linked.
 
 Refreshing rewrites the note only if the section text changed, and does so without
 recording and without restamping `generated`. Refreshing a date with no daily note is
@@ -1814,7 +1817,8 @@ implementer's.
      For every other finding, present 2–4 concrete options with consequences using the
      harness's structured multiple-choice tool if available, else a numbered list — with
      per-rule guidance for `orphan`, `duplicate-title`, `unknown-type`/`unknown-category`,
-     `dangling-link`, `stale-verification`, `malformed-field`, `reserved-casing`,
+     `dangling-link` (in a daily note's `# Touched`, refresh that day rather than editing),
+     `stale-verification`, `malformed-field`, `reserved-casing`,
      `missing-title`/`missing-description`, `missing-type`/`unparseable`. Batch related
      questions and offer "skip the rest". Never guess at a merge or a relation; report
      mechanical fixes; an unresolved finding is fine; read the note before proposing.

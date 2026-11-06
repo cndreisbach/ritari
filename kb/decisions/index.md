@@ -15,5 +15,6 @@
 * [Skill set after routing review](/decisions/skill-set-after-routing-review.md) - Keep ritari, ritari-ingest and ritari-reflect; fold the rest into references; move session start/end out of routing.
 * [Task notes are for ongoing efforts](/decisions/task-notes-are-for-ongoing-efforts.md) - Create a task only for an ongoing effort with context to preserve for resumption; one-off requests get a daily outcome.
 * [The package owns brief injection](/decisions/the-package-owns-brief-injection.md) - The pi-ritari package injects rit brief; the generated .pi/extensions hook is the no-npm fallback, never both.
+* [Touched names targets that no longer exist](/decisions/touched-names-targets-that-no-longer-exist.md) - A daily refresh keeps a touched entry whose target is gone as plain text with its historical action, rather than dropping it.
 * [Two hidden-content lint rules](/decisions/two-hidden-content-lint-rules.md) - hidden-content warns on hidden content; hidden-instruction warns when hidden text matches the pattern bank. Both are warnings.
 * [Writes warn only about hidden content they add](/decisions/writes-warn-only-about-hidden-content-they-add.md) - note write, note edit, and daily report only the screen findings a write introduces; lint reports everything.

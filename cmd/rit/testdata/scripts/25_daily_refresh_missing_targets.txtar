@@ -1,0 +1,36 @@
+# Scenario 25: refreshing an earlier daily note after its notes changed.
+exec rit project init work $WORK/kb --default
+
+exec rit note write --title Kept --obs 'a: b'
+exec rit note write --title Shelved --obs 'a: b'
+exec rit note write --title Gone --obs 'a: b'
+exec rit note write --title Mover --obs 'a: b'
+exec rit daily --note 'Day one'
+grep '^- \[Gone\]\(/notes/gone.md\) — created$' kb/daily/2026-07-29.md
+
+env RITARI_TEST_NOW=2026-07-30T09:00:00Z
+exec rit note delete notes/gone
+stdout '^broke_links_in: \[daily/2026-07-29\]$'
+exec rit note archive notes/shelved
+exec rit note move notes/mover references/mover
+
+exec rit lint --rule dangling-link
+stdout 'rule: dangling-link'
+
+exec rit daily 2026-07-29 --refresh
+stdout '^status: refreshed$'
+stdout '^touched: 4$'
+grep '^- \[Kept\]\(/notes/kept.md\) — created$' kb/daily/2026-07-29.md
+grep '^- \[Shelved\]\(/notes/shelved.md\) — created$' kb/daily/2026-07-29.md
+grep '^- notes/gone — created$' kb/daily/2026-07-29.md
+grep '^- notes/mover — created$' kb/daily/2026-07-29.md
+
+exec rit lint --rule dangling-link
+! stdout 'rule: dangling-link'
+
+cp kb/daily/2026-07-29.md first-refresh.md
+exec rit daily 2026-07-29 --refresh
+stdout '^touched: 4$'
+cmp kb/daily/2026-07-29.md first-refresh.md
+
+okflint kb

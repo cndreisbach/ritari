@@ -8,6 +8,8 @@
 * **Create**: [2026-11-06](/daily/2026-11-06.md)
 * **Update**: [Task notes are for ongoing efforts](/decisions/task-notes-are-for-ongoing-efforts.md)
 * **Update**: [2026-11-06](/daily/2026-11-06.md)
+* **Create**: [Touched names targets that no longer exist](/decisions/touched-names-targets-that-no-longer-exist.md)
+* **Update**: [Touched names targets that no longer exist](/decisions/touched-names-targets-that-no-longer-exist.md)
 
 ## 2026-11-01
 

@@ -44,7 +44,9 @@ Per-rule guidance:
 - **`dangling-link`**: write the missing note (it was a forward reference),
   retarget the link to an existing note, or remove the link. When the target
   is a file (an image, a `sources/` file, an `index.md`), ask whether to
-  restore the file, point the link elsewhere, or remove it.
+  restore the file, point the link elsewhere, or remove it. When the link is in
+  a daily note's `# Touched`, don't edit it or ask: run
+  `rit daily <date> --refresh`, which names a missing target without linking it.
 - **`stale-verification`** (content changed after verification): ask the user to
   re-verify (`rit note verify`) after reviewing the change, or leave it
   unverified-in-effect.

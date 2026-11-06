@@ -197,6 +197,44 @@ B
 	assert.Error(t, err)
 }
 
+func TestRefreshTouchedAfterLaterChanges(t *testing.T) {
+	root := t.TempDir()
+	env := testEnv()
+	for _, title := range []string{"Kept", "Shelved", "Gone"} {
+		_, err := Write(root, env, WriteOpts{Title: title, Obs: []string{"a: b"}})
+		require.NoError(t, err)
+	}
+	_, err := Daily(root, env, DailyOpts{Notes: []string{"Day one"}})
+	require.NoError(t, err)
+
+	nextDay := env
+	nextDay.Now = func() time.Time { return testNow.AddDate(0, 0, 1) }
+	_, err = Delete(root, nextDay, "notes/gone")
+	require.NoError(t, err)
+	_, err = SetArchived(root, nextDay, "notes/shelved", true)
+	require.NoError(t, err)
+
+	want := `# Touched
+- [Kept](/notes/kept.md) — created
+- [Shelved](/notes/shelved.md) — created
+- notes/gone — created
+`
+	first, err := Daily(root, nextDay, DailyOpts{Date: "2026-07-29", Refresh: true})
+	require.NoError(t, err)
+	assert.Equal(t, 3, first.Touched)
+	assert.Contains(t, first.Content, want)
+
+	second, err := Daily(root, nextDay, DailyOpts{Date: "2026-07-29", Refresh: true})
+	require.NoError(t, err)
+	assert.Equal(t, first.Content, second.Content, "refreshing again changes nothing")
+
+	_, err = Write(root, nextDay, WriteOpts{Title: "Gone", Obs: []string{"a: b"}})
+	require.NoError(t, err)
+	restored, err := Daily(root, nextDay, DailyOpts{Date: "2026-07-29", Refresh: true})
+	require.NoError(t, err)
+	assert.Contains(t, restored.Content, "- [Gone](/notes/gone.md) — created\n", "a recreated target is linked again")
+}
+
 func TestTouchedResurrection(t *testing.T) {
 	evs := []Event{
 		{Action: ActCreate, ID: "a", Title: "A"},
