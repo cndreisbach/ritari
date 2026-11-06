@@ -208,6 +208,10 @@ func RefreshTouched(root, id, date string) (int, error) {
 			lines = append(lines, "- "+t.id+" — deleted")
 			continue
 		}
+		if _, ok := b.Get(t.id); !ok {
+			lines = append(lines, "- "+t.id+" — "+pastTense(t.action))
+			continue
+		}
 		title := t.title
 		if title == "" {
 			title = t.id
