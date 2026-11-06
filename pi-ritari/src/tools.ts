@@ -235,7 +235,7 @@ function editTool(exec: Exec) {
 		label: "Ritari edit",
 		namespace: NAMESPACE,
 		description:
-			"Edit an existing Ritari note: replace its markdown body (pass the hash from ritari_read in expect_hash), append to it, or change its description or state. Metadata, observations, and relations are kept. The preferred interface for these edits: use this instead of running rit note edit in a shell, and fall back to the CLI only for operations this tool does not expose (such as section edits or find/replace).",
+			"Edit an existing Ritari note: replace its markdown body (pass the hash from ritari_read in expect_hash), append to it, change its description or state, or update a cited source by its number. Metadata, observations, and relations are kept. The preferred interface for these edits: use this instead of running rit note edit in a shell, and fall back to the CLI only for operations this tool does not expose (such as section edits or find/replace).",
 		parameters: Type.Object({
 			ref: Type.String({ description: "Note ID, path, or title." }),
 			body: Type.Optional(
@@ -249,6 +249,15 @@ function editTool(exec: Exec) {
 			),
 			description: Type.Optional(Type.String({ description: "Replace the frontmatter description." })),
 			state: Type.Optional(Type.String({ description: "Replace the workflow state." })),
+			source_id: Type.Optional(
+				Type.String({
+					description: "The number of the source that source_resource and source_title update. Citations keep it.",
+				}),
+			),
+			source_resource: Type.Optional(
+				Type.String({ description: "New resource for that source. Text with spaces is shown without a link." }),
+			),
+			source_title: Type.Optional(Type.String({ description: "New title for that source. Empty clears it." })),
 			dry_run: Type.Optional(Type.Boolean({ description: "Render the result without writing it." })),
 		}),
 		async execute(_id, params, signal, _onUpdate, ctx) {
@@ -263,11 +272,15 @@ function editTool(exec: Exec) {
 			const project = await projectFor(exec, ctx.cwd);
 			const words = ["note", "edit", params.ref];
 			if (params.body !== undefined) {
-				words.push("--op=replace_body", `--content=${params.body}`, `--expect-hash=${params.expect_hash}`);
+				words.push("--op=replace_body", `--content=${params.body}`);
 			}
 			if (params.append !== undefined) words.push("--op=append", `--content=${params.append}`);
 			if (params.description !== undefined) words.push(`--description=${params.description}`);
 			if (params.state !== undefined) words.push(`--meta=state=${params.state}`);
+			if (params.source_id !== undefined) words.push(`--source-id=${params.source_id}`);
+			if (params.source_resource !== undefined) words.push(`--source-resource=${params.source_resource}`);
+			if (params.source_title !== undefined) words.push(`--source-title=${params.source_title}`);
+			if (params.expect_hash) words.push(`--expect-hash=${params.expect_hash}`);
 			if (params.dry_run) words.push("--dry-run");
 
 			const docs = await run(exec, ctx.cwd, project, words, signal);

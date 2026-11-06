@@ -13,6 +13,7 @@
 * [replace_body keeps structured sections](/decisions/replace-body-keeps-structured-sections.md) - note edit --op replace_body replaces only the document and keeps frontmatter, Observations, Relations, and derived footnotes.
 * [Session-start hooks](/decisions/session-start-hooks.md) - rit install hooks writes project-scoped hooks that run the read-only rit brief at session start.
 * [Skill set after routing review](/decisions/skill-set-after-routing-review.md) - Keep ritari, ritari-ingest and ritari-reflect; fold the rest into references; move session start/end out of routing.
+* [Sources are updated by ID with note edit flags](/decisions/sources-are-updated-by-id-with-note-edit-flags.md) - note edit --source-id updates a source in place, using flags rather than an op, so --op stays body-only.
 * [Task notes are for ongoing efforts](/decisions/task-notes-are-for-ongoing-efforts.md) - Create a task only for an ongoing effort with context to preserve for resumption; one-off requests get a daily outcome.
 * [The package owns brief injection](/decisions/the-package-owns-brief-injection.md) - The pi-ritari package injects rit brief; the generated .pi/extensions hook is the no-npm fallback, never both.
 * [Touched names targets that no longer exist](/decisions/touched-names-targets-that-no-longer-exist.md) - A daily refresh keeps a touched entry whose target is gone as plain text with its historical action, rather than dropping it.

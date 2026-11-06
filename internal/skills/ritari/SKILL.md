@@ -175,6 +175,7 @@ rit context decisions/auth-uses-jwt --depth 2   # follow links outward
 ```
 rit note edit tasks/ship-v2 --op replace_section --section Steps --content="- [x] build"
 rit note edit decisions/auth-uses-jwt --description "Updated summary."
+rit note edit decisions/auth-uses-jwt --source-id 2 --source-resource /references/auth-guide.md
 ```
 
 Body ops: `append`, `prepend`, `find_replace` (`--find`, optional `--count`),

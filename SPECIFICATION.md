@@ -412,6 +412,12 @@ exactly for followable resources, case-insensitively after trimming for
 descriptors. Citing the same source again reuses its `id` (the entry is left as
 it is) rather than adding an entry.
 
+**Updating.** `note edit --source-id` (§9.7) changes a numbered entry's `resource`
+and/or `title` in place. Its `id`, its other keys, and every citation of it stay as
+they are, and its footnote definition is derived again as above. A source is never
+deleted or renumbered this way. To keep the provenance of a source whose file is
+gone, set its `resource` to a descriptor, which renders without a link.
+
 **Legacy citations.** OKF v0.1 bodies may carry a `# Citations` list with `[n]`
 references. The tool treats that list as ordinary body text: it never parses it
 as provenance, never writes one, and never rewrites it.
@@ -1300,16 +1306,28 @@ content (§8.1); standard output is unchanged.
 ```
 rit note edit <ref> [--op OP] [--content C|-] [--section S] [--find F] [--count N]
     [--title T] [--description D] [--tags a,b] [--resource URI] [--meta k=v]...
+    [--source-id ID [--source-resource R] [--source-title T]]
     [--expect-hash H] [--dry-run]
 ```
 
-- Error `nothing to do: pass --op for a body edit, or --title/--description/--tags/
-  --resource/--meta to set frontmatter` if neither an op nor a frontmatter flag is given.
+- Error `nothing to do: pass --op for a body edit, --title/--description/--tags/
+  --resource/--meta to set frontmatter, or --source-id with --source-resource/--source-title
+  to update a source` if no op, frontmatter flag, or source update is given.
 - Body ops are §5.7. Frontmatter flags **set outright** (not merge): `--tags` *replaces*
   the list; `--meta` replaces per key; `--title` changes the stored title but does **not**
   move the file or change the ID (identity is the path). An op and frontmatter flags may
   be combined in one call/write.
-- `generated` is restamped only if the body actually changed.
+- **Source update** (§3.7). `--source-id` names the entry, and `--source-resource` and
+  `--source-title` set its fields (values are trimmed; an empty title clears it). It may be
+  combined with an op and frontmatter flags. Errors, none of which change the note:
+  `--source-resource and --source-title need --source-id`;
+  `--source-id needs --source-resource or --source-title`;
+  `note "<id>" has no source "<x>"; its source ids are <ids>` (or `note "<id>" has no sources`);
+  `source "<x>" has a non-numeric id, so its footnote is not managed by rit and cannot be updated with it`;
+  `a source needs a resource; to keep a source whose file is gone, describe it in words`;
+  `source "<x>" would duplicate source "<y>"` (the same-source test of §3.7);
+  `a source's resource and title must each be one line`.
+- `generated` is restamped only if the body or a source actually changed.
 - **Content hash.** A note's hash is the lowercase hex SHA-256 of its file's bytes, as
   `note read` reports and `note write`/`note edit` return for the file they wrote (the
   same value `sha256sum` prints). `--expect-hash H` (compared case-insensitively) makes
@@ -1763,7 +1781,7 @@ implementer's.
    ways to address a note). Editing and moving, and that **`move` is the only correct way to
    relocate a note**; the difference between `note edit`'s *set* semantics and `note write`'s
    *merge* semantics for frontmatter flags; the body ops, including `replace_body`,
-   `note view --body`, `--dry-run`, and `--expect-hash`; archive rather than delete. Projects and their
+   `note view --body`, `--dry-run`, and `--expect-hash`; updating a source with `--source-id`; archive rather than delete. Projects and their
    resolution order. Housekeeping (`index`, `index --check`; never hand-edit generated files).
    Principles: files are the source of truth; search before writing; one fact per
    observation; link generously.
@@ -1775,7 +1793,8 @@ implementer's.
      write a description; observations (one fact per line, reusable categories, tags,
      context, only lines under `# Observations` count and checkboxes never do); relations as links (single-token types with
      underscores, title or ID targets, forward references are fine, prose links are edges
-     too); recording sources (`--source`, `--resource`); trust signals (`generated` is
+     too); recording sources (`--source`, `--resource`) and updating one by id (`--source-id`,
+     keeping a gone file's provenance as a descriptor, and that a single token still renders as a link); trust signals (`generated` is
      automatic, `verified` is deliberate and not to be called reflexively); archiving; writing
      again adds; **`--tags` merges but `--description`/`--resource` replace and `--meta`
      replaces per key**, with a warning about batch loops that would clobber existing
@@ -1822,7 +1841,8 @@ implementer's.
      For every other finding, present 2–4 concrete options with consequences using the
      harness's structured multiple-choice tool if available, else a numbered list — with
      per-rule guidance for `orphan`, `duplicate-title`, `unknown-type`/`unknown-category`,
-     `dangling-link` (in a daily note's `# Touched`, refresh that day rather than editing),
+     `dangling-link` (in a daily note's `# Touched`, refresh that day rather than editing; in a
+     source's footnote, update the source by id),
      `stale-verification`, `malformed-field`, `reserved-casing`,
      `missing-title`/`missing-description`, `missing-type`/`unparseable`. Batch related
      questions and offer "skip the rest". Never guess at a merge or a relation; report

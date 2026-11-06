@@ -96,6 +96,19 @@ without one appears bare and is hard to choose from a list.
   a fact came from.
 - Never edit the `[^n]:` footnote lines at the bottom — they are regenerated
   from `sources` on every write.
+- When a source moves or its title is wrong, update it by id; `note read` lists
+  the ids. Citations keep their number and the rest of the note stays as it is,
+  so don't add a second source or use `--force`. `--dry-run` and `--expect-hash`
+  work as usual, and an empty `--source-title=` clears the title:
+
+  ```
+  rit note edit <ref> --source-id 2 --source-resource /references/api-guide.md --source-title "API guide"
+  ```
+
+- When a cited file is gone for good, keep the provenance in words:
+  `rit note edit <ref> --source-id 3 --source-resource "Temporary plan file, since removed"`.
+  Text with spaces renders without a link. A single token such as `/tmp/plan.md`
+  still renders as a link, and so still dangles.
 
 ## Trust signals
 

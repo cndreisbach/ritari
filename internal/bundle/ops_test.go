@@ -41,6 +41,49 @@ func TestEditExpectHashAndDryRun(t *testing.T) {
 	assert.Equal(t, Hash([]byte(readFile(t, root, "decisions/auth-uses-jwt.md"))), res.Hash)
 }
 
+func TestEditSource(t *testing.T) {
+	root := t.TempDir()
+	env := testEnv()
+	later := env
+	later.Now = func() time.Time { return testNow.Add(time.Hour) }
+	_, err := Write(root, env, WriteOpts{Title: "Cited", Obs: []string{"fact: x"}, Sources: []string{"Old /notes/old.md"}})
+	require.NoError(t, err)
+	before := readFile(t, root, "notes/cited.md")
+
+	for _, tc := range []struct {
+		name string
+		o    EditOpts
+		want string
+	}{
+		{"unknown id", EditOpts{SourceID: "9", SourceTitle: ptr("x")}, `note "notes/cited" has no source "9"; its source ids are 1`},
+		{"id alone", EditOpts{SourceID: "1"}, "--source-id needs --source-resource or --source-title"},
+		{"fields alone", EditOpts{SourceTitle: ptr("x")}, "--source-resource and --source-title need --source-id"},
+		{"stale hash", EditOpts{SourceID: "1", SourceTitle: ptr("x"), ExpectHash: "stale"}, "changed since it was read"},
+	} {
+		_, err := Edit(root, later, "notes/cited", tc.o)
+		assert.ErrorContains(t, err, tc.want, tc.name)
+		assert.Equal(t, before, readFile(t, root, "notes/cited.md"), tc.name)
+	}
+
+	res, err := Edit(root, later, "notes/cited", EditOpts{SourceID: "1", SourceResource: ptr("/notes/new.md"), DryRun: true})
+	require.NoError(t, err)
+	assert.Equal(t, "dry-run", res.Status)
+	assert.Contains(t, res.Rendered, "[^1]: [Old](/notes/new.md)\n")
+	assert.Equal(t, before, readFile(t, root, "notes/cited.md"))
+
+	_, err = Edit(root, later, "notes/cited", EditOpts{SourceID: "1", SourceTitle: ptr("Old")})
+	require.NoError(t, err)
+	assert.Equal(t, before, readFile(t, root, "notes/cited.md"), "the same value changes nothing and keeps the stamp")
+
+	_, err = Edit(root, later, "notes/cited", EditOpts{SourceID: "1", SourceResource: ptr("/notes/new.md")})
+	require.NoError(t, err)
+	got := readFile(t, root, "notes/cited.md")
+	assert.Contains(t, got, "- [fact] x [^1]\n", "the citation keeps its id")
+	assert.Contains(t, got, "[^1]: [Old](/notes/new.md)\n")
+	assert.NotContains(t, got, "old.md")
+	assert.Contains(t, got, "at: 2026-07-29T13:00:00Z", "a changed source restamps")
+}
+
 func TestEdit(t *testing.T) {
 	root := seed(t)
 	_, err := Edit(root, testEnv(), "decisions/auth-uses-jwt", EditOpts{})

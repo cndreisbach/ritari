@@ -86,8 +86,12 @@ type EditOpts struct {
 	Resource    *string
 	Tags        *[]string
 	Meta        [][2]string
-	ExpectHash  string
-	DryRun      bool
+	// SourceID selects the source that SourceResource and SourceTitle set.
+	SourceID       string
+	SourceResource *string
+	SourceTitle    *string
+	ExpectHash     string
+	DryRun         bool
 }
 
 // Result is the common outcome of a single-note operation.
@@ -102,8 +106,15 @@ type Result struct {
 
 // Edit implements `note edit` (§9.7).
 func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
-	if o.Op == "" && o.Title == nil && o.Description == nil && o.Resource == nil && o.Tags == nil && len(o.Meta) == 0 {
-		return Result{}, fmt.Errorf("nothing to do: pass --op for a body edit, or --title/--description/--tags/--resource/--meta to set frontmatter")
+	setsSource := o.SourceResource != nil || o.SourceTitle != nil
+	if setsSource && o.SourceID == "" {
+		return Result{}, fmt.Errorf("--source-resource and --source-title need --source-id")
+	}
+	if o.SourceID != "" && !setsSource {
+		return Result{}, fmt.Errorf("--source-id needs --source-resource or --source-title")
+	}
+	if o.Op == "" && o.Title == nil && o.Description == nil && o.Resource == nil && o.Tags == nil && len(o.Meta) == 0 && !setsSource {
+		return Result{}, fmt.Errorf("nothing to do: pass --op for a body edit, --title/--description/--tags/--resource/--meta to set frontmatter, or --source-id with --source-resource/--source-title to update a source")
 	}
 	var res Result
 	err := Update(root, env, func(b *Bundle) ([]Event, error) {
@@ -155,6 +166,15 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 		}
 		for _, kv := range o.Meta {
 			n.FM.SetExtra(kv[0], kv[1])
+		}
+		if setsSource {
+			changed, err := note.UpdateSource(n.FM.Sources, c.ID, o.SourceID, o.SourceResource, o.SourceTitle)
+			if err != nil {
+				return nil, err
+			}
+			if changed {
+				n.Restamp(env.Actor, env.Stamp())
+			}
 		}
 		n.FillGenerated(env.Actor, env.Stamp())
 		data := note.Render(n)

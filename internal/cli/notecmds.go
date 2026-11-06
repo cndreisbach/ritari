@@ -207,19 +207,22 @@ func (cmd *NoteReadCmd) Run(c *Ctx) error {
 
 // NoteEditCmd is `note edit`.
 type NoteEditCmd struct {
-	Ref         string   `arg:"" help:"Note ID, path, or title."`
-	Op          string   `enum:"append,prepend,find_replace,replace_section,insert_before_section,insert_after_section,replace_body," default:"" help:"Body operation: append, prepend, find_replace, replace_section, insert_before_section, insert_after_section, replace_body (replace the document, keeping metadata, observations, and relations)."`
-	Content     string   `help:"Content for the operation, or - for stdin."`
-	Section     string   `help:"Section heading for section operations."`
-	Find        string   `help:"Text to find (find_replace)."`
-	Count       int      `help:"Expected number of occurrences (find_replace)."`
-	Title       *string  `help:"Set the title (does not move the file)."`
-	Description *string  `help:"Set the description."`
-	Tags        *string  `help:"Replace the tags (comma-separated)."`
-	Resource    *string  `help:"Set the resource URI."`
-	Meta        []string `sep:"none" placeholder:"KEY=VALUE" help:"Set an extra frontmatter field (repeatable)."`
-	ExpectHash  string   `help:"Fail unless the note's file still has this hash (from note read)."`
-	DryRun      bool     `help:"Show the result without writing."`
+	Ref            string   `arg:"" help:"Note ID, path, or title."`
+	Op             string   `enum:"append,prepend,find_replace,replace_section,insert_before_section,insert_after_section,replace_body," default:"" help:"Body operation: append, prepend, find_replace, replace_section, insert_before_section, insert_after_section, replace_body (replace the document, keeping metadata, observations, and relations)."`
+	Content        string   `help:"Content for the operation, or - for stdin."`
+	Section        string   `help:"Section heading for section operations."`
+	Find           string   `help:"Text to find (find_replace)."`
+	Count          int      `help:"Expected number of occurrences (find_replace)."`
+	Title          *string  `help:"Set the title (does not move the file)."`
+	Description    *string  `help:"Set the description."`
+	Tags           *string  `help:"Replace the tags (comma-separated)."`
+	Resource       *string  `help:"Set the resource URI."`
+	Meta           []string `sep:"none" placeholder:"KEY=VALUE" help:"Set an extra frontmatter field (repeatable)."`
+	SourceID       string   `help:"The numbered source that --source-resource and --source-title update."`
+	SourceResource *string  `help:"Set that source's resource; text with spaces is shown without a link."`
+	SourceTitle    *string  `help:"Set that source's title; empty clears it."`
+	ExpectHash     string   `help:"Fail unless the note's file still has this hash (from note read)."`
+	DryRun         bool     `help:"Show the result without writing."`
 }
 
 // Run executes `note edit`.
@@ -243,6 +246,7 @@ func (cmd *NoteEditCmd) Run(c *Ctx) error {
 	o := bundle.EditOpts{
 		Op: cmd.Op, Content: content, Section: cmd.Section, Find: cmd.Find, Count: cmd.Count,
 		Title: cmd.Title, Description: cmd.Description, Resource: cmd.Resource, Meta: meta,
+		SourceID: cmd.SourceID, SourceResource: cmd.SourceResource, SourceTitle: cmd.SourceTitle,
 		ExpectHash: cmd.ExpectHash, DryRun: cmd.DryRun,
 	}
 	if cmd.Tags != nil {

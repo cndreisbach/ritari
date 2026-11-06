@@ -17,7 +17,7 @@ package version matches the CLI version it ships with.
 | `ritari_search` | Search by words, type, tag, observation category, or relation. Returns IDs, titles, and matching snippets. |
 | `ritari_read` | Read a note (frontmatter, observations, relations, sources, hash) or just its markdown body. |
 | `ritari_write` | Create a note, or add observations, relations, tags, and sources to an existing one. |
-| `ritari_edit` | Replace a body (with the hash you last read), append to it, or change its description or state. |
+| `ritari_edit` | Replace a body (with the hash you last read), append to it, change its description or state, or update a cited source by its number. |
 
 At the start of a session, and again after a compaction, the extension adds the
 output of `rit brief` — recent daily notes and open tasks — to the run. It is
