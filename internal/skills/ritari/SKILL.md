@@ -1,6 +1,6 @@
 ---
 name: ritari
-description: Long-term memory across sessions with the `rit` CLI. Use when the user asks what we know, decided, or did before; asks you to remember, note, or record something; when you pick up earlier work or track a multi-step task; when you write the day's notes; or when asked to check or clean up the knowledge base.
+description: Long-term memory across sessions with the `rit` CLI. Use when the user asks what we know, decided, or did before; asks you to remember, note, or record something; when you pick up earlier work or track an ongoing effort that will need resuming; when you write the day's notes; or when asked to check or clean up the knowledge base.
 ---
 
 # Ritari: long-term memory with `rit`
@@ -31,7 +31,7 @@ moment named here, not before.
 | Before you… | Read |
 | --- | --- |
 | run your first `rit note write` or `rit note edit` in a session | `references/writing.md`: types, descriptions, observations, relations, sources |
-| create or update a note of type `task` | `references/tasks.md`: state, steps, writing for resumability |
+| decide whether work needs a task, or create or update a note of type `task` | `references/tasks.md`: when to create one, state, steps, writing for resumability |
 | write to the daily note (`rit daily --note` / `--obs`), usually just before finishing | `references/daily.md`: what goes in the narrative, observations, and tasks |
 | run `rit lint`, or check or clean up a knowledge base | `references/lint.md`: which findings to fix and which to ask about |
 
@@ -46,9 +46,12 @@ consolidating recent daily notes into durable ones.
    `rit install hooks` runs it), don't run it again. Pick up open threads and
    open tasks before starting something new.
 2. **Work**: search before you write; record decisions and facts as they come
-   up; keep a task note current for work that spans steps or sessions.
-3. **Finish**: update the task's state, write the daily note's narrative and
-   open threads, and run `rit lint` if you changed several notes.
+   up; keep a task note current for an ongoing effort that needs context
+   preserved for later resumption. A one-off request stays one request however
+   many tools or agents it takes: record its outcome in the daily note instead.
+3. **Finish**: update the state of any task you worked on, write the daily
+   note's narrative and open threads, and run `rit lint` if you changed several
+   notes.
 
 ## Output
 

@@ -1,5 +1,14 @@
 # Update Log
 
+## 2026-11-06
+
+* **Create**: [Reserve task notes for ongoing efforts](/tasks/reserve-task-notes-for-ongoing-efforts.md)
+* **Create**: [Task notes are for ongoing efforts](/decisions/task-notes-are-for-ongoing-efforts.md)
+* **Update**: [Reserve task notes for ongoing efforts](/tasks/reserve-task-notes-for-ongoing-efforts.md)
+* **Create**: [2026-11-06](/daily/2026-11-06.md)
+* **Update**: [Task notes are for ongoing efforts](/decisions/task-notes-are-for-ongoing-efforts.md)
+* **Update**: [2026-11-06](/daily/2026-11-06.md)
+
 ## 2026-11-01
 
 - **Update**: [Screen notes for hidden instructions](/ideas/screen-notes-for-hidden-instructions.md)

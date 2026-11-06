@@ -1739,8 +1739,8 @@ implementer's.
    consolidating daily notes are the other two skills; that an agent with native Ritari tools
    (such as the Pi package's, §13) prefers them over the CLI for what they support and falls
    back to `rit` for the rest, the CLI examples being that fallback; a session's shape (start with `brief`,
-   or with its output when a hook already ran it; work; finish by updating task state, the
-   daily note, and lint). The bundle model (markdown files, no database). The output contract
+   or with its output when a hook already ran it; work, keeping a task only for an ongoing effort that needs resumption context; finish by
+   updating the state of any task worked on, the daily note, and lint). The bundle model (markdown files, no database). The output contract
    (§9.1) including that `note view`/`read` return raw bytes and that `--output text` gives
    human output. The leading-`-` rule: values starting with `-` need `--flag=value` (with
    examples for `--content` and `--find`). Where to look (`brief`, `recent`, `ls`). **Search
@@ -1774,21 +1774,28 @@ implementer's.
      descriptions; that `--force` replaces the whole note, losing its metadata, observations,
      and relations; **long documents**: prose stays in the body rather than becoming
      observations, a recipe for creating one from stdin, a heredoc, or a staged file, linking it
-     to its project or task, revising it with `note view --body` and `replace_body`
+     to any project or task it serves (a retained document does not need a task to own it), revising it with `note view --body` and `replace_body`
      `--expect-hash`, and keeping one authoritative copy (what stays with its source; exports
      record the note ID and hash and are refreshed from Ritari, never edited as a second copy);
      a before-you-write checklist (search, add to existing, link).
-   - **`references/tasks.md`** (read before creating or updating a task). A task is a note of
-     type `task`; when to create one; creating with steps, queryable state in **both**
+   - **`references/tasks.md`** (read before deciding whether work needs a task, or creating or
+     updating one). A task is a note of type `task`; when to create one: an ongoing effort with
+     meaningful context to preserve for later resumption, counting stages of the work rather
+     than steps of execution, so tool calls, delegation, verification, background waits, and
+     pending confirmations do not justify a task on their own, with examples of both cases
+     (multi-stage implementation and investigations continuing across sessions keep tasks;
+     routine reviews, check-ins, and completed one-off requests get a concise daily outcome, and
+     a brief unresolved follow-up to one may stay in the daily note); creating with steps, queryable state in **both**
      frontmatter (`state`, never `status`, which is OKF lifecycle) and an observation, and
      resumption context; finding open tasks; updating progress (tick steps with a section
      replace, record learnings with sources, move a pointer); completing with an outcome;
      writing for resumability (context beats steps; reusable categories such as `state`,
-     `context`, `decision`, `blocked`, `outcome`, `next-step`); tasks and documents (the task
-     owns state, approvals, blockers, and the next step; a short plan can live in the task, a
-     substantial standalone document gets its own linked note; no tasks just to hold prose;
+     `context`, `decision`, `blocked`, `outcome`, `next-step`); tasks and documents (a retained
+     document does not need a task; a task, when one exists, owns state, approvals, blockers, and
+     the next step; a short plan can live in the task, a substantial standalone document gets its
+     own note, linked from any task; no tasks just to hold prose;
      reviewed versions are kept and superseded rather than overwritten); guidelines (one task per unit
-     of work, concrete steps, externalize early, link the work, close finished tasks, state
+     of work, concrete steps, externalize early once work qualifies, link the work, close finished tasks, state
      lives in the task).
    - **`references/daily.md`** (read before writing to the daily note). Read recent notes
      when starting with `brief`, which does not create today's note as bare `daily` does, and
@@ -1796,8 +1803,9 @@ implementer's.
      before finishing; `--note` is repeatable (one paragraph each) and repeat calls append;
      sections the agent adds under its own heading are left alone while prose above the first
      heading *is* the narrative; never write `# Touched` (generated; refresh with
-     `--refresh`); what belongs where (narrative vs observations vs task state — task state
-     belongs to the task, not the day); daily notes are excluded from search by default;
+     `--refresh`); what belongs where (narrative vs observations vs task state — one-off
+     requests get a concise outcome and any brief follow-up as an open thread, with an example;
+     the state of an existing task belongs to the task, not the day); daily notes are excluded from search by default;
      promote durable facts out; close open threads.
    - **`references/lint.md`** (read before running `lint`, or when asked to check or clean
      up a knowledge base). Lint finds problems; judgment belongs to the user. Workflow: run,
@@ -1818,8 +1826,9 @@ implementer's.
    notes, emails and chat messages usually do not — their facts go on the notes they belong
    to, cited to the message); workflow (acquire, classify, extract, search, plan, write);
    search several ways before proposing; present **one plan and take one approval**; write
-   the source note and update the notes it touches, each cited to the same source; action
-   items become tasks (per `references/tasks.md`); a source with no URL is a plain-text
+   the source note and update the notes it touches, each cited to the same source; an action
+   item that is an ongoing effort becomes a task (per `references/tasks.md`), while a brief one
+   stays an observation on the source's note or an open thread in the daily note; a source with no URL is a plain-text
    descriptor (`--source "Email from …, 2026-07-29"`); raw material kept in `sources/` is
    cited by bundle path (`/sources/<file>`); `sources/` rules (never `.md`, never hidden
    directories); hedge inferences; do not re-ingest.

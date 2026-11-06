@@ -58,8 +58,9 @@ rit note write --title "Ana Ruiz" --type person \
 
 ## Details
 
-- **Action items become tasks** (see the `ritari` skill's `references/tasks.md`),
-  linked to the meeting.
+- **An action item that is an ongoing effort becomes a task** (see the `ritari`
+  skill's `references/tasks.md`), linked to the meeting. A brief one stays an
+  observation on the source's note, or an open thread in the daily note.
 - A source with no URL is a plain-text descriptor:
   `--source "Email from Ana Ruiz, 2026-07-29, subject: H1 commitments"`.
 - Raw material is not kept by default — a source with a URL already lives

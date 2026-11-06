@@ -82,8 +82,8 @@ generated: {by: human:you@example.com, at: 2026-07-29T14:30:00Z}
 ## Using it with an agent
 
 Ritari ships with agent skills that teach an agent how to use it: searching
-before writing, keeping daily notes for session continuity, tracking multi-step
-tasks, ingesting documents, consolidating what it learned, and cleaning up lint
+before writing, keeping daily notes for session continuity, tracking ongoing
+work that needs resuming, ingesting documents, consolidating what it learned, and cleaning up lint
 findings. Install them for your agent:
 
 ```bash

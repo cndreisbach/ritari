@@ -13,6 +13,7 @@
 * [replace_body keeps structured sections](/decisions/replace-body-keeps-structured-sections.md) - note edit --op replace_body replaces only the document and keeps frontmatter, Observations, Relations, and derived footnotes.
 * [Session-start hooks](/decisions/session-start-hooks.md) - rit install hooks writes project-scoped hooks that run the read-only rit brief at session start.
 * [Skill set after routing review](/decisions/skill-set-after-routing-review.md) - Keep ritari, ritari-ingest and ritari-reflect; fold the rest into references; move session start/end out of routing.
+* [Task notes are for ongoing efforts](/decisions/task-notes-are-for-ongoing-efforts.md) - Create a task only for an ongoing effort with context to preserve for resumption; one-off requests get a daily outcome.
 * [The package owns brief injection](/decisions/the-package-owns-brief-injection.md) - The pi-ritari package injects rit brief; the generated .pi/extensions hook is the no-npm fallback, never both.
 * [Two hidden-content lint rules](/decisions/two-hidden-content-lint-rules.md) - hidden-content warns on hidden content; hidden-instruction warns when hidden text matches the pattern bank. Both are warnings.
 * [Writes warn only about hidden content they add](/decisions/writes-warn-only-about-hidden-content-they-add.md) - note write, note edit, and daily report only the screen findings a write introduces; lint reports everything.

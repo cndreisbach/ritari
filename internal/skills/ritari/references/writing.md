@@ -43,7 +43,7 @@ invent a type.
 | Type | Use for |
 | --- | --- |
 | `decision` | A choice that was made, with its rationale. |
-| `task` | Multi-step work in progress, with state (see `tasks.md`). |
+| `task` | An ongoing effort that needs context preserved for later resumption, with state (see `tasks.md`). A one-off request is not a task, however many tools it takes. |
 | `person` | A human: role, preferences, what you know about them. |
 | `project` | An ongoing effort and its context. |
 | `meeting` | A meeting and what came out of it. |
@@ -150,8 +150,9 @@ rit note write --type note --title "Rollout plan for v2" \
 EOF
 ```
 
-Link it to the project or task it serves (`--rel "part_of: …"`, or
-`rit note write --title "<Task>" --rel "documented_by: Rollout plan for v2"`).
+If it serves a project or an existing task, link it (`--rel "part_of: …"`, or
+`rit note write --title "<Task>" --rel "documented_by: Rollout plan for v2"`). A
+retained document doesn't need a task to own it.
 
 To revise it:
 

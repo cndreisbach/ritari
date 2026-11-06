@@ -1,6 +1,7 @@
 # Tasks: work that survives context loss
 
-Read this before you create or update a task note.
+Read this before you decide whether work needs a task note, or create or update
+one.
 
 A task is a note of type `task`. It holds the steps, the current state, and —
 most importantly — the context someone (you, after a compaction) needs to pick
@@ -8,11 +9,33 @@ the work back up cold.
 
 ## When to create one
 
-- The work has several steps or will outlast this session.
-- You might lose context partway (long investigations, big refactors).
-- Someone else might resume it.
+Create a task for an ongoing effort with meaningful context to preserve, so that
+you or someone else can resume it later. The test: if this stopped now, would
+picking it up take more than a line in the daily note?
 
-Single-step work doesn't need a task.
+Count stages of the work, not steps of execution. Tool calls, delegating to an
+agent, verification, background waits, and pending confirmations don't justify a
+task on their own.
+
+**Create a task:**
+
+- Multi-stage implementation: migrating sessions to JWT, where inventorying
+  readers, adding middleware, moving endpoints, and removing the store are each
+  real work.
+- An investigation that will continue across sessions, whose findings and dead
+  ends must not be lost: tracing an intermittent token refresh failure.
+
+**Don't create a task:**
+
+- A routine review, check-in, or one-off request you complete. Reviewing a PR is
+  one request even when it takes several tools and a review agent. Record the
+  outcome in the daily note:
+  `rit daily --note "Reviewed PR #1234: approved, with one comment on retry limits."`
+- A one-off request with a brief unresolved follow-up. Keep the follow-up in the
+  daily note:
+  `rit daily --obs "open-thread: Re-check PR #1234 once CI is fixed"`
+- A document you want to retain. It gets its own note and needs no task (see
+  "Tasks and documents").
 
 ## Create
 
@@ -87,19 +110,21 @@ Archive it later if it no longer needs to show up in searches.
 
 ## Tasks and documents
 
-The task owns the current state, approvals, blockers, and the next step.
+A retained document doesn't need a task to own it. When a task does exist, it
+owns the current state, approvals, blockers, and the next step.
 
-- A short plan can live in the task's body (a `# Plan` or `# Steps` section).
+- A task's short plan can live in its body (a `# Plan` or `# Steps` section).
 - A substantial report, brief, or proposal that is useful on its own gets its
-  own note, linked from the task:
+  own note. If a task exists, link the note from it:
   `rit note write --title "Migrate sessions to JWT" --rel "documented_by: JWT migration proposal"`.
   See "Long documents" in `writing.md`.
 - Don't create a task just to hold prose, and don't append every version of a
   proposal to a task that is already long.
 - Keep versions distinguishable. Revise a draft in place with `replace_body`.
   Once a version has been reviewed or approved, keep it as it is and write the
-  next one as a new note that `supersedes` it. Point the task at the current
-  one, record the approval as an observation
+  next one as a new note that `supersedes` it. Point any task at the current
+  one, record the approval as an observation on the task, or on the document if
+  there is no task
   (`--obs "decision: Approved JWT migration proposal v2 (Ana, 2026-07-29)"`),
   and archive versions nobody needs to find any more.
 
@@ -107,7 +132,8 @@ The task owns the current state, approvals, blockers, and the next step.
 
 - One task per unit of work.
 - Concrete steps ("Add JWT middleware to api/auth"), not vague ones ("auth stuff").
-- Externalize early — create the task before you need it, not after context is gone.
+- Once work qualifies, externalize early — create the task before you need it,
+  not after context is gone.
 - Link the work: the project it's part of, decisions it implements, people involved.
 - Close finished tasks; stale open tasks poison searches.
 - State lives in the task, not in daily notes.
