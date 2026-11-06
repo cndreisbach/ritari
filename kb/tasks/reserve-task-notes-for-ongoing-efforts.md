@@ -6,9 +6,12 @@ sources:
   - id: "1"
     resource: https://github.com/cndreisbach/ritari/issues/12
     title: GitHub issue 12
-generated: {by: claude-code, at: 2026-11-06T15:26:20Z}
+  - id: "2"
+    resource: https://github.com/cndreisbach/ritari/pull/14
+    title: PR 14
+generated: {by: claude-code, at: 2026-11-06T15:46:54Z}
 priority: medium
-state: open
+state: done
 ---
 
 # Steps
@@ -17,7 +20,7 @@ state: open
 - [x] Update references/tasks.md, daily.md, and writing.md
 - [x] Update spec section 11
 - [x] Run the checks
-- [ ] Commit and open a PR
+- [x] Commit and open a PR
 
 # Observations
 - [state] open [^1]
@@ -25,8 +28,11 @@ state: open
 - [next-step] Update SKILL.md, the tasks, daily, and writing references, and spec section 11 [^1]
 - [next-step] Commit fix/task-note-threshold and open a PR that closes issue 12
 - [open-thread] AGENTS.md, README.md, and ritari-ingest still use wording that predates the new threshold; left alone because the issue does not list them
+- [state] done [^2]
+- [outcome] Merged in PR 14, which closed issue 12 [^2]
 
 # Relations
 - implements [Task notes are for ongoing efforts](/decisions/task-notes-are-for-ongoing-efforts.md)
 
 [^1]: [GitHub issue 12](https://github.com/cndreisbach/ritari/issues/12)
+[^2]: [PR 14](https://github.com/cndreisbach/ritari/pull/14)
