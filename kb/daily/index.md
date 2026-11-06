@@ -1,5 +1,6 @@
 # 2026
 
+* [2026-11-06](/daily/2026-11-06.md) - Narrowed the skill guidance on when to create task notes.
 * [2026-11-01](/daily/2026-11-01.md) - Hidden-content screening: phases 1 and 2.
 * [2026-10-31](/daily/2026-10-31.md) - Body-only replacement, content hashes, observation scoping, and document guidance in the skills.
 * [2026-10-30](/daily/2026-10-30.md) - The pi-ritari package: typed tools, JSON output, and dropping the generated Pi hook.

@@ -1,5 +1,7 @@
 # Tasks
 
+* [Reserve task notes for ongoing efforts](/tasks/reserve-task-notes-for-ongoing-efforts.md) - Change the skill guidance so task notes are for ongoing efforts that need resumption context, per GitHub issue 12.
+
 # Archived
 
 * [Build the pi-ritari package](/tasks/build-the-pi-ritari-package.md) - Ship the Pi extension as an in-repo npm package with typed tools, brief injection, and JSON CLI output.

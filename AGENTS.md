@@ -35,12 +35,13 @@ Workflow:
 1. At the start of a session, read `mise exec -- rit brief` (the latest daily
    notes and open tasks) unless a session hook has already put its output in
    your context.
-2. Before starting multi-step work, create or find its task note and keep it
-   current as you go.
+2. Before starting an ongoing effort that will need resuming later, create or
+   find its task note and keep it current as you go. A one-off request gets an
+   outcome in the daily note instead, however many tools it takes.
 3. Record design decisions as you make them, and new ideas when they come up.
 4. Search before writing (`mise exec -- rit search …`). Writing to an existing
    title adds to that note.
-5. Before finishing, update the task's state, write the daily note, and run
+5. Before finishing, update the state of any task you worked on, write the daily note, and run
    `mise exec -- rit lint`.
 6. Commit `kb/` changes with the code they relate to, or on their own as
    `docs(kb): …`.

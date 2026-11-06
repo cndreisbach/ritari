@@ -52,8 +52,17 @@ rit daily --note "Debugged the token refresh race; root cause was a stale cache.
 
 - **Narrative** (`--note`): what happened, in a sentence or two each.
 - **Observations** on the daily note: open threads and loose facts of the day.
-- **Task state belongs to the task**, not the day: update the task note (see
-  `tasks.md`) and let `# Touched` record that you did.
+- **One-off requests belong here**, not in a task (see `tasks.md`). Give a
+  routine review, check-in, or finished request a concise outcome in the
+  narrative, and keep any brief unresolved follow-up as an open thread:
+
+  ```
+  rit daily --note "Reviewed PR #1234: approved, with one comment on retry limits." \
+            --obs "open-thread: Re-check PR #1234 once CI is fixed"
+  ```
+
+- **Task state belongs to the task**, not the day: if the work has a task note,
+  update it and let `# Touched` record that you did.
 - Durable facts belong on typed notes (decisions, people, projects). Daily notes
   are excluded from search by default (`--include-daily` to include them), so a
   fact left only in a daily note is hard to find later.
