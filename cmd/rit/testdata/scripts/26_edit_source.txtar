@@ -1,0 +1,90 @@
+# Scenario 26: update a source by ID, keeping its citations and everything else.
+exec rit project init work $WORK/kb --default
+exec rit note write --title 'Moved plan' --description d --content 'The plan.'
+exec rit note write --title 'Ship v2' --type task --description 'Ship the v2 API.' --tags api --meta state=open --obs 'state: open' --rel 'part_of: Moved plan' --source 'PR 1 https://example.com/pr/1' --content='Body text.'
+exec rit note write --title 'Ship v2' --obs 'context: old plan' --source 'Old plan /notes/old-plan.md'
+exec rit note write --title 'Ship v2' --obs 'context: scratch' --source '/tmp/scratch.md'
+exec rit lint --rule dangling-link
+stdout '^warnings: 2$'
+cp kb/tasks/ship-v2.md before.md
+
+env RITARI_TEST_NOW=2026-07-29T13:00:00Z
+
+# Bad requests change nothing.
+! exec rit note edit tasks/ship-v2 --source-id 9 --source-title x
+stderr 'note "tasks/ship-v2" has no source "9"; its source ids are 1, 2, 3'
+! exec rit note edit tasks/ship-v2 --source-id 2
+stderr '--source-id needs --source-resource or --source-title'
+! exec rit note edit tasks/ship-v2 --source-title x
+stderr '--source-resource and --source-title need --source-id'
+! exec rit note edit tasks/ship-v2 --source-id 2 --source-resource=
+stderr 'a source needs a resource; to keep a source whose file is gone, describe it in words'
+! exec rit note edit tasks/ship-v2 --source-id 2 --source-resource https://example.com/pr/1
+stderr 'source "2" would duplicate source "1"'
+! exec rit note edit tasks/ship-v2 --source-id 2 --source-title x --expect-hash deadbeef
+stderr 'changed since it was read'
+cmp kb/tasks/ship-v2.md before.md
+
+# A dry run shows the result without writing it.
+exec rit note edit tasks/ship-v2 --source-id 2 --source-resource /notes/moved-plan.md --dry-run
+stdout '^status: dry-run$'
+stdout 'Old plan\]\(/notes/moved-plan.md\)'
+cmp kb/tasks/ship-v2.md before.md
+
+# A moved document: the resource and title change, and [^2] still cites it.
+exec rit note edit tasks/ship-v2 --source-id 2 --source-resource /notes/moved-plan.md --source-title 'Moved plan'
+stdout '^status: updated$'
+
+# A temporary file that is gone: its provenance stays, with no broken link.
+exec rit note edit tasks/ship-v2 --source-id 3 --source-resource 'Temporary scratch file, since removed'
+
+# A title alone.
+exec rit note edit tasks/ship-v2 --source-id 1 --source-title 'PR one'
+
+cmp kb/tasks/ship-v2.md want/ship-v2.md
+exec rit lint --rule dangling-link
+stdout '^warnings: 0$'
+
+# An empty title clears it.
+exec rit note edit tasks/ship-v2 --source-id 1 --source-title=
+grep '^\[\^1\]: \[https://example.com/pr/1\]\(https://example.com/pr/1\)$' kb/tasks/ship-v2.md
+
+# Daily notes carry sources too.
+exec rit daily --note 'A day.' --obs 'fact: x' --source 'Old /notes/old-plan.md'
+exec rit note edit daily/2026-07-29 --source-id 1 --source-resource /notes/moved-plan.md
+grep '^\[\^1\]: \[Old\]\(/notes/moved-plan.md\)$' kb/daily/2026-07-29.md
+
+okflint kb
+
+-- want/ship-v2.md --
+---
+type: task
+title: Ship v2
+description: Ship the v2 API.
+tags: [api]
+sources:
+  - id: "1"
+    resource: https://example.com/pr/1
+    title: PR one
+  - id: "2"
+    resource: /notes/moved-plan.md
+    title: Moved plan
+  - id: "3"
+    resource: Temporary scratch file, since removed
+generated: {by: claude-code, at: 2026-07-29T13:00:00Z}
+state: open
+---
+
+Body text.
+
+# Observations
+- [state] open [^1]
+- [context] old plan [^2]
+- [context] scratch [^3]
+
+# Relations
+- part_of [Moved plan](/notes/moved-plan.md)
+
+[^1]: [PR one](https://example.com/pr/1)
+[^2]: [Moved plan](/notes/moved-plan.md)
+[^3]: Temporary scratch file, since removed

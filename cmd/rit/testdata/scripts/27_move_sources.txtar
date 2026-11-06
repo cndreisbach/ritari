@@ -1,0 +1,52 @@
+# Scenario 27: moving a note updates the sources that cite it, so a later write
+# derives the same footnote rather than bringing the old link back.
+exec rit project init work $WORK/kb --default
+exec rit note write --title Plan --description d --content 'The plan.'
+exec rit note write --title 'Uses plan' --description d --obs 'fact: x' --source 'The plan /notes/plan.md'
+exec rit note write --title 'Uses plan' --obs 'fact: why' --source 'Why /notes/plan.md#why'
+exec rit note write --title 'Uses plan' --obs 'fact: pr' --source 'PR 1 https://example.com/pr/1'
+exec rit note write --title 'Uses plan' --obs 'fact: mail' --source 'Email from Ana'
+
+env RITARI_TEST_NOW=2026-07-29T13:00:00Z
+exec rit note move notes/plan references/plan
+stdout '^rewrote_links_in: \[notes/uses-plan\]$'
+cmp kb/notes/uses-plan.md want/moved.md
+
+exec rit note write --title 'Uses plan' --obs 'fact: later'
+grep '^\[\^1\]: \[The plan\]\(/references/plan.md\)$' kb/notes/uses-plan.md
+grep '^\[\^2\]: \[Why\]\(/references/plan.md#why\)$' kb/notes/uses-plan.md
+exec rit lint --rule dangling-link
+stdout '^warnings: 0$'
+
+okflint kb
+
+-- want/moved.md --
+---
+type: note
+title: Uses plan
+description: d
+sources:
+  - id: "1"
+    resource: /references/plan.md
+    title: The plan
+  - id: "2"
+    resource: /references/plan.md#why
+    title: Why
+  - id: "3"
+    resource: https://example.com/pr/1
+    title: PR 1
+  - id: "4"
+    resource: Email from Ana
+generated: {by: claude-code, at: 2026-07-29T12:00:00Z}
+---
+
+# Observations
+- [fact] x [^1]
+- [fact] why [^2]
+- [fact] pr [^3]
+- [fact] mail [^4]
+
+[^1]: [The plan](/references/plan.md)
+[^2]: [Why](/references/plan.md#why)
+[^3]: [PR 1](https://example.com/pr/1)
+[^4]: Email from Ana

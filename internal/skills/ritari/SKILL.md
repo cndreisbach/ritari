@@ -175,6 +175,7 @@ rit context decisions/auth-uses-jwt --depth 2   # follow links outward
 ```
 rit note edit tasks/ship-v2 --op replace_section --section Steps --content="- [x] build"
 rit note edit decisions/auth-uses-jwt --description "Updated summary."
+rit note edit decisions/auth-uses-jwt --source-id 2 --source-resource /references/auth-guide.md
 ```
 
 Body ops: `append`, `prepend`, `find_replace` (`--find`, optional `--count`),
@@ -185,7 +186,8 @@ document; `--dry-run` previews an edit; `--expect-hash` (the `hash` from
 `note read`) refuses the edit if the note changed since you read it.
 
 **`rit note move <ref> <dest>` is the only correct way to relocate a note.** It
-rewrites every link that pointed at the old path. Never rename files by hand.
+rewrites every link and source that pointed at the old path. Never rename files
+by hand.
 
 Retire notes with `rit note archive` (still linkable, out of search). Use
 `rit note delete` only for mistakes — it breaks inbound links.

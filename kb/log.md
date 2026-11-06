@@ -10,6 +10,7 @@
 * **Update**: [2026-11-06](/daily/2026-11-06.md)
 * **Create**: [Touched names targets that no longer exist](/decisions/touched-names-targets-that-no-longer-exist.md)
 * **Update**: [Touched names targets that no longer exist](/decisions/touched-names-targets-that-no-longer-exist.md)
+* **Create**: [Sources are updated by ID with note edit flags](/decisions/sources-are-updated-by-id-with-note-edit-flags.md)
 
 ## 2026-11-01
 

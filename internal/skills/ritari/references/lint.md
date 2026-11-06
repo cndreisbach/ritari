@@ -47,6 +47,9 @@ Per-rule guidance:
   restore the file, point the link elsewhere, or remove it. When the link is in
   a daily note's `# Touched`, don't edit it or ask: run
   `rit daily <date> --refresh`, which names a missing target without linking it.
+  When the link is in a source's `[^n]:` footnote, the fix is to update that
+  source by id (see "Recording sources" in `writing.md`): ask whether to point
+  it at the file's new home or keep it as a description.
 - **`stale-verification`** (content changed after verification): ask the user to
   re-verify (`rit note verify`) after reviewing the change, or leave it
   unverified-in-effect.

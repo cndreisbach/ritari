@@ -86,8 +86,12 @@ type EditOpts struct {
 	Resource    *string
 	Tags        *[]string
 	Meta        [][2]string
-	ExpectHash  string
-	DryRun      bool
+	// SourceID selects the source that SourceResource and SourceTitle set.
+	SourceID       string
+	SourceResource *string
+	SourceTitle    *string
+	ExpectHash     string
+	DryRun         bool
 }
 
 // Result is the common outcome of a single-note operation.
@@ -102,8 +106,15 @@ type Result struct {
 
 // Edit implements `note edit` (§9.7).
 func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
-	if o.Op == "" && o.Title == nil && o.Description == nil && o.Resource == nil && o.Tags == nil && len(o.Meta) == 0 {
-		return Result{}, fmt.Errorf("nothing to do: pass --op for a body edit, or --title/--description/--tags/--resource/--meta to set frontmatter")
+	setsSource := o.SourceResource != nil || o.SourceTitle != nil
+	if setsSource && o.SourceID == "" {
+		return Result{}, fmt.Errorf("--source-resource and --source-title need --source-id")
+	}
+	if o.SourceID != "" && !setsSource {
+		return Result{}, fmt.Errorf("--source-id needs --source-resource or --source-title")
+	}
+	if o.Op == "" && o.Title == nil && o.Description == nil && o.Resource == nil && o.Tags == nil && len(o.Meta) == 0 && !setsSource {
+		return Result{}, fmt.Errorf("nothing to do: pass --op for a body edit, --title/--description/--tags/--resource/--meta to set frontmatter, or --source-id with --source-resource/--source-title to update a source")
 	}
 	var res Result
 	err := Update(root, env, func(b *Bundle) ([]Event, error) {
@@ -155,6 +166,15 @@ func Edit(root string, env Env, ref string, o EditOpts) (Result, error) {
 		}
 		for _, kv := range o.Meta {
 			n.FM.SetExtra(kv[0], kv[1])
+		}
+		if setsSource {
+			changed, err := note.UpdateSource(n.FM.Sources, c.ID, o.SourceID, o.SourceResource, o.SourceTitle)
+			if err != nil {
+				return nil, err
+			}
+			if changed {
+				n.Restamp(env.Actor, env.Stamp())
+			}
 		}
 		n.FillGenerated(env.Actor, env.Stamp())
 		data := note.Render(n)
@@ -316,7 +336,7 @@ func Move(root string, env Env, ref, dest string) (MoveResult, error) {
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			return nil, err
 		}
-		inbound := b.Graph().In[c.ID]
+		inbound := referrers(b, c.ID)
 
 		if err := os.MkdirAll(filepath.Dir(b.Abs(newRel)), 0o755); err != nil {
 			return nil, err
@@ -363,6 +383,24 @@ func Move(root string, env Env, ref, dest string) (MoveResult, error) {
 	return res, err
 }
 
+// referrers lists the notes that link to id or cite it as a source. A source
+// need not have a link in the body: another tool's may have no footnote at all.
+func referrers(b *Bundle, id string) []string {
+	ids := slices.Clone(b.Graph().In[id])
+	for _, c := range b.Concepts {
+		if slices.Contains(ids, c.ID) {
+			continue
+		}
+		for _, s := range c.Note.FM.Sources {
+			if target, ok := note.ResolveLink(s.Resource, c.ID); ok && note.Followable(s.Resource) && target == id {
+				ids = append(ids, c.ID)
+				break
+			}
+		}
+	}
+	return ids
+}
+
 func fragment(href string) string {
 	if i := strings.IndexByte(href, '#'); i >= 0 {
 		return href[i:]
@@ -370,9 +408,10 @@ func fragment(href string) string {
 	return ""
 }
 
-// rewriteLinks replaces link destinations in a concept file. fn maps a
-// destination as written to its replacement. Replacement is keyed on the exact
-// destination text, so unrelated links are untouched.
+// rewriteLinks replaces link destinations in a concept file, and the source
+// resources that footnotes are derived from. fn maps a destination as written to
+// its replacement. Replacement is keyed on the exact destination text, so
+// unrelated links are untouched.
 func rewriteLinks(file string, fn func(href string) (string, bool)) error {
 	data, err := os.ReadFile(file)
 	if err != nil {
@@ -391,6 +430,23 @@ func rewriteLinks(file string, fn func(href string) (string, bool)) error {
 		text = strings.ReplaceAll(text, "]("+l.Href+")", "]("+repl+")")
 		text = strings.ReplaceAll(text, "]: "+l.Href+"\n", "]: "+repl+"\n")
 	}
-	_, err = writeIfChanged(file, []byte(text))
+	out := []byte(text)
+	if n, err = note.Parse(out); err != nil {
+		return err
+	}
+	changed := false
+	for i, s := range n.FM.Sources {
+		if !note.Followable(s.Resource) {
+			continue
+		}
+		if repl, ok := fn(s.Resource); ok && repl != s.Resource {
+			n.FM.Sources[i].Resource = repl
+			changed = true
+		}
+	}
+	if changed {
+		out = note.Render(n)
+	}
+	_, err = writeIfChanged(file, out)
 	return err
 }

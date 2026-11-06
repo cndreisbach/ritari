@@ -176,6 +176,34 @@ describe("ritari_edit", () => {
 			"--expect-hash=abc123",
 		]);
 	});
+
+	it("updates a source by its id", async () => {
+		const { exec, calls } = responder([{ match: is("edit"), result: { stdout: '{"success":true}\n' } }]);
+		await tool(exec, "ritari_edit").execute(
+			"call",
+			{
+				ref: "ideas/retry",
+				source_id: "2",
+				source_resource: "/notes/moved.md",
+				source_title: "",
+				expect_hash: "abc123",
+				dry_run: true,
+			},
+			undefined,
+			undefined,
+			ctx,
+		);
+		expect(calls[0].slice(4)).toEqual([
+			"note",
+			"edit",
+			"ideas/retry",
+			"--source-id=2",
+			"--source-resource=/notes/moved.md",
+			"--source-title=",
+			"--expect-hash=abc123",
+			"--dry-run",
+		]);
+	});
 });
 
 describe("ritari_read", () => {

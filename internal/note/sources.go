@@ -1,6 +1,7 @@
 package note
 
 import (
+	"fmt"
 	"regexp"
 	"slices"
 	"strconv"
@@ -153,6 +154,47 @@ func maxFootnote(body string) int {
 		}
 	}
 	return max
+}
+
+// UpdateSource sets the resource and/or title of the numbered source with this
+// id, in place, keeping its id and any other keys (§3.7). noteID names the note
+// in errors. It reports whether the entry changed.
+func UpdateSource(sources []Source, noteID, id string, resource, title *string) (bool, error) {
+	i := slices.IndexFunc(sources, func(s Source) bool { return s.ID == id })
+	if i < 0 {
+		if len(sources) == 0 {
+			return false, fmt.Errorf("note %q has no sources", noteID)
+		}
+		ids := make([]string, len(sources))
+		for j, s := range sources {
+			ids[j] = s.ID
+		}
+		return false, fmt.Errorf("note %q has no source %q; its source ids are %s", noteID, id, strings.Join(ids, ", "))
+	}
+	if numericID(id) == 0 {
+		return false, fmt.Errorf("source %q has a non-numeric id, so its footnote is not managed by rit and cannot be updated with it", id)
+	}
+	next := sources[i]
+	if title != nil {
+		next.Title = strings.TrimSpace(*title)
+	}
+	if resource != nil {
+		next.Resource = strings.TrimSpace(*resource)
+		if next.Resource == "" {
+			return false, fmt.Errorf("a source needs a resource; to keep a source whose file is gone, describe it in words")
+		}
+		for j, s := range sources {
+			if j != i && SameSource(s, next) {
+				return false, fmt.Errorf("source %q would duplicate source %q", id, s.ID)
+			}
+		}
+	}
+	if strings.ContainsAny(next.Resource+next.Title, "\r\n") {
+		return false, fmt.Errorf("a source's resource and title must each be one line")
+	}
+	changed := next.Resource != sources[i].Resource || next.Title != sources[i].Title
+	sources[i] = next
+	return changed, nil
 }
 
 // AddSources merges new sources into existing ones, allocating ids per §3.7.
