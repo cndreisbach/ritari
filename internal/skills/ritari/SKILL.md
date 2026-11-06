@@ -185,7 +185,8 @@ document; `--dry-run` previews an edit; `--expect-hash` (the `hash` from
 `note read`) refuses the edit if the note changed since you read it.
 
 **`rit note move <ref> <dest>` is the only correct way to relocate a note.** It
-rewrites every link that pointed at the old path. Never rename files by hand.
+rewrites every link and source that pointed at the old path. Never rename files
+by hand.
 
 Retire notes with `rit note archive` (still linkable, out of search). Use
 `rit note delete` only for mistakes — it breaks inbound links.

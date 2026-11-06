@@ -1349,7 +1349,9 @@ rit note move <ref> <dest>
 `/` is stripped. Errors: `note <id> is already there` (same ID), `destination already
 exists: <id>`. Effects, in order:
 
-1. Collect the notes that link to the moved note (from the graph, before the move).
+1. Collect the notes that link to the moved note (from the graph, before the move) or
+   have a `sources` entry with a followable `resource` that targets it (it may have no
+   link in the body).
 2. Move the file, creating directories.
 3. Rewrite the **moved note's own** relative in-bundle links to bundle-absolute form
    (its old relative paths would otherwise break), including links to targets that
@@ -1357,7 +1359,10 @@ exists: <id>`. Effects, in order:
 4. In each inbound note, rewrite every link whose target was the old ID to the new
    bundle-absolute path (`](/<newid>.md)`). Replacement is keyed on the exact
    destination text as written so unrelated links are untouched.
-5. Record a `Move` event (subject new ID, detail `was <old id>`).
+5. Apply steps 3 and 4 to followable `resource` values in `sources` as well, keeping
+   any fragment, because footnote definitions are derived from them (§3.7). Their `id`s,
+   their other keys, and the note's `generated` stamp are unchanged.
+6. Record a `Move` event (subject new ID, detail `was <old id>`).
 
 Result: `success`, `status: moved`, `from`, `to`, `rewrote_links_in` (sorted IDs;
 explicit `[]` if none). Text: `Moved A -> B`, then
